@@ -1,0 +1,7 @@
+# mdprobe review artifacts (generated locally during spec/plan review)
+docs/**/*.annotations.json
+docs/**/*.annotations.yaml
+
+# Note: full Python .gitignore added in Phase A Task T01 step 2 (see
+# docs/superpowers/plans/2026-05-12-titan-v0.1-phase-a.md). Engineer
+# should APPEND the Python entries to this file, not overwrite it.
