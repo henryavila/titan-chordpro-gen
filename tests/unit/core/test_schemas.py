@@ -10,7 +10,12 @@ from titan_chordpro.core.schemas import (
     AlignmentResult,
     BeatGrid,
     ChordEvent,
+    ChordMarker,
+    InstrumentalLine,
+    LyricLine,
+    Metadata,
     PhonemeEvent,
+    Section,
     StemSet,
     SyllableEvent,
     TimeStamp,
@@ -269,3 +274,137 @@ class TestResultWrappers:
     def test_alignment_result_basic(self) -> None:
         ar = AlignmentResult(words=[], phonemes=[])
         assert ar.words == []
+
+
+@pytest.mark.unit
+class TestChordMarker:
+    def test_basic(self) -> None:
+        chord = ChordEvent(
+            symbol="C",
+            timestamp=TimeStamp(start=0, end=2),
+            source_engine="mock",
+        )
+        marker = ChordMarker(
+            chord=chord,
+            char_position=3,
+            placement_strategy="stressed_syllable",
+        )
+        assert marker.char_position == 3
+        assert marker.placement_strategy == "stressed_syllable"
+
+    def test_negative_char_position_rejected(self) -> None:
+        chord = ChordEvent(
+            symbol="C",
+            timestamp=TimeStamp(start=0, end=2),
+            source_engine="mock",
+        )
+        with pytest.raises(ValidationError):
+            ChordMarker(
+                chord=chord,
+                char_position=-1,
+                placement_strategy="stressed_syllable",
+            )
+
+    def test_invalid_strategy_rejected(self) -> None:
+        chord = ChordEvent(
+            symbol="C",
+            timestamp=TimeStamp(start=0, end=2),
+            source_engine="mock",
+        )
+        with pytest.raises(ValidationError):
+            ChordMarker(
+                chord=chord,
+                char_position=0,
+                placement_strategy="invalid_strategy",  # type: ignore[arg-type]
+            )
+
+    @pytest.mark.parametrize(
+        "strategy",
+        [
+            "melisma_start",
+            "stressed_syllable",
+            "any_syllable",
+            "before_word",
+            "beat_boundary",
+        ],
+    )
+    def test_all_strategies_accepted(self, strategy: str) -> None:
+        chord = ChordEvent(
+            symbol="C",
+            timestamp=TimeStamp(start=0, end=2),
+            source_engine="mock",
+        )
+        marker = ChordMarker(
+            chord=chord,
+            char_position=0,
+            placement_strategy=strategy,  # type: ignore[arg-type]
+        )
+        assert marker.placement_strategy == strategy
+
+
+@pytest.mark.unit
+class TestLyricLine:
+    def test_basic(self) -> None:
+        line = LyricLine(text="hello world")
+        assert line.line_type == "lyric"
+        assert line.chord_markers == []
+        assert line.confidence == 1.0
+
+
+@pytest.mark.unit
+class TestInstrumentalLine:
+    def test_basic(self) -> None:
+        chord = ChordEvent(
+            symbol="C",
+            timestamp=TimeStamp(start=0, end=2),
+            source_engine="mock",
+        )
+        line = InstrumentalLine(chords=[chord], measures=2)
+        assert line.line_type == "instrumental"
+        assert line.pattern_hint == "full_measure"
+        assert line.measures == 2
+
+    def test_zero_measures_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            InstrumentalLine(chords=[], measures=0)
+
+
+@pytest.mark.unit
+class TestSection:
+    def test_basic(self) -> None:
+        line = LyricLine(text="hello")
+        section = Section(
+            type="verse",
+            label="Verse 1",
+            lines=[line],
+            timestamp=TimeStamp(start=0, end=10),
+        )
+        assert section.type == "verse"
+
+
+@pytest.mark.unit
+class TestMetadata:
+    def test_minimal(self) -> None:
+        m = Metadata(title="Test Song")
+        assert m.capo == 0
+        assert m.extensions == {}
+
+    def test_full(self) -> None:
+        m = Metadata(
+            title="Test",
+            artist="Author",
+            key="C",
+            tempo=120,
+            time_signature=(4, 4),
+            capo=2,
+            extensions={"x_custom": "value"},
+        )
+        assert m.tempo == 120
+
+    def test_tempo_out_of_range_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Metadata(title="x", tempo=400)
+
+    def test_capo_out_of_range_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Metadata(title="x", capo=15)

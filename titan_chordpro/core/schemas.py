@@ -8,7 +8,7 @@ invalid data raises pydantic.ValidationError at construction time.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
@@ -160,3 +160,71 @@ class AlignmentResult(BaseModel):
 
     words: list[WordEvent]
     phonemes: list[PhonemeEvent]
+
+
+class ChordMarker(BaseModel):
+    """A chord pinned to a specific character position in a rendered line."""
+
+    chord: ChordEvent
+    char_position: int = Field(ge=0)
+    placement_strategy: Literal[
+        "melisma_start",
+        "stressed_syllable",
+        "any_syllable",
+        "before_word",
+        "beat_boundary",
+    ]
+
+
+class LyricLine(BaseModel):
+    """A line of lyrics with chord markers placed at character positions."""
+
+    line_type: Literal["lyric"] = "lyric"
+    text: str
+    chord_markers: list[ChordMarker] = Field(default_factory=list)
+    word_alignments: list[WordEvent] = Field(default_factory=list)
+    syllable_alignments: list[SyllableEvent] = Field(default_factory=list)
+    confidence: Confidence = 1.0
+
+
+class InstrumentalLine(BaseModel):
+    """A line representing instrumental measures (intro, solo break, outro)."""
+
+    line_type: Literal["instrumental"] = "instrumental"
+    chords: list[ChordEvent]
+    measures: int = Field(gt=0)
+    pattern_hint: Literal["full_measure", "half_measure", "beat"] = "full_measure"
+    label: str | None = None
+
+
+# Discriminated union for type-safe section content
+Line = Annotated[LyricLine | InstrumentalLine, Field(discriminator="line_type")]
+
+
+class Section(BaseModel):
+    """A song section: verse, chorus, bridge, instrumental."""
+
+    type: Literal[
+        "verse",
+        "chorus",
+        "bridge",
+        "pre-chorus",
+        "instrumental",
+        "intro",
+        "outro",
+    ]
+    label: str
+    lines: list[Line]
+    timestamp: TimeStamp
+
+
+class Metadata(BaseModel):
+    """Structured song metadata. Maps to ChordPro {directives}."""
+
+    title: str
+    artist: str | None = None
+    key: str | None = None
+    tempo: int | None = Field(default=None, ge=20, le=300)
+    time_signature: tuple[int, int] | None = None
+    capo: int = Field(default=0, ge=0, le=12)
+    extensions: dict[str, str] = Field(default_factory=dict)
