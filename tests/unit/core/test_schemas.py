@@ -1,14 +1,20 @@
 # tests/unit/core/test_schemas.py
 """Tests for core Pydantic schemas."""
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
 from titan_chordpro.core.schemas import (
+    AlignmentResult,
+    BeatGrid,
     ChordEvent,
     PhonemeEvent,
+    StemSet,
     SyllableEvent,
     TimeStamp,
+    TranscriptionResult,
     WordEvent,
 )
 
@@ -162,3 +168,104 @@ class TestChordEvent:
                 source_engine="mock",
             )
         assert "disagrees" in str(exc.value)
+
+
+@pytest.mark.unit
+class TestBeatGrid:
+    def test_basic(self) -> None:
+        grid = BeatGrid(
+            beats=[0.5, 1.0, 1.5, 2.0],
+            downbeat_indices=[0, 4],
+            bpm=120.0,
+            source_engine="mock",
+        )
+        assert grid.meter == (4, 4)
+        assert not grid.bpm_variable
+
+    def test_non_monotonic_beats_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            BeatGrid(
+                beats=[1.0, 0.5, 2.0],
+                downbeat_indices=[0],
+                bpm=120.0,
+                source_engine="mock",
+            )
+
+    def test_zero_bpm_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            BeatGrid(
+                beats=[0.5, 1.0],
+                downbeat_indices=[0],
+                bpm=0.0,
+                source_engine="mock",
+            )
+
+    def test_invalid_meter_denominator_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            BeatGrid(
+                beats=[0.5, 1.0],
+                downbeat_indices=[0],
+                bpm=120.0,
+                meter=(4, 3),  # 3 not in {2,4,8,16}
+                source_engine="mock",
+            )
+
+    def test_six_eight_ok(self) -> None:
+        grid = BeatGrid(
+            beats=[0.5, 1.0],
+            downbeat_indices=[0],
+            bpm=120.0,
+            meter=(6, 8),
+        )
+        assert grid.meter == (6, 8)
+
+
+@pytest.mark.unit
+class TestStemSet:
+    def test_basic(self, tmp_path: Path) -> None:
+        stems = StemSet(
+            audio_id="abc123",
+            vocals=tmp_path / "vocals.wav",
+            bass=tmp_path / "bass.wav",
+            drums=tmp_path / "drums.wav",
+            other=tmp_path / "other.wav",
+            duration=180.0,
+            source_engine="mock",
+        )
+        assert stems.sample_rate == 44100
+
+    def test_zero_duration_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(ValidationError):
+            StemSet(
+                audio_id="abc",
+                vocals=tmp_path / "v.wav",
+                bass=tmp_path / "b.wav",
+                drums=tmp_path / "d.wav",
+                other=tmp_path / "o.wav",
+                duration=0.0,
+                source_engine="mock",
+            )
+
+
+@pytest.mark.unit
+class TestResultWrappers:
+    def test_transcription_result_minimal(self) -> None:
+        tr = TranscriptionResult(words=[])
+        assert tr.phonemes is None
+        assert tr.detected_language is None
+
+    def test_transcription_result_full(self) -> None:
+        word = WordEvent(
+            text="hi",
+            timestamp=TimeStamp(start=0, end=1),
+            source_engine="mock",
+        )
+        tr = TranscriptionResult(
+            words=[word],
+            detected_language="en",
+        )
+        assert tr.detected_language == "en"
+
+    def test_alignment_result_basic(self) -> None:
+        ar = AlignmentResult(words=[], phonemes=[])
+        assert ar.words == []

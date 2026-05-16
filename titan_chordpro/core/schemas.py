@@ -7,6 +7,7 @@ invalid data raises pydantic.ValidationError at construction time.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
@@ -102,3 +103,60 @@ class ChordEvent(BaseModel):
         if "/" in self.symbol:
             return self.symbol.rsplit("/", 1)[1].strip()
         return None
+
+
+class BeatGrid(BaseModel):
+    """Beat positions, downbeats, tempo, and meter for a song."""
+
+    beats: list[float]
+    downbeat_indices: list[int]
+    bpm: float = Field(gt=0)
+    bpm_variable: bool = False
+    meter: tuple[int, int] = (4, 4)
+    confidence: Confidence = 1.0
+    source_engine: str = ""
+
+    @field_validator("beats")
+    @classmethod
+    def beats_monotonic(cls, v: list[float]) -> list[float]:
+        for i in range(len(v) - 1):
+            if v[i] >= v[i + 1]:
+                raise ValueError("beats must be strictly monotonically increasing")
+        return v
+
+    @field_validator("meter")
+    @classmethod
+    def meter_valid(cls, v: tuple[int, int]) -> tuple[int, int]:
+        if v[0] <= 0 or v[1] not in {2, 4, 8, 16}:
+            raise ValueError(
+                f"invalid meter {v}: numerator must be > 0, denominator in {{2,4,8,16}}"
+            )
+        return v
+
+
+class StemSet(BaseModel):
+    """Output of source separation: 4 stem files + metadata."""
+
+    audio_id: str  # sha256 of source audio
+    vocals: Path
+    bass: Path
+    drums: Path
+    other: Path
+    sample_rate: int = 44100
+    duration: float = Field(gt=0)
+    source_engine: str
+
+
+class TranscriptionResult(BaseModel):
+    """Output of a TranscriptionEngine."""
+
+    words: list[WordEvent]
+    phonemes: list[PhonemeEvent] | None = None
+    detected_language: str | None = None
+
+
+class AlignmentResult(BaseModel):
+    """Output of an AlignmentEngine."""
+
+    words: list[WordEvent]
+    phonemes: list[PhonemeEvent]
