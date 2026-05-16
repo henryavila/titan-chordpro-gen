@@ -173,7 +173,7 @@ class ChordMarker(BaseModel):
         "stressed_syllable",
         "any_syllable",
         "before_word",
-        "beat_boundary",
+        "orphan",
     ]
 
 

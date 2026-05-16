@@ -333,7 +333,7 @@ class TestChordMarker:
             "stressed_syllable",
             "any_syllable",
             "before_word",
-            "beat_boundary",
+            "orphan",
         ],
     )
     def test_all_strategies_accepted(self, strategy: str) -> None:
