@@ -7,10 +7,11 @@ invalid data raises pydantic.ValidationError at construction time.
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 # Confidence: float in [0, 1]
 Confidence = Annotated[float, Field(ge=0.0, le=1.0)]
@@ -228,3 +229,57 @@ class Metadata(BaseModel):
     time_signature: tuple[int, int] | None = None
     capo: int = Field(default=0, ge=0, le=12)
     extensions: dict[str, str] = Field(default_factory=dict)
+
+
+class EngineInfo(BaseModel):
+    """Identification of a concrete engine instance."""
+
+    name: str
+    version: str
+    backend: Literal["cuda", "mps", "mlx", "coreml", "metal", "cpu"]
+    model_id: str | None = None
+
+    model_config = ConfigDict(frozen=True)
+
+
+class StageConfidence(BaseModel):
+    """Aggregated confidence for a pipeline stage."""
+
+    stage: Literal[
+        "separation",
+        "transcription",
+        "alignment",
+        "chord_recognition",
+        "beat_tracking",
+        "syllabification",
+        "fusion",
+    ]
+    mean: Confidence
+    median: Confidence
+    p10: Confidence  # bottom 10%
+
+
+class EngineRegistry(BaseModel):
+    """Type-safe map of pipeline stages to their producing EngineInfo."""
+
+    separation: EngineInfo
+    transcription: EngineInfo
+    alignment: EngineInfo | None = None  # None when transcription produces phonemes
+    chord_recognition: EngineInfo
+    beat_tracking: EngineInfo
+    syllabification: EngineInfo
+
+    model_config = ConfigDict(frozen=True)
+
+
+class Provenance(BaseModel):
+    """Audit trail for a ChordProDocument."""
+
+    titan_version: str
+    audio_id: str  # sha256 of source audio
+    engines: EngineRegistry
+    started_at: datetime
+    completed_at: datetime
+    confidence: list[StageConfidence]
+
+    model_config = ConfigDict(frozen=True)

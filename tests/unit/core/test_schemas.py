@@ -1,6 +1,7 @@
 # tests/unit/core/test_schemas.py
 """Tests for core Pydantic schemas."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -11,11 +12,15 @@ from titan_chordpro.core.schemas import (
     BeatGrid,
     ChordEvent,
     ChordMarker,
+    EngineInfo,
+    EngineRegistry,
     InstrumentalLine,
     LyricLine,
     Metadata,
     PhonemeEvent,
+    Provenance,
     Section,
+    StageConfidence,
     StemSet,
     SyllableEvent,
     TimeStamp,
@@ -408,3 +413,80 @@ class TestMetadata:
     def test_capo_out_of_range_rejected(self) -> None:
         with pytest.raises(ValidationError):
             Metadata(title="x", capo=15)
+
+
+@pytest.mark.unit
+class TestEngineInfo:
+    def test_basic(self) -> None:
+        info = EngineInfo(name="whisper_cpp", version="1.5.0", backend="metal")
+        assert info.model_id is None
+
+    def test_frozen(self) -> None:
+        info = EngineInfo(name="x", version="1", backend="cpu")
+        with pytest.raises(ValidationError):
+            info.name = "y"  # type: ignore[misc]
+
+    def test_invalid_backend_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            EngineInfo(name="x", version="1", backend="rocm")  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
+class TestStageConfidence:
+    def test_basic(self) -> None:
+        sc = StageConfidence(
+            stage="transcription",
+            mean=0.9,
+            median=0.92,
+            p10=0.7,
+        )
+        assert sc.stage == "transcription"
+
+
+@pytest.mark.unit
+class TestEngineRegistry:
+    def _make_info(self, name: str) -> EngineInfo:
+        return EngineInfo(name=name, version="1", backend="cpu")
+
+    def test_full(self) -> None:
+        reg = EngineRegistry(
+            separation=self._make_info("htdemucs"),
+            transcription=self._make_info("whisper_cpp"),
+            chord_recognition=self._make_info("chordino"),
+            beat_tracking=self._make_info("beatthis"),
+            syllabification=self._make_info("portuguese"),
+        )
+        assert reg.alignment is None
+
+    def test_frozen(self) -> None:
+        reg = EngineRegistry(
+            separation=self._make_info("a"),
+            transcription=self._make_info("b"),
+            chord_recognition=self._make_info("c"),
+            beat_tracking=self._make_info("d"),
+            syllabification=self._make_info("e"),
+        )
+        with pytest.raises(ValidationError):
+            reg.separation = self._make_info("z")  # type: ignore[misc]
+
+
+@pytest.mark.unit
+class TestProvenance:
+    def test_basic(self) -> None:
+        info = EngineInfo(name="x", version="1", backend="cpu")
+        reg = EngineRegistry(
+            separation=info,
+            transcription=info,
+            chord_recognition=info,
+            beat_tracking=info,
+            syllabification=info,
+        )
+        prov = Provenance(
+            titan_version="0.1.0a0",
+            audio_id="abc",
+            engines=reg,
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
+            confidence=[],
+        )
+        assert prov.titan_version == "0.1.0a0"
