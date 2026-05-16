@@ -12,6 +12,9 @@ from titan_chordpro.core.schemas import (
     BeatGrid,
     ChordEvent,
     ChordMarker,
+    ChordProDocument,
+    Correction,
+    CorrectionLog,
     EngineInfo,
     EngineRegistry,
     InstrumentalLine,
@@ -490,3 +493,94 @@ class TestProvenance:
             confidence=[],
         )
         assert prov.titan_version == "0.1.0a0"
+
+
+@pytest.mark.unit
+class TestChordProDocument:
+    def _make_provenance(self) -> Provenance:
+        info = EngineInfo(name="mock", version="0", backend="cpu")
+        reg = EngineRegistry(
+            separation=info,
+            transcription=info,
+            chord_recognition=info,
+            beat_tracking=info,
+            syllabification=info,
+        )
+        now = datetime.now(UTC)
+        return Provenance(
+            titan_version="0.1.0a0",
+            audio_id="abc",
+            engines=reg,
+            started_at=now,
+            completed_at=now,
+            confidence=[],
+        )
+
+    def test_basic(self) -> None:
+        doc = ChordProDocument(
+            metadata=Metadata(title="Test"),
+            sections=[],
+            provenance=self._make_provenance(),
+        )
+        assert doc.metadata.title == "Test"
+
+    def test_default_profile_is_inline_slash(self) -> None:
+        # to_string/write methods are added in T28 (writer). For now, just check
+        # the schema accepts construction. Default-profile contract is tested in T28.
+        doc = ChordProDocument(
+            metadata=Metadata(title="Test"),
+            sections=[],
+            provenance=self._make_provenance(),
+        )
+        assert doc is not None
+
+
+@pytest.mark.unit
+class TestCorrection:
+    def test_basic(self) -> None:
+        c = Correction(
+            audio_id="abc",
+            timestamp=12.45,
+            field="chord_symbol",
+            original={"symbol": "C"},
+            corrected={"symbol": "Cm"},
+            created_at=datetime.now(UTC),
+        )
+        assert c.field == "chord_symbol"
+
+    def test_negative_timestamp_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Correction(
+                audio_id="abc",
+                timestamp=-1.0,
+                field="chord_symbol",
+                original={},
+                corrected={},
+                created_at=datetime.now(UTC),
+            )
+
+
+@pytest.mark.unit
+class TestCorrectionLog:
+    def test_basic(self) -> None:
+        log = CorrectionLog(audio_id="abc")
+        assert log.corrections == []
+        assert log.schema_version == 1
+
+    def test_roundtrip_json(self, tmp_path: Path) -> None:
+        log = CorrectionLog(audio_id="abc")
+        c = Correction(
+            audio_id="abc",
+            timestamp=1.0,
+            field="chord_symbol",
+            original={"symbol": "C"},
+            corrected={"symbol": "Cm"},
+            created_at=datetime.now(UTC),
+        )
+        log.corrections.append(c)
+        path = tmp_path / "log.json"
+        log.save(path)
+        loaded = CorrectionLog.load(path)
+        assert loaded.audio_id == "abc"
+        assert len(loaded.corrections) == 1
+        assert loaded.corrections[0].field == "chord_symbol"

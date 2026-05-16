@@ -283,3 +283,55 @@ class Provenance(BaseModel):
     confidence: list[StageConfidence]
 
     model_config = ConfigDict(frozen=True)
+
+
+class ChordProDocument(BaseModel):
+    """The final output document, renderable to a .chordpro file.
+
+    The to_string() / write() methods are added in T28 and delegate to
+    writer/document.py via lazy import so this module stays ML/IO-free.
+    """
+
+    metadata: Metadata
+    sections: list[Section]
+    provenance: Provenance
+
+
+# Phase-2 schemas: defined in v0.1 but NOT consumed by the v0.1 pipeline.
+# Reserved as the extension point for editor app (drag-to-correct) + LearnableEngine.
+
+
+class Correction(BaseModel):
+    """A single user correction to a Titan output, captured by a phase-2 app."""
+
+    audio_id: str
+    timestamp: float = Field(ge=0)
+    field: Literal[
+        "chord_symbol",
+        "chord_position",
+        "word_text",
+        "word_timestamp",
+        "syllable_position",
+        "beat_position",
+        "meter",
+    ]
+    original: dict[str, object]
+    corrected: dict[str, object]
+    user_id: str | None = None
+    note: str | None = None
+    created_at: datetime
+
+
+class CorrectionLog(BaseModel):
+    """A bundle of corrections for one audio file. Persisted as JSON."""
+
+    audio_id: str
+    corrections: list[Correction] = Field(default_factory=list)
+    schema_version: int = 1
+
+    @classmethod
+    def load(cls, path: Path) -> Self:
+        return cls.model_validate_json(path.read_text())
+
+    def save(self, path: Path) -> None:
+        path.write_text(self.model_dump_json(indent=2))
