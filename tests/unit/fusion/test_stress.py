@@ -4,7 +4,7 @@
 import pytest
 
 from titan_chordpro.core.schemas import SyllableEvent, TimeStamp, WordEvent
-from titan_chordpro.fusion.stress import PortugueseStressDetector
+from titan_chordpro.fusion.stress import EnglishStressDetector, PortugueseStressDetector
 
 
 def _word(text: str) -> WordEvent:
@@ -66,3 +66,25 @@ class TestPortugueseStressDetector:
         # "ruim" — termina em "im" → oxítona
         idx = self.detector.detect_stressed_syllable(_word("ruim"), _syllables("ru", "im"))
         assert idx == 1
+
+
+@pytest.mark.unit
+class TestEnglishStressDetector:
+    def setup_method(self) -> None:
+        # Use heuristic fallback (no CMU lookup) for Phase A
+        self.detector = EnglishStressDetector(use_cmu_dict=False)
+
+    def test_monosyllable(self) -> None:
+        idx = self.detector.detect_stressed_syllable(_word("cat"), _syllables("cat"))
+        assert idx == 0
+
+    def test_bisyllable_heuristic_first(self) -> None:
+        # Without CMU dict, heuristic = "stress first syllable" for most EN words
+        idx = self.detector.detect_stressed_syllable(_word("hello"), _syllables("hel", "lo"))
+        assert idx == 0
+
+    def test_trisyllable_heuristic_first(self) -> None:
+        idx = self.detector.detect_stressed_syllable(
+            _word("beautiful"), _syllables("beau", "ti", "ful")
+        )
+        assert idx == 0

@@ -65,3 +65,57 @@ class PortugueseStressDetector:
         if len(syllables) >= 2:
             return len(syllables) - 2
         return 0
+
+
+class EnglishStressDetector:
+    """EN stress via CMU dict (preferred) or heuristic fallback.
+
+    Phase A uses the heuristic by default (no g2p_en dependency).
+    Phase B will pass use_cmu_dict=True after installing g2p_en.
+    """
+
+    def __init__(self, use_cmu_dict: bool = True):
+        self.use_cmu_dict = use_cmu_dict
+        self._g2p = None
+        if use_cmu_dict:
+            try:
+                from g2p_en import G2p
+
+                self._g2p = G2p()
+            except ImportError:
+                self.use_cmu_dict = False
+
+    @property
+    def language(self) -> str:
+        return "en"
+
+    def detect_stressed_syllable(
+        self,
+        word: WordEvent,
+        syllables: list[SyllableEvent],
+    ) -> int:
+        if not syllables:
+            return 0
+        if len(syllables) == 1:
+            return 0
+
+        if self.use_cmu_dict and self._g2p is not None:
+            try:
+                phonemes = self._g2p(word.text)
+                # ARPABET stress markers: digits attached to vowel symbols
+                # '1' = primary stress, '2' = secondary, '0' = unstressed.
+                # Map phoneme stress to syllable index by counting vowels.
+                vowel_count = 0
+                primary_vowel = -1
+                for ph in phonemes:
+                    if isinstance(ph, str) and ph and ph[-1].isdigit():
+                        if ph[-1] == "1":
+                            primary_vowel = vowel_count
+                        vowel_count += 1
+                if 0 <= primary_vowel < len(syllables):
+                    return primary_vowel
+            except (KeyError, IndexError, AttributeError):
+                pass
+
+        # Heuristic fallback: first syllable (modal stress pattern in EN).
+        return 0
