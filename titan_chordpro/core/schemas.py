@@ -286,15 +286,21 @@ class Provenance(BaseModel):
 
 
 class ChordProDocument(BaseModel):
-    """The final output document, renderable to a .chordpro file.
-
-    The to_string() / write() methods are added in T28 and delegate to
-    writer/document.py via lazy import so this module stays ML/IO-free.
-    """
+    """The final output document, renderable to a .chordpro file."""
 
     metadata: Metadata
     sections: list[Section]
     provenance: Provenance
+
+    def to_string(self, profile: str = "inline_slash") -> str:
+        from titan_chordpro.writer.document import render
+
+        return render(self, profile)
+
+    def write(self, path: Path, profile: str = "inline_slash") -> None:
+        from titan_chordpro.writer.document import write as _write
+
+        _write(self, path, profile)
 
 
 # Phase-2 schemas: defined in v0.1 but NOT consumed by the v0.1 pipeline.
