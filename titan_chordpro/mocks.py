@@ -12,6 +12,7 @@ tests have a stable input. They are NOT random.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 from titan_chordpro.core.schemas import (
     AlignmentResult,
@@ -137,7 +138,7 @@ class MockChordRecognitionEngine:
         return EngineInfo(name="mock_chord", version="0", backend="cpu")
 
     @property
-    def vocabulary(self) -> str:
+    def vocabulary(self) -> Literal["majmin", "sevenths", "tetrads", "extended_170"]:
         return "majmin"
 
     @property
