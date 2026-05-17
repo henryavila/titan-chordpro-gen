@@ -2,6 +2,31 @@
 docs/**/*.annotations.json
 docs/**/*.annotations.yaml
 
+# Python cache / build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+.venv/
+*.venv
+venv/
+env/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+uv.lock
+
 # Note: full Python .gitignore added in Phase A Task T01 step 2 (see
 # docs/superpowers/plans/2026-05-12-titan-v0.1-phase-a.md). Engineer
 # should APPEND the Python entries to this file, not overwrite it.
