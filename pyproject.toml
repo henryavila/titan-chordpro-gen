@@ -22,6 +22,38 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
     "pre-commit>=3.7",
+    "numpy>=1.26",
+    "scipy>=1.13",
+    "soundfile>=0.12",
+]
+
+# Apple Silicon (M-series) fast paths — installs PyTorch with MPS support
+# plus the universal engines (whisper.cpp, htdemucs via audio-separator,
+# BeatThis, Chordino Python bindings).
+mac = [
+    "torch>=2.1",
+    "torchaudio>=2.1",
+    "python-audio-separator>=0.17",
+    "pywhispercpp>=1.2",
+    "beat-this @ git+https://github.com/CPJKU/beat_this.git@main",
+    "chord-extractor>=0.2",
+    "gruut[pt-br]>=2.3",
+    "g2p_en>=2.1",
+    "librosa>=0.10",
+]
+
+# CUDA fast paths — same engines, CUDA-capable PyTorch build is installed
+# separately by the user via the official PyTorch index URL.
+cuda = [
+    "torch>=2.1",
+    "torchaudio>=2.1",
+    "python-audio-separator>=0.17",
+    "pywhispercpp>=1.2",
+    "beat-this @ git+https://github.com/CPJKU/beat_this.git@main",
+    "chord-extractor>=0.2",
+    "gruut[pt-br]>=2.3",
+    "g2p_en>=2.1",
+    "librosa>=0.10",
 ]
 
 [project.scripts]
@@ -29,6 +61,9 @@ titan-chordpro = "titan_chordpro.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["titan_chordpro"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.ruff]
 line-length = 100
