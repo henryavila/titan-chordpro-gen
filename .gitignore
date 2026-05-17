@@ -5,3 +5,10 @@ docs/**/*.annotations.yaml
 # Note: full Python .gitignore added in Phase A Task T01 step 2 (see
 # docs/superpowers/plans/2026-05-12-titan-v0.1-phase-a.md). Engineer
 # should APPEND the Python entries to this file, not overwrite it.
+
+# atomic-skills project tracking (runtime state, not for VCS)
+.atomic-skills/status/stop.log
+.atomic-skills/status/SKIP
+.atomic-skills/initiatives/*.rendered.md
+.atomic-skills/bootstrap-drafts/
+.atomic-skills/status/bootstrap.json
