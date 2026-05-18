@@ -48,3 +48,42 @@ jobs:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
       - run: pytest tests/integration/ -v
+
+  integration-tests-real:
+    # Optional: runs real engines when the platform supports the install path.
+    # ubuntu installs VAMP via apt; macOS installs via Homebrew.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    needs: integration-tests-mocks
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install VAMP host (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y vamp-plugin-sdk sonic-annotator
+
+      - name: Install VAMP host (macOS)
+        if: matrix.os == 'macos-14'
+        run: brew install vamp-plugin-sdk sonic-annotator
+
+      - name: Install [mac] extras (works on both ubuntu and macOS — same wheel deps)
+        run: pip install -e ".[mac]"
+
+      - name: Cache HuggingFace + torch hub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+            ~/.cache/whisper
+          key: model-cache-${{ matrix.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Run integration tests with real engines
+        run: pytest tests/integration/ -v -m integration
