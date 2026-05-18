@@ -32,6 +32,55 @@ class TestHtdemucsEngineInit:
         assert info.backend == "cpu"
         assert info.model_id == "htdemucs_ft"
 
+    def test_load_separator_passes_use_cuda_when_backend_cuda(self, tmp_path: Path) -> None:
+        """_load_separator must propagate backend to audio_separator (F-004).
+
+        Pre-fix bug: backend was accepted by HtdemucsEngine.__init__ but never
+        forwarded to Separator(), so --device cuda had no effect on separation.
+        """
+        from titan_chordpro.engines.separation import htdemucs as mod
+
+        captured: dict[str, object] = {}
+
+        class FakeSeparator:
+            def __init__(self, **kwargs):
+                captured.update(kwargs)
+
+            def load_model(self, model_filename):  # noqa: D401
+                captured["model_filename"] = model_filename
+
+        with patch.object(mod, "_load_separator", wraps=mod._load_separator):
+            with patch.dict(
+                "sys.modules", {"audio_separator.separator": MagicMock(Separator=FakeSeparator)}
+            ):
+                mod._load_separator("cuda", tmp_path)
+        assert (
+            captured.get("use_cuda") is True
+        ), f"backend='cuda' did not produce use_cuda=True kwarg; got {captured!r}"
+
+    def test_load_separator_falls_back_on_typeerror(self, tmp_path: Path) -> None:
+        """When audio_separator rejects backend kwargs (older version), the
+        loader must fall back to default args without crashing."""
+        from titan_chordpro.engines.separation import htdemucs as mod
+
+        call_count = {"n": 0}
+
+        class OldSeparator:
+            def __init__(self, **kwargs):
+                # First call (with use_cuda) rejected; second call (defaults) accepted.
+                call_count["n"] += 1
+                if "use_cuda" in kwargs or "use_cpu" in kwargs:
+                    raise TypeError("unexpected keyword argument 'use_cuda'")
+
+            def load_model(self, model_filename):
+                pass
+
+        with patch.dict(
+            "sys.modules", {"audio_separator.separator": MagicMock(Separator=OldSeparator)}
+        ):
+            mod._load_separator("cuda", tmp_path)
+        assert call_count["n"] == 2  # initial TypeError + retry with defaults
+
 
 @pytest.mark.unit
 class TestHtdemucsEngineSeparate:

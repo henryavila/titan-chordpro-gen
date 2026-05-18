@@ -40,7 +40,13 @@ def _probe_duration(path: Path) -> float:
 
 
 def _load_separator(backend: Backend, output_dir: Path) -> Any:
-    """Import audio_separator lazily; raise EngineUnavailableError if missing."""
+    """Import audio_separator lazily; raise EngineUnavailableError if missing.
+
+    Attempts to honor `backend` via audio_separator's `use_cuda` / `use_autocast`
+    kwargs (present in 0.17+). Falls back to defaults on older versions that
+    don't accept those kwargs (TypeError caught). MPS is left to library
+    auto-detect — audio_separator does not expose a `use_mps` kwarg directly.
+    """
     try:
         from audio_separator.separator import Separator
     except ImportError as exc:
@@ -51,12 +57,26 @@ def _load_separator(backend: Backend, output_dir: Path) -> Any:
             cause=exc,
         ) from exc
 
-    # The `use_cuda` / `use_mps` kwargs are not present in all versions of
-    # audio_separator; we pass a generic `device` and let the lib handle it.
-    sep = Separator(
-        output_dir=str(output_dir),
-        log_level=logging.WARNING,
-    )
+    sep_kwargs: dict[str, Any] = {
+        "output_dir": str(output_dir),
+        "log_level": logging.WARNING,
+    }
+    if backend == "cuda":
+        sep_kwargs["use_cuda"] = True
+    elif backend == "cpu":
+        sep_kwargs["use_cpu"] = True
+    # MPS: rely on audio_separator's auto-detect (no public kwarg in 0.17.x).
+
+    try:
+        sep = Separator(**sep_kwargs)
+    except TypeError as exc:
+        # Older audio_separator version rejects the backend kwargs — retry
+        # with only the universally-supported pair.
+        _log.warning(
+            "audio_separator does not accept backend kwargs (%s); using defaults",
+            exc,
+        )
+        sep = Separator(output_dir=str(output_dir), log_level=logging.WARNING)
     sep.load_model(model_filename="htdemucs_ft.yaml")
     return sep
 
