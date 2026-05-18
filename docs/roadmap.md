@@ -2,9 +2,9 @@
 
 > **Living document** — Atualize sempre que mudar status de uma tarefa, terminar uma fase, ou repriorizar. Substitui o `docs/research/00-original-roadmap.md` (artefato histórico de pesquisa inicial).
 >
-> **Última atualização:** 2026-05-17
-> **Fase atual:** Phase A completa — v0.1.0-a0 tagueado
-> **Próxima milestone:** v0.1.0 (Phase B — ML integration)
+> **Última atualização:** 2026-05-17 (Phase B)
+> **Fase atual:** Phase B completa — v0.1.0-b0 tagueado
+> **Próxima milestone:** Phase C (validation harness)
 
 ## Status legend
 
@@ -118,46 +118,46 @@
 
 ---
 
-## v0.1.0 — Phase B: ML Integration (Mac-first) | Semanas 4-7
+## v0.1.0 — Phase B: ML Integration (Mac-first) | Semanas 4-7 ✅ COMPLETA
 
 ### Week 4 — BeatThis (beat tracking)
 
 | Tarefa | Status |
 |---|---|
-| `engines/beat/beatthis.py` (BeatThis MIT, PyTorch CUDA+MPS) | ⏳ |
-| Integration test: F-measure > 0.85 em snippets | ⏳ |
-| EngineInfo correctly reports backend (mps/cuda/cpu) | ⏳ |
+| `engines/beat/beatthis.py` (BeatThis MIT, PyTorch CUDA+MPS) | ✅ |
+| Integration test: F-measure > 0.85 em snippets | ✅ |
+| EngineInfo correctly reports backend (mps/cuda/cpu) | ✅ |
 
 ### Week 5 — htdemucs_ft (separation)
 
 | Tarefa | Status |
 |---|---|
-| `engines/separation/htdemucs.py` via `python-audio-separator` | ⏳ |
-| Integration test: 4 stems gerados, audible | ⏳ |
-| Cache integration (opt-in via `cache=True`) | ⏳ |
+| `engines/separation/htdemucs.py` via `python-audio-separator` | ✅ |
+| Integration test: 4 stems gerados, audible | ✅ |
+| Cache integration (opt-in via `cache=True`) | ✅ |
 
 ### Week 6 — whisper.cpp + alignment
 
 | Tarefa | Status |
 |---|---|
-| `engines/transcription/whisper_cpp.py` via `pywhispercpp` | ⏳ |
-| `engines/alignment/torchaudio_align.py` (forced alignment MPS+CUDA) | ⏳ |
-| Integration test: word-level offset mediano < 100ms | ⏳ |
+| `engines/transcription/whisper_cpp.py` via `pywhispercpp` | ✅ |
+| `engines/alignment/torchaudio_align.py` (forced alignment MPS+CUDA) | ✅ |
+| Integration test: word-level offset mediano < 100ms | ✅ |
 
 ### Week 7 — Chordino + EN syllabifier
 
 | Tarefa | Status |
 |---|---|
-| `engines/chord/chordino.py` via `chord-extractor` (VAMP plugin) | ⏳ |
-| `engines/lang/english.py` (g2p_en + CMU stress) | ⏳ |
-| `engines/lang/portuguese.py` (gruut + orthographic stress) | ⏳ |
-| Integration test: chord events com bass note correto | ⏳ |
-| Setup script para VAMP plugin (brew install vamp-plugin-sdk) | ⏳ |
+| `engines/chord/chordino.py` via `chord-extractor` (VAMP plugin) | ✅ |
+| `engines/lang/english.py` (g2p_en + CMU stress) | ✅ |
+| `engines/lang/portuguese.py` (gruut + orthographic stress) | ✅ |
+| Integration test: chord events com bass note correto | ✅ |
+| Setup script para VAMP plugin (brew install vamp-plugin-sdk) | ✅ |
 
 **Validação fim Phase B:**
-- [ ] Pipeline real end-to-end nas 6 músicas PT-BR
-- [ ] Tier 1 CI tests passando com engines reais
-- [ ] Output `.chordpro` "razoável" (subjective review do owner)
+- [x] Pipeline real end-to-end nas 6 músicas PT-BR
+- [x] Tier 1 CI tests passando com engines reais
+- [x] Output `.chordpro` "razoável" (subjective review do owner)
 
 ---
 
@@ -295,6 +295,13 @@ Projetos separados deste repo:
 ## Updates log
 
 > Adicione aqui mudanças significativas no roadmap. Mantenha cronológico, mais recente em cima.
+
+### 2026-05-17 (Phase B)
+- ✅ Phase B completa — 7 engines integrados (BeatThis, htdemucs_ft, whisper.cpp,
+  torchaudio align, Chordino, gruut PT, g2p_en EN), CI matrix ativada, factory
+  com fallback transparente para mocks.
+- ✅ `v0.1.0-b0` tagueado.
+- 📌 Próximo: Phase C — validation harness + corpus testing (30 → 147 songs).
 
 ### 2026-05-17
 - ✅ Phase A completa — 259 testes passando, 92.55% coverage, pipeline end-to-end funcional.

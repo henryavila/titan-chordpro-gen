@@ -8,4 +8,4 @@ import pytest
 def test_package_import_and_version() -> None:
     import titan_chordpro
 
-    assert titan_chordpro.__version__ == "0.1.0a0"
+    assert titan_chordpro.__version__ == "0.1.0b0"
