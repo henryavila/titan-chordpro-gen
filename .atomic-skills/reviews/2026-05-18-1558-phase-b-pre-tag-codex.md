@@ -5204,4 +5204,9 @@ Begin review now.
 
 ## Fixes applied in this session
 
-<!-- Append-only. Triagem step adds lines here as user approves/skips. -->
+- **F-001** → `a7f3104` fix(orchestrator): propagate force_mock to syllabification factory + regression test asserting `last_selection()["syllabification"]["real"] is False` after force_mock=True
+- **F-003** → `25d4b8c` fix(engines/chord): preserve N markers as interval boundaries + regression test for `[C@0, N@1, G@2]` no-smear behavior
+- **F-002** → `cf73b02` fix(orchestrator): pass original audio as Chordino harmonic source + spy-based regression test on `factory.select_chord_recognition`
+- **F-004** → `9b2e02e` fix(engines/sep): plumb backend to audio_separator with TypeError fallback + 2 regression tests (kwarg passing, fallback)
+
+**Final state:** 318 tests passed (+5 regression tests vs 313 pre-review), 10 skipped, full suite green. E2E smoke produces valid ChordPro with `titan_version 0.1.0b0`. All 4 Codex findings resolved.
