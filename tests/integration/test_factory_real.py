@@ -57,3 +57,23 @@ class TestFactoryRealSelection:
 
         engine = select_beat_tracking(force_mock=True)
         assert isinstance(engine, MockBeatTrackingEngine)
+
+    def test_orchestrator_force_mock_reaches_syllabification(self, tmp_path) -> None:
+        """force_mock=True must apply to syllabification too (regression: F-001).
+
+        Pre-fix bug: orchestrator called select_syllabification without
+        propagating force_mock, so --device mock could still load real gruut/g2p_en.
+        """
+        from titan_chordpro.factory import last_selection
+        from titan_chordpro.orchestrator import transcribe
+
+        audio = tmp_path / "x.wav"
+        audio.write_bytes(b"RIFF")  # bytes don't matter — mocks ignore content
+
+        transcribe(audio, force_mock=True)
+        sel = last_selection()
+        assert "syllabification" in sel
+        assert sel["syllabification"]["real"] is False, (
+            f"syllabification used real engine despite force_mock=True: "
+            f"{sel['syllabification']}"
+        )

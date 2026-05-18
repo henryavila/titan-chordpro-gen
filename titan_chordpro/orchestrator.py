@@ -79,7 +79,10 @@ def transcribe(
         phonemes = trans_result.phonemes
 
     detected_lang = trans_result.detected_language or language or "en"
-    syll_engine = factory.select_syllabification(language=detected_lang)
+    syll_engine = factory.select_syllabification(
+        language=detected_lang,
+        **factory_kwargs,  # type: ignore[arg-type]
+    )
     syllables: list[SyllableEvent] = syll_engine.syllabify(words, phonemes)
 
     stress_detector = _stress_detector_for(detected_lang)
