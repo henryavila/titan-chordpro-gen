@@ -1,11 +1,12 @@
 # Project Status — titan-chordpro-lib
 
-_Last updated: 2026-05-17T12:00:00Z_
+_Last updated: 2026-05-17T14:11:06Z_
 
 ## Active Initiatives
 
 | Slug | Status | Started | Branch | Next Action |
 |------|--------|---------|--------|-------------|
+| titan-phase-b | active | 2026-05-17 | main | Sonnet executes T35 (Phase B bootstrap — pyproject extras + deps) |
 
 ## Recently Archived
 

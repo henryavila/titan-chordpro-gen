@@ -1,6 +1,6 @@
-# Architectural Checkpoints — Phase A
+# Architectural Checkpoints — Phase A + Phase B
 
-This directory contains **review prompts** Henry passes to an Opus subagent at the end of each Week of Phase A implementation. They exist because Henry chose end-to-end review at v0.1.0-a0 tag time but wants cheap architectural validation per-Week to catch bugs that would otherwise compound for 3 weeks.
+This directory contains **review prompts** Henry passes to an Opus subagent at the end of each Week of implementation (Phase A: Weeks 1-3; Phase B: Weeks 4-7). They exist because Henry chose end-to-end review at each phase tag time but wants cheap architectural validation per-Week to catch bugs that would otherwise compound across weeks.
 
 ## How to use
 
@@ -30,12 +30,24 @@ It does NOT do detailed line-level code review — that's reserved for the end-t
 
 ## Files
 
+### Phase A (Weeks 1-3, T01-T34, tag `v0.1.0-a0`)
+
 | File | When to use |
 |---|---|
 | `week-1-review.md` | After Week 1 (T01-T12): schemas + protocols + exceptions + logging |
 | `week-2-review.md` | After Week 2 (T13-T20): fusion engine |
 | `week-3-review.md` | After Week 3 (T21-T33): writer + mocks + CLI (run BEFORE T34) |
 | `final-review.md` | After T34 but BEFORE `git tag v0.1.0-a0` — full architectural review |
+
+### Phase B (Weeks 4-7, T35-T59, tag `v0.1.0-b0`)
+
+| File | When to use |
+|---|---|
+| `phase-b-week-4-review.md` | After Week 4 (T35-T40): pyproject extras + hardware probe + engines skeleton + BeatThis |
+| `phase-b-week-5-review.md` | After Week 5 (T41-T43): htdemucs_ft + cache helper |
+| `phase-b-week-6-review.md` | After Week 6 (T44-T47): whisper.cpp + torchaudio forced_align |
+| `phase-b-week-7-review.md` | After Week 7 (T48-T53): Chordino + EN/PT lang wrappers — **ESSENTIAL** (license + Phase A surface compat) |
+| `phase-b-final-review.md` | After T58 but BEFORE T59 tag step — full architectural review |
 
 ## Why this layer exists
 
