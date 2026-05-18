@@ -110,8 +110,12 @@ class TorchaudioAlignEngine:
 
         for span in spans:
             word_idx = int(span.get("word_idx", 0))
+            # end_frame is the LAST inclusive frame containing the token.
+            # The audible interval is [start_frame * FS, (end_frame + 1) * FS)
+            # — i.e., end_s marks when the token *finishes* sounding, matching
+            # librosa/sox conventions and what downstream chord-placement expects.
             start_s = span["start_frame"] * self._frame_seconds
-            end_s = span["end_frame"] * self._frame_seconds
+            end_s = (span["end_frame"] + 1) * self._frame_seconds
             phonemes.append(
                 PhonemeEvent(
                     symbol=str(span["text"]),
@@ -138,7 +142,7 @@ class TorchaudioAlignEngine:
                         text=original.text,
                         timestamp=TimeStamp(
                             start=lo_f * self._frame_seconds,
-                            end=hi_f * self._frame_seconds,
+                            end=(hi_f + 1) * self._frame_seconds,
                         ),
                         confidence=original.confidence,
                         source_engine="torchaudio_align",

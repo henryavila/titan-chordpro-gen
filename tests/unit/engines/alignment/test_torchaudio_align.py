@@ -47,7 +47,8 @@ class TestTorchaudioAlignEngineAlign:
         engine._backend = "cpu"
         # Fake forced_align result: 3 tokens spanning frames 0-9, 10-19, 20-29.
         # At 16kHz sample_rate and stride 320 samples → 0.02s per frame.
-        # So token spans become: [0.00, 0.20], [0.20, 0.40], [0.40, 0.60]
+        # end_s = (end_frame + 1) * FS marks when the token finishes sounding,
+        # so the spans are [0.00, 0.20), [0.20, 0.40), [0.40, 0.60).
         engine._run_forced_align = MagicMock(
             return_value=[
                 {"text": "h", "start_frame": 0, "end_frame": 9, "word_idx": 0},
@@ -72,12 +73,12 @@ class TestTorchaudioAlignEngineAlign:
         # 1 word with 3 phonemes.
         assert len(result.words) == 1
         assert len(result.phonemes) == 3
-        # First phoneme spans frames 0-9 → 0.00-0.18s (9 * 0.02).
+        # First phoneme spans frames 0-9 → audible [0.00, 0.20) → end = 10 * 0.02.
         assert result.phonemes[0].timestamp.start == pytest.approx(0.0)
-        assert result.phonemes[0].timestamp.end == pytest.approx(0.18, abs=1e-3)
-        # Word span = union of its phoneme spans → 0.00-0.58s.
+        assert result.phonemes[0].timestamp.end == pytest.approx(0.20, abs=1e-3)
+        # Word span = union → frames 0-29 → audible [0.00, 0.60).
         assert result.words[0].timestamp.start == pytest.approx(0.0)
-        assert result.words[0].timestamp.end == pytest.approx(0.58, abs=1e-3)
+        assert result.words[0].timestamp.end == pytest.approx(0.60, abs=1e-3)
 
     def test_align_empty_words_returns_empty_result(self, tmp_path: Path) -> None:
         from titan_chordpro.engines.alignment.torchaudio_align import (
