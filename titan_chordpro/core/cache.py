@@ -41,7 +41,7 @@ def cache_dir(audio_id: str, root: Path | None = None) -> Path:
         audio_id: sha256-hex string identifying the source audio.
         root: cache root; defaults to `./.titan-cache` (relative to cwd).
 
-    Raises ValueError when audio_id is shorter than 8 chars (likely typo).
+    Raises ValueError when audio_id is shorter than 4 chars (likely typo).
     """
     if len(audio_id) < _MIN_AUDIO_ID_LEN:
         raise ValueError(
