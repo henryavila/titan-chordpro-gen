@@ -341,3 +341,93 @@ def _single_syllable(text: str, ts: TimeStamp) -> SyllableEvent:
         is_stressed=False,
         parent_word_idx=0,
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase B engine adapter surface
+# ---------------------------------------------------------------------------
+# The T51/T52 Reference Implementations call three helpers that have slightly
+# different names than the Phase A functions above.  These thin re-exports
+# and adapters bridge the name gap without touching the original implementations.
+# ---------------------------------------------------------------------------
+
+
+def cv_split(text: str) -> list[str]:
+    """Split a single word string into orthographic syllable texts.
+
+    Adapter for Phase B engine wrappers (T51 portuguese.py, T52 english.py).
+    Delegates to syllabify_word_orthographic with a dummy WordEvent and
+    returns only the text labels.
+
+    Example:
+        cv_split("casa")  -> ["ca", "sa"]
+        cv_split("amor")  -> ["a", "mor"]
+    """
+    dummy = WordEvent(
+        text=text,
+        timestamp=TimeStamp(start=0.0, end=1.0),
+        source_engine="cv_split",
+    )
+    events = syllabify_word_orthographic(dummy, language="pt")
+    return [e.text for e in events] if events else [text]
+
+
+def syllabify_word_from_phonemes(
+    word: WordEvent,
+    phonemes: list[PhonemeEvent],
+    word_idx: int,
+    language: str,
+) -> list[SyllableEvent]:
+    """Re-export of syllabify_word with parent_word_idx fixup.
+
+    Phase B engine wrappers (T51/T52) call this instead of syllabify_word
+    directly so they can pass word_idx without mutating phoneme objects.
+    The returned SyllableEvent.parent_word_idx values are overridden to
+    word_idx so upstream callers get consistent indexing regardless of the
+    phoneme list's parent_word_idx field.
+    """
+    events = syllabify_word(word=word, phonemes=phonemes, language=language)
+    for e in events:
+        object.__setattr__(e, "parent_word_idx", word_idx)
+    return events
+
+
+def group_arpabet_into_syllables(arpabet: list[str]) -> list[list[str]]:
+    """Group a flat ARPABET token list into per-syllable token sublists.
+
+    Each vowel nucleus (ARPABET token whose base is in _ARPABET_VOWELS)
+    anchors one syllable.  Consonants before the first nucleus are prepended
+    to it (onset); consonants between two nuclei go to the following onset
+    (Maximum Onset Principle); trailing consonants after the last nucleus
+    become its coda.
+
+    Returns an empty list when arpabet is empty.
+
+    Example:
+        group_arpabet_into_syllables(["HH", "AH0", "L", "OW1"])
+        -> [["HH", "AH0"], ["L", "OW1"]]
+    """
+    if not arpabet:
+        return []
+
+    vowel_positions = [i for i, tok in enumerate(arpabet) if _phoneme_is_vowel(tok)]
+
+    if not vowel_positions:
+        # No vowel found — treat the whole token list as a single syllable.
+        return [list(arpabet)]
+
+    groups: list[list[str]] = []
+    for k, vi in enumerate(vowel_positions):
+        # Onset: consonants from the previous nucleus+1 up to current vowel.
+        if k == 0:
+            onset_start = 0
+        else:
+            onset_start = vowel_positions[k - 1] + 1
+
+        if k == len(vowel_positions) - 1:
+            # Last nucleus: swallow trailing consonants as coda.
+            groups.append(list(arpabet[onset_start:]))
+        else:
+            groups.append(list(arpabet[onset_start : vi + 1]))
+
+    return groups
