@@ -66,3 +66,42 @@ class TestTranscribePipeline:
         doc.write(out_path)
         assert out_path.exists()
         assert len(out_path.read_text()) > 0
+
+    def test_chord_engine_receives_audio_not_bass(self, tmp_path: Path, monkeypatch) -> None:
+        """Orchestrator must pass the harmonic source (audio) to chord_engine.detect,
+        not the bass stem (regression: F-002).
+
+        Pre-fix bug: chord_engine.detect(stems.bass) starved Chordino of harmonic
+        content, producing empty/wrong chord progressions in real-engine mode.
+        """
+        from titan_chordpro import factory
+
+        captured: dict[str, object] = {}
+        real_select = factory.select_chord_recognition
+
+        def spy_select_chord(*args, **kwargs):
+            engine = real_select(*args, **kwargs)
+            original_detect = engine.detect
+
+            def detect_spy(harmonic_mix, bass_stem=None):
+                captured["harmonic_mix"] = harmonic_mix
+                captured["bass_stem"] = bass_stem
+                return original_detect(harmonic_mix, bass_stem=bass_stem)
+
+            engine.detect = detect_spy  # type: ignore[method-assign]
+            return engine
+
+        monkeypatch.setattr(factory, "select_chord_recognition", spy_select_chord)
+
+        audio = tmp_path / "song.wav"
+        audio.write_bytes(b"RIFF" + b"\x00" * 44)
+        transcribe(audio)
+
+        # harmonic_mix should be the original audio file, NOT a bass stem path.
+        assert captured["harmonic_mix"] == audio, (
+            f"chord_engine.detect got {captured['harmonic_mix']!r} as harmonic_mix; "
+            f"expected the original audio path {audio!r}"
+        )
+        # bass_stem should be populated (mock separator emits stems.bass).
+        assert captured["bass_stem"] is not None
+        assert captured["bass_stem"] != audio

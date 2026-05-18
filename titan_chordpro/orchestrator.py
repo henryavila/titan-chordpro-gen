@@ -88,7 +88,12 @@ def transcribe(
     stress_detector = _stress_detector_for(detected_lang)
     _apply_stress(words, syllables, stress_detector)
 
-    chords = chord_engine.detect(stems.bass)
+    # Chord recognition needs harmonic content (chroma analysis). The original
+    # mix is the safest harmonic source; vocals leakage minimally degrades
+    # majmin detection. The bass stem is passed as the optional bass_stem
+    # kwarg for future Phase C slash-chord synthesis (currently noop —
+    # ChordinoEngine returns bass_note=None per Phase B baseline).
+    chords = chord_engine.detect(audio, bass_stem=stems.bass)
     beats = beat_engine.track(audio)
 
     melismas = melisma_module.detect_melismas(syllables, chords, beats)
