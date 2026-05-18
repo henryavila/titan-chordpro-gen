@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from titan_chordpro.factory import last_selection
 from titan_chordpro.orchestrator import transcribe
 from titan_chordpro.writer.profiles import PROFILES
 
@@ -18,6 +19,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--keep-stems", action="store_true")
     parser.add_argument("--cache", action="store_true")
     parser.add_argument("--list-profiles", action="store_true")
+    # Phase B additions:
+    parser.add_argument(
+        "--device",
+        choices=("auto", "mps", "cuda", "cpu", "mock"),
+        default="auto",
+        help=(
+            "Backend preference. 'auto' (default) probes hardware. 'mock' "
+            "forces every engine to its mock implementation."
+        ),
+    )
+    parser.add_argument(
+        "--list-engines",
+        action="store_true",
+        help="After running the pipeline, print which engine ran each stage.",
+    )
     args = parser.parse_args(argv)
 
     if args.list_profiles:
@@ -29,15 +45,27 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 1
 
+    force_mock = args.device == "mock"
+    backend: str | None = args.device if args.device not in ("auto", "mock") else None
+
     doc = transcribe(
         args.audio,
         language=args.language,
         output_profile=args.profile,
         keep_stems=args.keep_stems,
         cache=args.cache,
+        force_mock=force_mock,
+        backend=backend,
     )
     out = args.output or args.audio.with_suffix(".chordpro")
     doc.write(out, profile=args.profile)
+
+    if args.list_engines:
+        print("--- engine selections ---")
+        for stage, info in last_selection().items():
+            real_tag = "real" if info["real"] else "mock"
+            print(f"  {stage:20s} {info['engine']:20s} [{real_tag}] ({info['reason']})")
+
     return 0
 
 

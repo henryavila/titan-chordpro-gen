@@ -42,20 +42,27 @@ def transcribe(
     output_profile: str = "inline_slash",
     keep_stems: bool = False,
     cache: bool = False,
-    **engine_overrides: object,
+    force_mock: bool = False,
+    backend: str | None = None,
 ) -> ChordProDocument:
     """Run the full transcription pipeline on an audio file.
 
     Returns a ChordProDocument ready for rendering via doc.to_string() / doc.write().
+
+    Args:
+        force_mock: If True, all engines will use mock implementations.
+        backend: Backend hint for torch engines (e.g. "mps", "cuda", "cpu").
     """
     started_at = datetime.now(UTC)
     audio_id = _sha256_id(audio)
 
-    sep_engine = factory.select_separation(**engine_overrides)
-    trans_engine = factory.select_transcription(**engine_overrides)
-    align_engine = factory.select_alignment(**engine_overrides)
-    chord_engine = factory.select_chord_recognition(**engine_overrides)
-    beat_engine = factory.select_beat_tracking(**engine_overrides)
+    factory_kwargs: dict[str, object] = {"force_mock": force_mock, "backend": backend}
+
+    sep_engine = factory.select_separation(**factory_kwargs)  # type: ignore[arg-type]
+    trans_engine = factory.select_transcription(**factory_kwargs)  # type: ignore[arg-type]
+    align_engine = factory.select_alignment(**factory_kwargs)  # type: ignore[arg-type]
+    chord_engine = factory.select_chord_recognition(**factory_kwargs)  # type: ignore[arg-type]
+    beat_engine = factory.select_beat_tracking(**factory_kwargs)  # type: ignore[arg-type]
 
     stems = sep_engine.separate(audio)
 
