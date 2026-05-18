@@ -16,6 +16,26 @@ from titan_chordpro.orchestrator import transcribe
 
 
 @pytest.mark.integration
+def test_real_factory_smoke_on_silent_wav(silent_wav: Path) -> None:
+    """End-to-end: silent.wav through whatever real engines are present.
+
+    The factory falls back to mocks for missing extras, so this test is
+    expected to pass in every environment — bare CI (all mocks), dev Mac
+    with [mac] extras (real Beat/Sep/Trans/Align + mock or real Chord/Lang),
+    or a fully-set-up box.
+
+    We only assert no crash and that a ChordProDocument is produced.
+    """
+    doc = transcribe(silent_wav, language="pt", output_profile="inline_slash")
+    assert isinstance(doc, ChordProDocument)
+    # Document should have metadata even on silent input.
+    assert doc.metadata is not None
+    # Provenance should reflect which engines actually ran.
+    assert doc.provenance is not None
+    assert len(doc.provenance.confidence) >= 0
+
+
+@pytest.mark.integration
 class TestTranscribePipeline:
     def test_returns_chord_pro_document(self, tmp_path: Path) -> None:
         audio = tmp_path / "silent.wav"
