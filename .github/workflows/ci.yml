@@ -32,4 +32,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
-      - run: pytest -m "unit or integration" --cov=titan_chordpro --cov-report=term --cov-fail-under=80
+      - run: pytest tests/unit/ --cov=titan_chordpro --cov-report=term --cov-fail-under=80
+
+  integration-tests-mocks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/integration/ -v
