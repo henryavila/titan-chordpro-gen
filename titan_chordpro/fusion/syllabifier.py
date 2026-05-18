@@ -98,9 +98,7 @@ _IPA_VOWELS = frozenset(
 # Orthographic vowels (Latin alphabet + diacritics, EN + PT-BR + common Romance).
 # 'y' included as orthographic vowel (heuristic — works for "rhythm", "bye", "y-cluster";
 # misclassifies "yes" but that's a single-syllable word so impact is minimal).
-_ORTHOGRAPHIC_VOWELS = frozenset(
-    "aeiouyAEIOUY" "áéíóúýÁÉÍÓÚÝ" "âêîôûÂÊÎÔÛ" "ãõÃÕ" "àèìòùÀÈÌÒÙ" "äëïöüÄËÏÖÜ"
-)
+_ORTHOGRAPHIC_VOWELS = frozenset("aeiouyAEIOUYáéíóúýÁÉÍÓÚÝâêîôûÂÊÎÔÛãõÃÕàèìòùÀÈÌÒÙäëïöüÄËÏÖÜ")
 
 
 def _strip_arpabet_stress(symbol: str) -> tuple[str, int]:

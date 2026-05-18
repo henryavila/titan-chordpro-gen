@@ -30,8 +30,7 @@ def _load_g2p() -> Any:
         from g2p_en import G2p
     except ImportError as exc:
         raise EngineUnavailableError(
-            "g2p_en is not installed; install with `pip install -e .[mac]` "
-            "or `pip install g2p_en`",
+            "g2p_en is not installed; install with `pip install -e .[mac]` or `pip install g2p_en`",
             engine="g2p_en",
             cause=exc,
         ) from exc

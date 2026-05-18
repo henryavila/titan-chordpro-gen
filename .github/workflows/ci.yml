@@ -32,9 +32,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
-      - run: pytest tests/unit/ --cov=titan_chordpro --cov-report=term --cov-fail-under=80
+      # unit-only coverage floor: 75% (factory/orchestrator/cli covered by integration)
+      - run: pytest tests/unit/ --cov=titan_chordpro --cov-report=term --cov-fail-under=75
 
   integration-tests-mocks:
+    # Full suite (unit + integration mocks) with 80% combined coverage gate.
     strategy:
       fail-fast: false
       matrix:
@@ -47,7 +49,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
-      - run: pytest tests/integration/ -v
+      - run: pytest tests/ --cov=titan_chordpro --cov-report=term --cov-fail-under=80 -v
 
   integration-tests-real:
     # Optional: runs real engines when the platform supports the install path.
