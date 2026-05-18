@@ -133,7 +133,7 @@ class TestChordinoEngineDetect:
         assert chords[0].symbol == "C"
         assert chords[0].timestamp.start == 0.0
         assert chords[0].timestamp.end == 1.0, (
-            f"C should end at N@1.0, not smear to G@2.0 " f"(end was {chords[0].timestamp.end})"
+            f"C should end at N@1.0, not smear to G@2.0 (end was {chords[0].timestamp.end})"
         )
         assert chords[1].symbol == "G"
         assert chords[1].timestamp.start == 2.0

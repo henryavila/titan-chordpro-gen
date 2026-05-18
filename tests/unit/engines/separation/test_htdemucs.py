@@ -54,9 +54,9 @@ class TestHtdemucsEngineInit:
                 "sys.modules", {"audio_separator.separator": MagicMock(Separator=FakeSeparator)}
             ):
                 mod._load_separator("cuda", tmp_path)
-        assert (
-            captured.get("use_cuda") is True
-        ), f"backend='cuda' did not produce use_cuda=True kwarg; got {captured!r}"
+        assert captured.get("use_cuda") is True, (
+            f"backend='cuda' did not produce use_cuda=True kwarg; got {captured!r}"
+        )
 
     def test_load_separator_falls_back_on_typeerror(self, tmp_path: Path) -> None:
         """When audio_separator rejects backend kwargs (older version), the

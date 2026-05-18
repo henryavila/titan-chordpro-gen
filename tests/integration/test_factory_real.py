@@ -74,6 +74,5 @@ class TestFactoryRealSelection:
         sel = last_selection()
         assert "syllabification" in sel
         assert sel["syllabification"]["real"] is False, (
-            f"syllabification used real engine despite force_mock=True: "
-            f"{sel['syllabification']}"
+            f"syllabification used real engine despite force_mock=True: {sel['syllabification']}"
         )
