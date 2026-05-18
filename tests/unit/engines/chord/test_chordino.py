@@ -108,6 +108,36 @@ class TestChordinoEngineDetect:
         chords = engine.detect(audio)
         assert chords == []
 
+    def test_n_marker_does_not_smear_previous_chord(self, tmp_path: Path) -> None:
+        """N (no-chord) must terminate the previous chord, not extend it (F-003).
+
+        Pre-fix bug: N events were dropped BEFORE computing end times, so a
+        sequence like C@0, N@1, G@2 produced C from 0..2 instead of 0..1.
+        """
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        c1 = MagicMock(chord="C:maj", timestamp=0.0)
+        c2 = MagicMock(chord="N", timestamp=1.0)
+        c3 = MagicMock(chord="G:maj", timestamp=2.0)
+        fake_extractor = MagicMock()
+        fake_extractor.extract = MagicMock(return_value=[c1, c2, c3])
+
+        engine = ChordinoEngine.__new__(ChordinoEngine)
+        engine._extractor = fake_extractor
+
+        audio = tmp_path / "song.wav"
+        audio.write_bytes(b"x")
+
+        chords = engine.detect(audio)
+        assert len(chords) == 2  # C and G; N is a boundary, not emitted
+        assert chords[0].symbol == "C"
+        assert chords[0].timestamp.start == 0.0
+        assert chords[0].timestamp.end == 1.0, (
+            f"C should end at N@1.0, not smear to G@2.0 " f"(end was {chords[0].timestamp.end})"
+        )
+        assert chords[1].symbol == "G"
+        assert chords[1].timestamp.start == 2.0
+
     def test_detect_native_failure_wrapped(self, tmp_path: Path) -> None:
         from titan_chordpro.core.exceptions import ChordRecognitionError
         from titan_chordpro.engines.chord.chordino import ChordinoEngine

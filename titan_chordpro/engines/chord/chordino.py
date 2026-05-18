@@ -111,27 +111,31 @@ class ChordinoEngine:
                 cause=exc,
             ) from exc
 
-        # Build (symbol, start_seconds) pairs, skipping "N" no-chord markers.
-        normalized: list[tuple[str, float]] = []
+        # Keep ALL events (including N) so end times can be derived against
+        # the next boundary — whether that boundary is another chord or a
+        # no-chord region. Dropping "N" before this step would smear the
+        # previous chord across the silence (caught by Codex review F-003).
+        all_events: list[tuple[str | None, float]] = []
         for c in raw_chords:
             symbol = _normalize_chord_symbol(str(c.chord))
-            if symbol is None:
-                continue
-            normalized.append((symbol, float(c.timestamp)))
+            all_events.append((symbol, float(c.timestamp)))
 
-        if not normalized:
+        # Skip if no real chord exists at all.
+        if not any(sym is not None for sym, _ in all_events):
             return []
 
-        # Derive end times: each chord runs until the next; last runs to file end.
+        # Derive end times: each event runs until the next; last runs to file end.
         try:
             duration = _probe_duration(harmonic_mix)
         except Exception:  # noqa: BLE001
-            # Fallback: extend last chord by 1s (defensive; loses precision).
-            duration = normalized[-1][1] + 1.0
+            # Fallback: extend last event by 1s (defensive; loses precision).
+            duration = all_events[-1][1] + 1.0
 
         events: list[ChordEvent] = []
-        for i, (symbol, start) in enumerate(normalized):
-            end = normalized[i + 1][1] if i + 1 < len(normalized) else duration
+        for i, (symbol, start) in enumerate(all_events):
+            if symbol is None:
+                continue  # N markers are boundaries only, not emitted as ChordEvents
+            end = all_events[i + 1][1] if i + 1 < len(all_events) else duration
             if end < start:
                 end = start
             # Phase B: bass_note left None even when bass_stem is provided;
