@@ -71,3 +71,29 @@ class TestHardwareToTorchDevice:
 
         with pytest.raises(ValueError, match="unsupported backend"):
             hardware_to_torch_device("foo")  # type: ignore[arg-type]
+
+
+class TestReleaseGpuMemory:
+    """Phase C T70 iter — best-effort GPU cache flush helper."""
+
+    def test_returns_none(self) -> None:
+        """Function is fire-and-forget; must not raise even when torch is absent."""
+        from titan_chordpro.core.hardware import release_gpu_memory
+
+        # Should not raise regardless of whether torch is installed.
+        assert release_gpu_memory() is None
+
+    def test_swallows_empty_cache_errors(self) -> None:
+        """If torch.mps.empty_cache raises, we log and continue."""
+        torch_pytest = pytest.importorskip("torch")
+        from unittest.mock import patch
+
+        from titan_chordpro.core.hardware import release_gpu_memory
+
+        with patch.object(
+            torch_pytest.mps, "empty_cache", side_effect=RuntimeError("driver glitch")
+        ):
+            with patch.object(torch_pytest.backends.mps, "is_available", return_value=True):
+                with patch.object(torch_pytest.cuda, "is_available", return_value=False):
+                    # Must NOT raise
+                    assert release_gpu_memory() is None

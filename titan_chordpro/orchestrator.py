@@ -19,11 +19,13 @@ from typing import Any
 
 from titan_chordpro import factory
 from titan_chordpro.core.cache import Stage, dump_stage, load_stage
+from titan_chordpro.core.hardware import release_gpu_memory
 from titan_chordpro.core.schemas import (
     AlignmentResult,
     BeatGrid,
     ChordEvent,
     ChordProDocument,
+    EngineInfo,
     EngineRegistry,
     InstrumentalLine,
     LyricLine,
@@ -85,8 +87,10 @@ def transcribe(
 
     # Lazy engine selection — each select_* runs at most once, only when
     # its stage misses cache. Engines are remembered for the Provenance
-    # block at the end.
+    # block at the end. `engine_infos` keeps EngineInfo even after the
+    # heavy engine object is released (Phase C T70 iter — memory relief).
     engines: dict[str, Any] = {}
+    engine_infos: dict[str, EngineInfo] = {}
 
     def _engine(name: str, **extra: Any) -> Any:
         # Key includes extra kwargs (e.g. language) so syllabification
@@ -95,7 +99,23 @@ def transcribe(
         if key not in engines:
             select = getattr(factory, f"select_{name}")
             engines[key] = select(**engine_overrides, **extra)
+            # Stash info NOW so provenance can still read it even after
+            # _release_engine drops the heavy model object.
+            engine_infos[name] = engines[key].info
         return engines[key]
+
+    def _release_engine(name: str) -> None:
+        """Phase C T70 iter: drop the heavy engine refs after its stage is
+        done and ask the GPU backend to flush its allocator cache. Info is
+        preserved in engine_infos so Provenance still has access.
+
+        Safe to call multiple times. Safe on engines that were cache-hit
+        (and so never instantiated) — nothing to release.
+        """
+        for key in list(engines.keys()):
+            if key == name or key.startswith(name + ":"):
+                del engines[key]
+        release_gpu_memory()
 
     stems = _run_or_cache(
         cache=cache,
@@ -105,6 +125,8 @@ def transcribe(
         schema=StemSet,
         compute=lambda: _engine("separation").separate(audio),
     )
+    # htdemucs ~700 MB — release before whisper.cpp Metal context spawns.
+    _release_engine("separation")
 
     trans_result = _run_or_cache(
         cache=cache,
@@ -114,6 +136,8 @@ def transcribe(
         schema=TranscriptionResult,
         compute=lambda: _engine("transcription").transcribe(stems.vocals, language=language),
     )
+    # whisper.cpp Metal context ~150 MB — release before MMS_FA loads.
+    _release_engine("transcription")
 
     if trans_result.phonemes is None:
         align_result = _run_or_cache(
@@ -128,6 +152,8 @@ def transcribe(
         )
         words: list[WordEvent] = align_result.words
         phonemes = align_result.phonemes
+        # MMS_FA ~1.2 GB + activations — release before chord/beat models.
+        _release_engine("alignment")
     else:
         words = trans_result.words
         phonemes = trans_result.phonemes
@@ -144,6 +170,7 @@ def transcribe(
             words, phonemes
         ),
     )
+    # gruut/g2p_en are lightweight; no release needed.
 
     stress_detector = _stress_detector_for(detected_lang)
     _apply_stress(words, syllables, stress_detector)
@@ -156,6 +183,7 @@ def transcribe(
         item_schema=ChordEvent,
         compute=lambda: _engine("chord_recognition").detect(audio, bass_stem=stems.bass),
     )
+    # chord_extractor is a thin Python wrapper; no release.
 
     beats = _run_or_cache(
         cache=cache,
@@ -165,6 +193,8 @@ def transcribe(
         schema=BeatGrid,
         compute=lambda: _engine("beat_tracking").track(audio),
     )
+    # BeatThis ~500 MB — release; provenance reads from engine_infos.
+    _release_engine("beat_tracking")
 
     melismas = melisma_module.detect_melismas(syllables, chords, beats)
 
@@ -175,16 +205,22 @@ def transcribe(
 
     completed_at = datetime.now(UTC)
 
-    # Provenance needs every engine.info. Force-select any engine that
-    # didn't get instantiated above (only happens if all 5 stages were
-    # cache-hit but document.json was deleted manually — a debugging
-    # scenario). Normal first-runs and post-fast-path returns are unaffected.
-    sep_engine = _engine("separation")
-    trans_engine = _engine("transcription")
-    align_engine = _engine("alignment")
-    chord_engine = _engine("chord_recognition")
-    beat_engine = _engine("beat_tracking")
-    syll_engine = _engine("syllabification", language=detected_lang)
+    # Provenance reads from `engine_infos` (Phase C T70 iter — populated
+    # by _engine() when each engine was first selected; persists even
+    # after _release_engine drops the heavy model). Any info still
+    # missing means that stage was a cache-hit, so we force-select once
+    # to grab .info (debug-only path; normal first-runs already populated).
+    for required in (
+        "separation",
+        "transcription",
+        "alignment",
+        "chord_recognition",
+        "beat_tracking",
+    ):
+        if required not in engine_infos:
+            engine_infos[required] = _engine(required).info
+    if "syllabification" not in engine_infos:
+        engine_infos["syllabification"] = _engine("syllabification", language=detected_lang).info
 
     confidence_aggregates: list[StageConfidence] = [
         aggregate_stage_confidence("transcription", trans_result.words),
@@ -197,12 +233,12 @@ def transcribe(
         titan_version=_titan_version(),
         audio_id=audio_id,
         engines=EngineRegistry(
-            separation=sep_engine.info,
-            transcription=trans_engine.info,
-            alignment=align_engine.info,
-            chord_recognition=chord_engine.info,
-            beat_tracking=beat_engine.info,
-            syllabification=syll_engine.info,
+            separation=engine_infos["separation"],
+            transcription=engine_infos["transcription"],
+            alignment=engine_infos["alignment"],
+            chord_recognition=engine_infos["chord_recognition"],
+            beat_tracking=engine_infos["beat_tracking"],
+            syllabification=engine_infos["syllabification"],
         ),
         started_at=started_at,
         completed_at=completed_at,

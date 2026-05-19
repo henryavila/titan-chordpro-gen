@@ -104,3 +104,30 @@ def hardware_to_torch_device(backend: Backend) -> Any:
     import torch
 
     return torch.device(backend)
+
+
+def release_gpu_memory() -> None:
+    """Best-effort release of GPU-side allocations (MPS / CUDA).
+
+    Phase C T70 iter — helps the orchestrator hand back memory between
+    pipeline stages so the next heavy model has headroom. No-op when
+    torch is not installed (e.g., mock-only test runs in py3.14 venv).
+
+    Calls torch.cuda.empty_cache() on CUDA hosts and torch.mps.empty_cache()
+    on Apple Silicon. Both are safe to call even when the cache is empty.
+    """
+    try:
+        import torch
+    except ImportError:
+        return
+
+    try:
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+    except Exception as exc:  # noqa: BLE001
+        # Defensive: empty_cache is documented as best-effort and has been
+        # known to raise on rare driver versions; we never want a memory
+        # hint to crash the pipeline.
+        _log.debug("release_gpu_memory: ignoring %s: %s", type(exc).__name__, exc)
