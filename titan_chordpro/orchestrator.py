@@ -2,6 +2,12 @@
 
 Wires all 6 engine Protocols via factory.py. Never imports torch/whisper/etc.
 All ML is behind Protocols; Phase A uses mock engines.
+
+Phase C: cache=True wiring (T66). When the caller opts into the cache,
+each stage reads from <cache_root>/<audio_id>/<stage>.json if present,
+otherwise runs the engine and writes the result back. Cache writes are
+atomic (see core/cache.py). Cache-miss falls back to the live engine —
+corruption is silently treated as miss.
 """
 
 from __future__ import annotations
@@ -12,7 +18,9 @@ from pathlib import Path
 from typing import Any
 
 from titan_chordpro import factory
+from titan_chordpro.core.cache import Stage, dump_stage, load_stage
 from titan_chordpro.core.schemas import (
+    AlignmentResult,
     BeatGrid,
     ChordEvent,
     ChordProDocument,
@@ -23,8 +31,10 @@ from titan_chordpro.core.schemas import (
     Provenance,
     Section,
     StageConfidence,
+    StemSet,
     SyllableEvent,
     TimeStamp,
+    TranscriptionResult,
     WordEvent,
     aggregate_stage_confidence,
 )
@@ -45,33 +55,76 @@ def transcribe(
     output_profile: str = "inline_slash",
     keep_stems: bool = False,
     cache: bool = False,
+    cache_root: Path | None = None,
     **engine_overrides: Any,
 ) -> ChordProDocument:
     """Run the full transcription pipeline on an audio file.
 
-    Returns a ChordProDocument ready for rendering via doc.to_string() / doc.write().
-
     Args:
+        audio: source audio path.
+        language: optional language hint (`pt`, `en`); autodetected when None.
+        output_profile: profile name reserved for future use.
+        keep_stems: when True, stems are written next to the audio file.
+        cache: when True, each stage reads/writes JSON under
+            `<cache_root>/<audio_id>/<stage>.json`. Defaults False.
+        cache_root: directory for cache files; defaults to `.titan-cache`
+            relative to cwd.
         **engine_overrides: passed through to factory.select_* — supports
-            `force_mock=True`, `backend="mps"|"cuda"|"cpu"`, and engine-
-            specific kwargs like `model_id="base"` for transcription.
+            `force_mock=True`, `backend="mps"|"cuda"|"cpu"`, etc.
     """
     started_at = datetime.now(UTC)
     audio_id = _sha256_id(audio)
 
-    sep_engine = factory.select_separation(**engine_overrides)
-    trans_engine = factory.select_transcription(**engine_overrides)
-    align_engine = factory.select_alignment(**engine_overrides)
-    chord_engine = factory.select_chord_recognition(**engine_overrides)
-    beat_engine = factory.select_beat_tracking(**engine_overrides)
+    # F-002 fast path (Codex review 2026-05-19): when a fully cached document
+    # exists, return it with ZERO engine selection. Idempotent reruns are
+    # engine-free as long as the cache is intact.
+    if cache:
+        cached_doc = load_stage(audio_id, "document", root=cache_root)
+        if cached_doc is not None:
+            return ChordProDocument.model_validate(cached_doc)
 
-    stems = sep_engine.separate(audio)
+    # Lazy engine selection — each select_* runs at most once, only when
+    # its stage misses cache. Engines are remembered for the Provenance
+    # block at the end.
+    engines: dict[str, Any] = {}
 
-    trans_result = trans_engine.transcribe(stems.vocals, language=language)
+    def _engine(name: str, **extra: Any) -> Any:
+        # Key includes extra kwargs (e.g. language) so syllabification
+        # picks the right wrapper when language is autodetected.
+        key = name if not extra else f"{name}:{extra.get('language', '')}"
+        if key not in engines:
+            select = getattr(factory, f"select_{name}")
+            engines[key] = select(**engine_overrides, **extra)
+        return engines[key]
+
+    stems = _run_or_cache(
+        cache=cache,
+        cache_root=cache_root,
+        audio_id=audio_id,
+        stage="stems",
+        schema=StemSet,
+        compute=lambda: _engine("separation").separate(audio),
+    )
+
+    trans_result = _run_or_cache(
+        cache=cache,
+        cache_root=cache_root,
+        audio_id=audio_id,
+        stage="transcription",
+        schema=TranscriptionResult,
+        compute=lambda: _engine("transcription").transcribe(stems.vocals, language=language),
+    )
 
     if trans_result.phonemes is None:
-        align_result = align_engine.align(
-            stems.vocals, trans_result.words, language=language or "pt"
+        align_result = _run_or_cache(
+            cache=cache,
+            cache_root=cache_root,
+            audio_id=audio_id,
+            stage="alignment",
+            schema=AlignmentResult,
+            compute=lambda: _engine("alignment").align(
+                stems.vocals, trans_result.words, language=language or "pt"
+            ),
         )
         words: list[WordEvent] = align_result.words
         phonemes = align_result.phonemes
@@ -80,22 +133,38 @@ def transcribe(
         phonemes = trans_result.phonemes
 
     detected_lang = trans_result.detected_language or language or "en"
-    syll_engine = factory.select_syllabification(
-        language=detected_lang,
-        **engine_overrides,
+
+    syllables = _run_or_cache_list(
+        cache=cache,
+        cache_root=cache_root,
+        audio_id=audio_id,
+        stage="syllables",
+        item_schema=SyllableEvent,
+        compute=lambda: _engine("syllabification", language=detected_lang).syllabify(
+            words, phonemes
+        ),
     )
-    syllables: list[SyllableEvent] = syll_engine.syllabify(words, phonemes)
 
     stress_detector = _stress_detector_for(detected_lang)
     _apply_stress(words, syllables, stress_detector)
 
-    # Chord recognition needs harmonic content (chroma analysis). The original
-    # mix is the safest harmonic source; vocals leakage minimally degrades
-    # majmin detection. The bass stem is passed as the optional bass_stem
-    # kwarg for future Phase C slash-chord synthesis (currently noop —
-    # ChordinoEngine returns bass_note=None per Phase B baseline).
-    chords = chord_engine.detect(audio, bass_stem=stems.bass)
-    beats = beat_engine.track(audio)
+    chords = _run_or_cache_list(
+        cache=cache,
+        cache_root=cache_root,
+        audio_id=audio_id,
+        stage="chords",
+        item_schema=ChordEvent,
+        compute=lambda: _engine("chord_recognition").detect(audio, bass_stem=stems.bass),
+    )
+
+    beats = _run_or_cache(
+        cache=cache,
+        cache_root=cache_root,
+        audio_id=audio_id,
+        stage="beats",
+        schema=BeatGrid,
+        compute=lambda: _engine("beat_tracking").track(audio),
+    )
 
     melismas = melisma_module.detect_melismas(syllables, chords, beats)
 
@@ -105,6 +174,17 @@ def transcribe(
     )
 
     completed_at = datetime.now(UTC)
+
+    # Provenance needs every engine.info. Force-select any engine that
+    # didn't get instantiated above (only happens if all 5 stages were
+    # cache-hit but document.json was deleted manually — a debugging
+    # scenario). Normal first-runs and post-fast-path returns are unaffected.
+    sep_engine = _engine("separation")
+    trans_engine = _engine("transcription")
+    align_engine = _engine("alignment")
+    chord_engine = _engine("chord_recognition")
+    beat_engine = _engine("beat_tracking")
+    syll_engine = _engine("syllabification", language=detected_lang)
 
     confidence_aggregates: list[StageConfidence] = [
         aggregate_stage_confidence("transcription", trans_result.words),
@@ -129,11 +209,62 @@ def transcribe(
         confidence=confidence_aggregates,
     )
 
-    return ChordProDocument(
+    document = ChordProDocument(
         metadata=Metadata(title=audio.stem),
         sections=sections,
         provenance=provenance,
     )
+
+    if cache:
+        dump_stage(audio_id, "document", document.model_dump(mode="json"), root=cache_root)
+        dump_stage(audio_id, "provenance", provenance.model_dump(mode="json"), root=cache_root)
+
+    return document
+
+
+def _run_or_cache(
+    *,
+    cache: bool,
+    cache_root: Path | None,
+    audio_id: str,
+    stage: Stage,
+    schema: Any,
+    compute: Any,
+) -> Any:
+    """Cache-aware single-result stage runner."""
+    if cache:
+        cached = load_stage(audio_id, stage, root=cache_root)
+        if cached is not None:
+            return schema.model_validate(cached)
+    result = compute()
+    if cache:
+        dump_stage(audio_id, stage, result.model_dump(mode="json"), root=cache_root)
+    return result
+
+
+def _run_or_cache_list(
+    *,
+    cache: bool,
+    cache_root: Path | None,
+    audio_id: str,
+    stage: Stage,
+    item_schema: Any,
+    compute: Any,
+) -> list[Any]:
+    """Cache-aware list-result stage runner (chords, syllables — list[Pydantic])."""
+    if cache:
+        cached = load_stage(audio_id, stage, root=cache_root)
+        if cached is not None:
+            return [item_schema.model_validate(d) for d in cached]
+    result: list[Any] = compute()
+    if cache:
+        dump_stage(
+            audio_id,
+            stage,
+            [item.model_dump(mode="json") for item in result],
+            root=cache_root,
+        )
+    return result
 
 
 def _sha256_id(path: Path) -> str:
