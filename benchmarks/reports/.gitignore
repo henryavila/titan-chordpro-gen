@@ -1,0 +1,4 @@
+# Ignore all reports — they are timestamped + audio-dependent
+*
+!.gitignore
+!README.md

@@ -56,6 +56,17 @@ cuda = [
     "librosa>=0.10",
 ]
 
+# Validation harness against the iasdermelinda corpus (Tier 2 / Tier 3).
+# Decoupled from [mac]/[cuda] so a CI runner can install validation without
+# pulling the full ML stack (yt-dlp + mir_eval do not need GPU).
+validation = [
+    "yt-dlp>=2024.8.6",
+    "mir_eval>=0.7",
+    "librosa>=0.10",   # bass-note chroma analysis (F-004)
+    "scipy>=1.13",     # signal processing helpers used by metrics
+    "rich>=13.7",      # CLI progress bars (T71)
+]
+
 [project.scripts]
 titan-chordpro = "titan_chordpro.cli:main"
 

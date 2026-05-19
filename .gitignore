@@ -40,3 +40,10 @@ uv.lock
 
 # Ephemeral session-handoff notes (not for VCS)
 WIP.md
+
+# Phase C — validation harness
+chordpros.csv/
+.titan-cache/
+benchmarks/reports/*
+!benchmarks/reports/README.md
+!benchmarks/reports/.gitignore
