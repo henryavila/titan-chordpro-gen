@@ -148,8 +148,13 @@ class ChordinoEngine:
                 end = start
 
             # F-004: derive bass_note from the bass stem if one was provided.
+            # Phase C T70-iter2 follow-up: when chordino itself emits a slash
+            # chord (e.g. 'C#/E#'), the bass is already encoded in symbol —
+            # do NOT also set bass_note. Otherwise ChordEvent.validate_bass_consistency
+            # rejects the event when bass_chroma picks the enharmonic spelling
+            # (E# vs F) chordino didn't use.
             bass_note: str | None = None
-            if bass_stem is not None:
+            if bass_stem is not None and "/" not in symbol:
                 try:
                     letter, _ = extract_bass_note(bass_stem, start=start, end=end)
                 except FileNotFoundError:

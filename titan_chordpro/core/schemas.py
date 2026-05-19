@@ -323,6 +323,12 @@ class ChordProDocument(BaseModel):
     metadata: Metadata
     sections: list[Section]
     provenance: Provenance
+    # Phase C T70-iter2 follow-up: beat_grid is surfaced on the document
+    # so the validation harness (benchmarks.validation_runner) can compute
+    # cross-detector beat consistency without poking at internal cache
+    # files. Optional + defaulted for back-compat with pre-Phase-C callers
+    # and snapshot tests. The writer ignores it.
+    beat_grid: BeatGrid | None = None
 
     def to_string(self, profile: str = "inline_slash") -> str:
         from titan_chordpro.writer.document import render

@@ -267,6 +267,38 @@ class TestBassNoteIntegration:
 
         assert events[0].bass_note is None
 
+    def test_native_slash_symbol_is_not_overridden_by_bass_chroma(self, tmp_path: Path) -> None:
+        """Phase C T70-iter2 follow-up: when chordino itself emits a slash
+        chord (e.g. 'C#/E#'), the wrapper must NOT also set bass_note from
+        bass_chroma. The schema validator rejects disagreement (E# vs F)
+        even when the two are enharmonically equivalent. Trust the native
+        slash output."""
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord = MagicMock()
+        chord.chord = "C#/E#"  # chordino emits raw slash chord — already has bass
+        chord.timestamp = 0.0
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"\x00" * 100)
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch("titan_chordpro.engines.chord.chordino._probe_duration", return_value=4.0):
+                with patch(
+                    "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                    return_value=("F", 0.9),  # F is enharmonic of E# — would crash
+                ):
+                    engine = ChordinoEngine()
+                    events = engine.detect(Path("fake.wav"), bass_stem=bass)
+
+        assert len(events) == 1
+        assert events[0].symbol == "C#/E#"
+        assert events[0].bass_note is None  # bass info already in symbol; not duplicated
+
     def test_bass_note_chord_with_quality_extracts_root(self, tmp_path: Path) -> None:
         from titan_chordpro.engines.chord.chordino import ChordinoEngine
 

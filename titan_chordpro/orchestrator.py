@@ -280,6 +280,7 @@ def transcribe(
         metadata=Metadata(title=audio.stem),
         sections=sections,
         provenance=provenance,
+        beat_grid=beats,
     )
 
     if cache:
