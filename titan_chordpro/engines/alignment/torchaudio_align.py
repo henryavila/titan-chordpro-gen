@@ -2,22 +2,32 @@
 """torchaudio.functional.forced_align — AlignmentEngine implementation.
 
 Uses the MMS (Massively Multilingual Speech) bundle which ships with
-torchaudio >= 2.1 and supports ~1100 languages out of the box. The wrapper:
+torchaudio >= 2.1 and supports ~1100 languages out of the box.
 
-  1. Loads the audio at 16kHz mono (torchaudio.load + resample if needed).
-  2. Runs the MMS acoustic model to get the emission tensor.
-  3. Tokenizes each word via the bundle's tokenizer.
-  4. Calls torchaudio.functional.forced_align(emissions, targets, blank_id).
-  5. Translates frame_offset -> seconds (frame stride = 0.02s at 16kHz / 320 hop).
-  6. Returns AlignmentResult with refined word timestamps + phoneme events.
+Phase C T70 iter — chunked emissions + global Viterbi:
+  1. Loads audio at 16kHz mono via librosa (ffmpeg fallback for non-WAV).
+  2. Splits waveform into 30s windows with 2s context on each side; runs
+     the MMS encoder per chunk (peak memory ~1 GiB vs 7-11 GiB single-shot).
+  3. Crops context-region emission frames from each chunk's output.
+  4. Concatenates emissions into a single global tensor (T_total, vocab).
+  5. Runs ONE torchaudio.functional.forced_align over the stitched
+     emissions — Viterbi decision is global, so alignment quality inside
+     chunk interiors is mathematically equivalent to single-shot.
+  6. Translates frame_offset -> seconds (frame stride = 0.02s at 16kHz / 320 hop).
+  7. Returns AlignmentResult with refined word timestamps + phoneme events.
 
-Phase B implements only the MMS path. v0.2 will add per-language Wav2Vec2
-bundles for higher quality on EN.
+References:
+- HuggingFace blog "Making ASR work on large files with Wav2Vec2"
+  (canonical chunk + stride + drop-sides derivation for CTC).
+- MahmoudAshraf97/ctc-forced-aligner — production library, MIT.
+- IRCAM/MDPI Appl. Sci. 13/3/1854 — quantifies CTC alignment error
+  (50ms speech / 120ms singing voice) on DALI.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 from pathlib import Path
 from typing import Any
 
@@ -31,10 +41,16 @@ from titan_chordpro.core.schemas import (
     WordEvent,
 )
 
-# MMS uses 320-sample hop at 16kHz -> 20ms per frame.
+# MMS uses 320-sample hop at 16kHz -> 20ms per frame -> 50 fps.
 _SAMPLE_RATE = 16000
 _FRAME_SAMPLES = 320
 _FRAME_SECONDS = _FRAME_SAMPLES / _SAMPLE_RATE  # 0.02
+
+# Chunked emissions parameters (Phase C T70 iter). 30 s window matches the
+# ctc-forced-aligner default; 2 s context is ~100 frames at 50 fps, vastly
+# larger than wav2vec2's ~25 ms receptive field — absorbs all edge effects.
+_CHUNK_WINDOW_SEC = 30.0
+_CHUNK_CONTEXT_SEC = 2.0
 
 _log = logging.getLogger(__name__)
 
@@ -157,6 +173,91 @@ class TorchaudioAlignEngine:
 
     # ------------------------------------------------------------------ inner
 
+    def _generate_emissions(
+        self,
+        waveform_1d: Any,
+        window_sec: float = _CHUNK_WINDOW_SEC,
+        context_sec: float = _CHUNK_CONTEXT_SEC,
+        batch_size: int = 1,
+    ) -> Any:
+        """Chunked encoder forward with global emissions stitching.
+
+        Splits a 1-D mono waveform into windows of `window_sec` with
+        `context_sec` of overlap on each side. Runs the MMS encoder on
+        each chunk independently, crops the context-region emission
+        frames, and concatenates the inner frames into a single global
+        emissions tensor with shape (1, T_total, vocab).
+
+        Algorithm follows HuggingFace's canonical chunk+stride+drop-sides
+        recipe for CTC + MMS. The downstream `forced_align` then runs a
+        SINGLE global Viterbi on the stitched emissions — alignment
+        decisions are mathematically equivalent to single-shot for chunk
+        interiors. Edge artifacts are bounded by wav2vec2's ~25 ms
+        receptive field, vastly smaller than the 2 s context.
+
+        Args:
+            waveform_1d: 1-D float32 tensor of mono audio at 16 kHz.
+            window_sec: inner-window duration per chunk (default 30 s).
+            context_sec: context overlap on each side (default 2 s).
+            batch_size: chunks to process per forward (1 = lowest memory).
+
+        Returns:
+            Tensor of shape (1, T_total, vocab) — batched global emissions
+            ready to pass to torchaudio.functional.forced_align.
+        """
+        import torch
+
+        n = int(waveform_1d.size(0))
+        window_samples = int(window_sec * _SAMPLE_RATE)
+        context_samples = int(context_sec * _SAMPLE_RATE)
+        context_frames = int(round(context_sec / _FRAME_SECONDS))  # 100 frames @ 50fps
+
+        # Short audio (<= window): single-shot is cheap and avoids the
+        # extra padding bookkeeping. Same path the original implementation
+        # took, but now isolated.
+        if n <= window_samples:
+            with torch.inference_mode():
+                em, _ = self._model(waveform_1d.unsqueeze(0).to(self._device))
+            return em.cpu()
+
+        # Pad so audio length is a multiple of window_samples. Add context
+        # on both sides so each chunk sees [context | window | context].
+        extension = math.ceil(n / window_samples) * window_samples - n
+        padded = torch.nn.functional.pad(
+            waveform_1d, (context_samples, context_samples + extension)
+        )
+        chunk_len = window_samples + 2 * context_samples
+        # unfold(dim, size, step) → (num_chunks, chunk_len). step=window
+        # ensures inner regions tile exactly with no inner overlap; only
+        # the context regions overlap between consecutive chunks.
+        chunks = padded.unfold(0, chunk_len, window_samples)
+
+        emissions_list = []
+        with torch.inference_mode():
+            for i in range(0, int(chunks.size(0)), batch_size):
+                batch = chunks[i : i + batch_size].to(self._device)
+                em_batch, _ = self._model(batch)
+                emissions_list.append(em_batch.cpu())
+        emissions = torch.cat(emissions_list, dim=0)
+        # emissions shape: (num_chunks, frames_per_chunk, vocab)
+
+        # Crop the context-region frames from each chunk. context_frames
+        # at start AND end; the remaining inner frames tile to form a
+        # contiguous global emissions sequence.
+        if context_frames > 0:
+            emissions = emissions[:, context_frames:-context_frames, :]
+
+        # Flatten chunks into a single global sequence.
+        emissions = emissions.flatten(0, 1)  # (num_chunks * frames_inner, vocab)
+
+        # Trim the right-side extension we padded earlier (in frames).
+        extension_frames = int(round((extension / _SAMPLE_RATE) / _FRAME_SECONDS))
+        if extension_frames > 0:
+            emissions = emissions[:-extension_frames]
+
+        # Add the batch dim back so forced_align sees (1, T, vocab).
+        return emissions.unsqueeze(0)
+
     def _run_forced_align(
         self,
         vocals: Path,
@@ -173,11 +274,11 @@ class TorchaudioAlignEngine:
         # ships ffmpeg 8 (libavutil.59) — the dlopen fails. Bypass torchaudio
         # I/O entirely; use librosa.load (audioread+ffmpeg fallback path).
         audio_np, _ = librosa.load(str(vocals), sr=_SAMPLE_RATE, mono=True)
-        waveform = torch.from_numpy(audio_np).unsqueeze(0).to(self._device)
+        waveform_1d = torch.from_numpy(audio_np)
 
-        with torch.inference_mode():
-            emissions, _ = self._model(waveform)
-            emissions = emissions.cpu()
+        # Phase C T70 iter: chunked emissions + global Viterbi. Single-shot
+        # forward on 4-5 min audio exhausts 11+ GiB of MPS activations.
+        emissions = self._generate_emissions(waveform_1d)
 
         # Build target token sequence by tokenizing each word individually.
         tokens_per_word: list[list[int]] = [list(self._tokenizer(w.text.lower())) for w in words]
