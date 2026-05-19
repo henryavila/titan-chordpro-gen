@@ -164,18 +164,16 @@ class TorchaudioAlignEngine:
         language: str,
     ) -> list[dict[str, Any]]:
         """Run the real MMS forced_align pipeline. Mocked in unit tests."""
+        import librosa
         import torch
-        import torchaudio
         from torchaudio.functional import forced_align
 
-        waveform, sr = torchaudio.load(str(vocals))
-        if sr != _SAMPLE_RATE:
-            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=_SAMPLE_RATE)
-            waveform = resampler(waveform)
-        if waveform.shape[0] > 1:
-            waveform = waveform.mean(dim=0, keepdim=True)  # mono
-
-        waveform = waveform.to(self._device)
+        # Phase C T70 iter: torchaudio 2.11+ moved torchaudio.load to use
+        # torchcodec internally, which needs ffmpeg 4.x ABI. Homebrew now
+        # ships ffmpeg 8 (libavutil.59) — the dlopen fails. Bypass torchaudio
+        # I/O entirely; use librosa.load (audioread+ffmpeg fallback path).
+        audio_np, _ = librosa.load(str(vocals), sr=_SAMPLE_RATE, mono=True)
+        waveform = torch.from_numpy(audio_np).unsqueeze(0).to(self._device)
 
         with torch.inference_mode():
             emissions, _ = self._model(waveform)
