@@ -21,13 +21,23 @@ class TestDetectBackend:
 
         assert detect_backend(prefer="cpu") == "cpu"
 
-    def test_prefer_unknown_falls_back_to_autodetect(self) -> None:
+    def test_prefer_unknown_raises_value_error(self) -> None:
+        """Codex F-008: unknown backend strings raise ValueError (was silent fallback)."""
         from titan_chordpro.core.hardware import detect_backend
 
-        # "tpu" is not a supported backend — module should ignore it
-        # and return whatever autodetect picks.
-        result = detect_backend(prefer="tpu")  # type: ignore[arg-type]
-        assert result in ("mps", "cuda", "cpu")
+        with pytest.raises(ValueError, match="unsupported backend preference"):
+            detect_backend(prefer="tpu")  # type: ignore[arg-type]
+
+    def test_prefer_unavailable_explicit_backend_raises(self) -> None:
+        """Codex F-008: explicit mps/cuda preference must fail-fast when unavailable."""
+        from titan_chordpro.core import hardware
+        from titan_chordpro.core.exceptions import TitanConfigError
+
+        with patch.dict("sys.modules", {"torch": None}):
+            hardware._cached_backend = None
+            with pytest.raises(TitanConfigError):
+                hardware.detect_backend(prefer="cuda")
+        hardware._cached_backend = None
 
     def test_torch_missing_returns_cpu(self) -> None:
         from titan_chordpro.core import hardware

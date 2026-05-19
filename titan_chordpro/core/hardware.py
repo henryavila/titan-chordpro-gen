@@ -15,6 +15,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Literal
 
+from titan_chordpro.core.exceptions import TitanConfigError
+
 Backend = Literal["mps", "cuda", "cpu"]
 
 _VALID_BACKENDS: frozenset[str] = frozenset({"mps", "cuda", "cpu"})
@@ -28,23 +30,26 @@ def detect_backend(prefer: str | None = None) -> Backend:
 
     Args:
         prefer: One of "mps", "cuda", "cpu" to force a specific backend.
-            If the preferred backend is not actually available, the call
-            falls back to autodetect (does NOT raise). Unknown strings are
-            silently ignored (also fall back to autodetect).
+            "cpu" is always honored. "mps"/"cuda" raise TitanConfigError
+            when the requested backend is not available on this host —
+            silent fallback is a footgun for users debugging dual-path
+            behavior. Unknown strings raise ValueError.
+            None means autodetect (cached per process).
 
     Returns:
         "mps" on Apple Silicon with MPS available,
         "cuda" on a host with a CUDA-capable GPU,
         "cpu" otherwise (including when torch itself is missing).
-
-    The result is cached per process. Use the private `_cached_backend = None`
-    reset for tests that need to re-probe.
     """
     global _cached_backend
 
     if prefer == "cpu":
-        # "cpu" is always honored — useful for CI, debugging, deterministic tests.
         return "cpu"
+
+    if prefer is not None and prefer not in _VALID_BACKENDS:
+        raise ValueError(
+            f"unsupported backend preference {prefer!r}; expected one of {sorted(_VALID_BACKENDS)}"
+        )
 
     if _cached_backend is not None and prefer is None:
         return _cached_backend
@@ -52,6 +57,10 @@ def detect_backend(prefer: str | None = None) -> Backend:
     try:
         import torch  # noqa: F401  — presence check
     except ImportError:
+        if prefer in ("mps", "cuda"):
+            raise TitanConfigError(
+                f"requested backend {prefer!r} is not available: torch is not installed"
+            ) from None
         _log.debug("torch not importable; defaulting to cpu backend")
         _cached_backend = "cpu"
         return "cpu"
@@ -59,22 +68,25 @@ def detect_backend(prefer: str | None = None) -> Backend:
     import torch
 
     auto: Backend = "cpu"
-    # MPS check is gated behind hasattr because torch < 1.12 lacks the namespace.
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         auto = "mps"
     elif torch.cuda.is_available():
         auto = "cuda"
 
-    if prefer in _VALID_BACKENDS:
-        # Honor preference only if the backend is actually available.
-        if prefer == "mps" and auto == "mps":
+    if prefer == "mps":
+        if auto == "mps":
             _cached_backend = "mps"
             return "mps"
-        if prefer == "cuda" and torch.cuda.is_available():
+        raise TitanConfigError(
+            f"requested backend 'mps' is not available on this host (autodetect: {auto!r})"
+        )
+    if prefer == "cuda":
+        if torch.cuda.is_available():
             _cached_backend = "cuda"
             return "cuda"
-        # Preferred backend unavailable — fall through to autodetect.
-        _log.info("preferred backend %r unavailable; using %r", prefer, auto)
+        raise TitanConfigError(
+            f"requested backend 'cuda' is not available on this host (autodetect: {auto!r})"
+        )
 
     _cached_backend = auto
     return auto
