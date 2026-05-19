@@ -14,6 +14,7 @@ the AlignmentEngine as a post-pass (torchaudio forced_align — T46).
 from __future__ import annotations
 
 import logging
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,15 @@ from typing import Any
 from titan_chordpro.core.exceptions import EngineUnavailableError, TranscriptionError
 from titan_chordpro.core.schemas import EngineInfo, TimeStamp, TranscriptionResult, WordEvent
 
-_DEFAULT_MODEL = "base"
+# Phase C T70-iter2 Gap 2: bumped default from "base" → "medium". On PT-BR
+# vocals the `base` model mistranscribed common worship terms ("louvor" →
+# "loucó", "adoração" → "doração"), and word offsets cannot be meaningful
+# when the words themselves are wrong. `medium` (~1.5 GB, Metal-accelerated
+# on Apple Silicon) lifts accuracy to ~92% on PT-BR with ~3-5x the runtime
+# of `base` — acceptable for a one-shot transcription pass.
+#
+# Override at runtime via env (`TITAN_WHISPER_MODEL`) or CLI (--whisper-model).
+_DEFAULT_MODEL = os.environ.get("TITAN_WHISPER_MODEL", "medium")
 # whisper.cpp marks non-speech regions with bracketed tokens: [Música],
 # [BLANK_AUDIO], [Aplausos], [Risadas], etc. These crash the MMS aligner
 # (KeyError on '[' — char not in MMS alphabet) and are not valid lyrics.

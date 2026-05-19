@@ -122,6 +122,59 @@ def _strip_slash_for_majmin(label: str) -> str:
     return _SLASH_BASS_RE.sub("", label)
 
 
+def compute_beat_consistency_vs_librosa(
+    audio_path: Any,
+    titan_beats: list[float],
+    *,
+    sr: int = 22050,
+    f_measure_threshold: float = 0.07,
+) -> dict[str, float]:
+    """Cross-detector beat consistency against librosa.beat.beat_track.
+
+    Spec §1683 originally asked for "Beat F ≥ 0.85" against ground-truth
+    beat times. The iasdermelinda corpus does NOT carry beat timestamps,
+    so a true F-measure against ground truth is impossible in Phase C.
+
+    What we compute instead: agreement between Titan's beat output and
+    librosa.beat.beat_track (a classical detector run on the same audio).
+    This is a CROSS-DETECTOR CONSISTENCY signal — useful for detecting
+    catastrophic regressions in the Titan beat engine, but it is NOT a
+    ground-truth gate. Octave errors (one detector at 2x tempo) drive
+    F-measure down even when both detectors are individually sensible;
+    AMLt (Allowed Metrical Level, total accuracy) is the octave-invariant
+    companion metric and is more robust for cross-detector comparison.
+
+    Returns dict with keys `f_measure` and `amlt` (both in [0.0, 1.0]).
+    Returns zeros on empty input or load failure (caller decides whether
+    to record or skip).
+
+    Phase D should replace this with mir_eval.beat.f_measure against a
+    labeled subset (DALI / RWC-Pop / hand-annotated) and apply the spec's
+    ≥ 0.85 gate properly.
+    """
+    import librosa
+    import mir_eval
+    import numpy as np
+
+    if not titan_beats:
+        return {"f_measure": 0.0, "amlt": 0.0}
+
+    try:
+        y, sr_loaded = librosa.load(str(audio_path), sr=sr, mono=True)
+        _, librosa_beats = librosa.beat.beat_track(y=y, sr=sr_loaded, units="time")
+    except Exception:  # noqa: BLE001
+        return {"f_measure": 0.0, "amlt": 0.0}
+
+    ref = mir_eval.beat.trim_beats(np.asarray(librosa_beats, dtype=float))
+    est = mir_eval.beat.trim_beats(np.asarray(titan_beats, dtype=float))
+    if ref.size == 0 or est.size == 0:
+        return {"f_measure": 0.0, "amlt": 0.0}
+
+    f = float(mir_eval.beat.f_measure(ref, est, f_measure_threshold=f_measure_threshold))
+    _cml_c, _cml_t, _aml_c, aml_t = mir_eval.beat.continuity(ref, est)
+    return {"f_measure": f, "amlt": float(aml_t)}
+
+
 def compute_wcsr_majmin(
     ref_intervals: list[tuple[float, float]],
     ref_labels: list[str],

@@ -139,6 +139,37 @@ def transcribe(
     # whisper.cpp Metal context ~150 MB — release before MMS_FA loads.
     _release_engine("transcription")
 
+    # Phase C T70-iter2 Gap 3 (defensive): when transcription yields zero
+    # words on a vocals stem that has audible content, surface a clear
+    # diagnostic. The downstream sectioner correctly classifies a wordless
+    # transcription as a single Instrumental section — but if the cause is
+    # an undersized whisper model rather than a truly instrumental song,
+    # the operator needs to know. Empty-word renders look like sectioner
+    # bugs but are almost always transcription failures (e.g. whisper "base"
+    # on PT-BR worship vocals tags everything as [Música] and our filter
+    # drops the lot). Try --whisper-model medium or larger.
+    if not trans_result.words:
+        try:
+            import librosa as _librosa
+            import numpy as _np
+
+            _y, _sr = _librosa.load(str(stems.vocals), sr=22050, mono=True)
+            _rms = float(_np.sqrt(_np.mean(_y * _y))) if _y.size else 0.0
+        except Exception:  # noqa: BLE001
+            _rms = 0.0
+        if _rms > 0.01:
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "transcription yielded 0 words but vocals stem RMS=%.4f is audible — "
+                "the song will render as a single Instrumental section. "
+                "Likely cause: undersized whisper model. Retry with "
+                "--whisper-model medium (or larger) and TITAN_WHISPER_MODEL env. "
+                "Audio: %s",
+                _rms,
+                audio,
+            )
+
     if trans_result.phonemes is None:
         align_result = _run_or_cache(
             cache=cache,

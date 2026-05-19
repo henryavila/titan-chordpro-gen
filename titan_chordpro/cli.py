@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 from titan_chordpro.factory import last_selection
 from titan_chordpro.orchestrator import transcribe
@@ -34,6 +35,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="After running the pipeline, print which engine ran each stage.",
     )
+    parser.add_argument(
+        "--whisper-model",
+        default=None,
+        choices=("tiny", "base", "small", "medium", "large-v2", "large-v3"),
+        help=(
+            "whisper.cpp model size. Default 'medium' (override via "
+            "TITAN_WHISPER_MODEL env var). 'base' is faster but mistranscribes "
+            "PT-BR vocals; 'large-v3' is slower but most accurate."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.list_profiles:
@@ -48,6 +59,10 @@ def main(argv: list[str] | None = None) -> int:
     force_mock = args.device == "mock"
     backend: str | None = args.device if args.device not in ("auto", "mock") else None
 
+    engine_kwargs: dict[str, Any] = {}
+    if args.whisper_model is not None:
+        engine_kwargs["transcription_model_id"] = args.whisper_model
+
     doc = transcribe(
         args.audio,
         language=args.language,
@@ -56,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         cache=args.cache,
         force_mock=force_mock,
         backend=backend,
+        **engine_kwargs,
     )
     out = args.output or args.audio.with_suffix(".chordpro")
     doc.write(out, profile=args.profile)

@@ -85,18 +85,21 @@ def select_separation(
 def select_transcription(
     *,
     force_mock: bool = False,
-    model_id: str = "base",
+    transcription_model_id: str | None = None,
     **_ignored: Any,
 ) -> TranscriptionEngine:
+    """Build the transcription engine. `transcription_model_id` overrides
+    the whisper.cpp default (env var TITAN_WHISPER_MODEL or "medium")."""
     if force_mock:
         _record("transcription", "mock", False, "force_mock")
         return MockTranscriptionEngine()
     if not _have_module("pywhispercpp"):
         raise _missing_real_engine("transcription", "pywhispercpp", "whisper_cpp")
-    from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
+    from titan_chordpro.engines.transcription.whisper_cpp import _DEFAULT_MODEL, WhisperCppEngine
 
+    model_id = transcription_model_id or _DEFAULT_MODEL
     engine = WhisperCppEngine(model_id=model_id)
-    _record("transcription", "whisper_cpp", True, "pywhispercpp importable")
+    _record("transcription", "whisper_cpp", True, f"pywhispercpp ({model_id})")
     return engine
 
 

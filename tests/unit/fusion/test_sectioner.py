@@ -75,6 +75,32 @@ class TestInferSectionsInstrumentalOnly:
         line = sections[0].lines[0]
         assert {c.symbol for c in line.chords} == {"C", "F"}
 
+    def test_any_words_present_produces_at_least_one_lyric_section(self) -> None:
+        """Phase C T70-iter2 Gap 3 regression — when transcription yields
+        words (even very sparse ones), the sectioner must produce >= 1
+        non-instrumental section. The 'Tua vontade' all-Instrumental render
+        was misdiagnosed as a sectioner bug; the real cause was whisper
+        'base' tagging everything as [Música] (filtered → zero words). This
+        test pins down the sectioner contract so the same misdiagnosis
+        can't recur silently."""
+        words = [
+            _word("entrega", 30.0, 30.5),
+            _word("tudo", 60.0, 60.4),
+            _word("vontade", 90.0, 90.6),
+        ]
+        chords = [_chord("C", 0.0, 30.0), _chord("F", 30.0, 120.0)]
+        sections = infer_sections(
+            words=words,
+            chords=chords,
+            beat_grid=_beat_grid(bpm=120.0, duration=120.0),
+            duration=120.0,
+        )
+        lyric_sections = [s for s in sections if s.type not in ("instrumental", "intro", "outro")]
+        assert lyric_sections, (
+            f"sectioner produced no lyric sections despite words present; "
+            f"all sections: {[(s.type, s.label) for s in sections]}"
+        )
+
     def test_empty_audio_returns_empty_list(self) -> None:
         sections = infer_sections(
             words=[],

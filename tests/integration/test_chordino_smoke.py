@@ -7,7 +7,6 @@ outcomes pass the smoke. Real harmonic content is validated in Phase C.
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import pytest
@@ -18,13 +17,17 @@ pytest.importorskip(
 )
 
 
-def _vamp_host_present() -> bool:
-    return shutil.which("sonic-annotator") is not None
+def _chordino_plugin_present() -> bool:
+    try:
+        import vampyhost
+    except ImportError:
+        return False
+    return "nnls-chroma:chordino" in vampyhost.list_plugins()
 
 
 pytestmark = pytest.mark.skipif(
-    not _vamp_host_present(),
-    reason="sonic-annotator (VAMP host) not installed; run scripts/install_vamp.sh",
+    not _chordino_plugin_present(),
+    reason="nnls-chroma:chordino VAMP plugin not installed; run scripts/install_vamp.sh",
 )
 
 

@@ -35,6 +35,33 @@ class TestWhisperCppEngineInit:
 
 
 @pytest.mark.unit
+class TestWhisperCppDefaultModel:
+    """Phase C T70-iter2 Gap 2: default model is 'medium', overridable via env."""
+
+    def test_default_is_medium_when_env_unset(self, monkeypatch) -> None:
+        monkeypatch.delenv("TITAN_WHISPER_MODEL", raising=False)
+        # Re-import the module to re-evaluate the module-level constant.
+        import importlib
+
+        import titan_chordpro.engines.transcription.whisper_cpp as wc
+
+        importlib.reload(wc)
+        assert wc._DEFAULT_MODEL == "medium"
+
+    def test_env_override(self, monkeypatch) -> None:
+        monkeypatch.setenv("TITAN_WHISPER_MODEL", "large-v3")
+        import importlib
+
+        import titan_chordpro.engines.transcription.whisper_cpp as wc
+
+        importlib.reload(wc)
+        assert wc._DEFAULT_MODEL == "large-v3"
+        # Reset for other tests.
+        monkeypatch.delenv("TITAN_WHISPER_MODEL", raising=False)
+        importlib.reload(wc)
+
+
+@pytest.mark.unit
 class TestWhisperCppEngineTranscribe:
     def test_transcribe_builds_words_only(self, tmp_path: Path) -> None:
         """whisper.cpp output → list[WordEvent], phonemes=None."""

@@ -18,6 +18,7 @@ from benchmarks.chordpro_parser import extract_chord_sequence, to_intervals_labe
 from benchmarks.corpus import Song
 from benchmarks.metrics import (
     chord_events_to_intervals,
+    compute_beat_consistency_vs_librosa,
     compute_wcsr_majmin,
     to_mir_eval_chord,
 )
@@ -32,6 +33,11 @@ class SongMetric:
     wcsr_majmin: float
     num_chords_ref: int
     num_chords_est: int
+    # Beat consistency vs librosa (cross-detector diagnostic — NOT a gate).
+    # See compute_beat_consistency_vs_librosa for rationale. Phase D will
+    # replace with a true ground-truth beat F-measure on a labeled subset.
+    beat_f_cross_librosa: float = 0.0
+    beat_amlt_cross_librosa: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -127,6 +133,20 @@ def run_validation(
             ref_intervals, ref_labels = to_intervals_labels(ref_seq_mir, duration)
 
             score = compute_wcsr_majmin(ref_intervals, ref_labels, est_intervals, est_labels)
+
+            # Beat consistency diagnostic — derived from titan beat_grid on
+            # the document (orchestrator always populates it). Skipped if
+            # absent. NOT a gate — see metrics.compute_beat_consistency_vs_librosa.
+            titan_beat_times: list[float] = []
+            bg = getattr(doc, "beat_grid", None)
+            if bg is not None:
+                titan_beat_times = list(getattr(bg, "beats", []) or [])
+            try:
+                beat_consistency = compute_beat_consistency_vs_librosa(audio, titan_beat_times)
+            except Exception as exc:  # noqa: BLE001
+                _log.warning("beat consistency failed for %s: %s", song.youtube_id, exc)
+                beat_consistency = {"f_measure": 0.0, "amlt": 0.0}
+
             metrics.append(
                 SongMetric(
                     song_title=song.title,
@@ -134,6 +154,8 @@ def run_validation(
                     wcsr_majmin=score,
                     num_chords_ref=len(ref_seq),
                     num_chords_est=len(titan_chords),
+                    beat_f_cross_librosa=beat_consistency["f_measure"],
+                    beat_amlt_cross_librosa=beat_consistency["amlt"],
                 )
             )
         except Exception as exc:  # noqa: BLE001
