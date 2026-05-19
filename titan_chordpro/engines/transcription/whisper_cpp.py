@@ -14,6 +14,7 @@ the AlignmentEngine as a post-pass (torchaudio forced_align — T46).
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,11 @@ from titan_chordpro.core.exceptions import EngineUnavailableError, Transcription
 from titan_chordpro.core.schemas import EngineInfo, TimeStamp, TranscriptionResult, WordEvent
 
 _DEFAULT_MODEL = "base"
+# whisper.cpp marks non-speech regions with bracketed tokens: [Música],
+# [BLANK_AUDIO], [Aplausos], [Risadas], etc. These crash the MMS aligner
+# (KeyError on '[' — char not in MMS alphabet) and are not valid lyrics.
+# Filter at the boundary so downstream stages see real words only.
+_WHISPER_SPECIAL_TOKEN_RE = re.compile(r"^\s*\[[^\[\]]*\]\s*$")
 _log = logging.getLogger(__name__)
 
 
@@ -97,6 +103,10 @@ class WhisperCppEngine:
                 end = start
             text = str(seg.text).strip()
             if not text:
+                continue
+            # Skip whisper.cpp special tokens (see _WHISPER_SPECIAL_TOKEN_RE).
+            if _WHISPER_SPECIAL_TOKEN_RE.match(text):
+                _log.debug("skipping whisper special token: %r", text)
                 continue
             words.append(
                 WordEvent(

@@ -100,3 +100,54 @@ class TestWhisperCppEngineTranscribe:
 
         with pytest.raises(TranscriptionError, match="whisper_cpp"):
             engine.transcribe(tmp_path / "vocals.wav")
+
+
+@pytest.mark.unit
+class TestWhisperSpecialTokenFilter:
+    """Phase C T70 iter: whisper.cpp marks instrumentals with [Música]
+    etc. — those tokens crash the MMS aligner (KeyError on '['). The
+    wrapper must drop them at the boundary."""
+
+    def _make_engine(self, segments):
+        import numpy as np
+
+        from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
+
+        fake_model = MagicMock()
+        fake_model.transcribe = MagicMock(return_value=segments)
+        engine = WhisperCppEngine.__new__(WhisperCppEngine)
+        engine._model_id = "base"
+        engine._model = fake_model
+        return engine, np.zeros(16000, dtype=np.float32)
+
+    def test_drops_musica_token(self, tmp_path: Path) -> None:
+        s1 = MagicMock(t0=0, t1=100, text="[Música]")
+        s2 = MagicMock(t0=100, t1=200, text="Hello")
+        engine, fake_audio = self._make_engine([s1, s2])
+        with patch("librosa.load", return_value=(fake_audio, 16000)):
+            result = engine.transcribe(tmp_path / "vocals.wav")
+        assert [w.text for w in result.words] == ["Hello"]
+
+    def test_drops_blank_audio_token(self, tmp_path: Path) -> None:
+        s1 = MagicMock(t0=0, t1=100, text="[BLANK_AUDIO]")
+        s2 = MagicMock(t0=100, t1=200, text="world")
+        engine, fake_audio = self._make_engine([s1, s2])
+        with patch("librosa.load", return_value=(fake_audio, 16000)):
+            result = engine.transcribe(tmp_path / "vocals.wav")
+        assert [w.text for w in result.words] == ["world"]
+
+    def test_keeps_words_with_brackets_inside(self, tmp_path: Path) -> None:
+        """Only WHOLE-segment [...] tokens are dropped; mixed text stays."""
+        s1 = MagicMock(t0=0, t1=100, text="Hello [pause] world")
+        engine, fake_audio = self._make_engine([s1])
+        with patch("librosa.load", return_value=(fake_audio, 16000)):
+            result = engine.transcribe(tmp_path / "vocals.wav")
+        assert [w.text for w in result.words] == ["Hello [pause] world"]
+
+    def test_drops_empty_brackets(self, tmp_path: Path) -> None:
+        s1 = MagicMock(t0=0, t1=100, text="[]")
+        s2 = MagicMock(t0=100, t1=200, text="ok")
+        engine, fake_audio = self._make_engine([s1, s2])
+        with patch("librosa.load", return_value=(fake_audio, 16000)):
+            result = engine.transcribe(tmp_path / "vocals.wav")
+        assert [w.text for w in result.words] == ["ok"]
