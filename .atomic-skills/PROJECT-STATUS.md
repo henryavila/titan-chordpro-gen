@@ -6,6 +6,7 @@ _Last updated: 2026-05-18T19:30:00Z_
 
 | Slug | Status | Started | Branch | Next Action |
 |------|--------|---------|--------|-------------|
+| titan-codex-fixes-v0.1.0-b1 | active | 2026-05-18 | main | Commit fixes + tag v0.1.0-b1 (8 Codex findings applied; F-004 deferred to Phase C; 320 passed) |
 
 ## Recently Archived
 
