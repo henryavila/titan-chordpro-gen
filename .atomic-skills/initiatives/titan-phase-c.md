@@ -1,19 +1,19 @@
 ---
 initiative_id: titan-phase-c
 title: Titan ChordPro Lib v0.1 Phase C — validation harness + corpus testing + F-004 bass-note
-status: planning
+status: active
 branch: main
 started: 2026-05-19
-last_updated: 2026-05-19T00:00:00Z
-plan_link: docs/superpowers/handoff-to-phase-c.md
-next_action: "READ docs/superpowers/handoff-to-phase-c.md. Answer 5 open scope decisions with Henry. Draft docs/superpowers/plans/2026-05-19-titan-v0.1-phase-c.md following Phase A/B template. Then flip to status: active + create proper plan_link."
+last_updated: 2026-05-19T14:30:00Z
+plan_link: docs/superpowers/plans/2026-05-19-titan-v0.1-phase-c.md
+next_action: "Execute T60: pyproject [validation] extra + docs/setup-validation.md + gitignore"
 max_stack_depth_warning: 5
 stack: []
 tasks:
-  PLAN: {title: "Draft Phase C implementation plan (~50 tasks; harness + F-004 + polish)", status: pending}
-  REVIEW: {title: "Cross-model plan review via review-plan-with-codex (Henry's call)", status: pending}
-  INIT: {title: "Flip initiative to status: active; create real plan_link", status: pending}
-  EXEC: {title: "Execute T60..T71 task-by-task (TDD; per-Week checkpoints)", status: pending}
+  PLAN: {title: "Draft Phase C implementation plan (15 tasks: T-pre + T60..T73; 5 RIs; 2 checkpoints)", status: done, closed_at: 2026-05-19T13:00:00Z}
+  REVIEW: {title: "Cross-model plan review via review-plan-with-codex (6 findings, all applied)", status: done, closed_at: 2026-05-19T14:00:00Z}
+  INIT: {title: "Flip initiative to status: active; repoint plan_link to the reviewed plan", status: done, closed_at: 2026-05-19T14:30:00Z}
+  EXEC: {title: "Execute T-pre + T60..T73 task-by-task (TDD; per-Week checkpoints)", status: pending}
   TAG: {title: "Tag v0.1.0-c0 (Henry tags manually after final review)", status: pending}
 parked: []
 emerged: []

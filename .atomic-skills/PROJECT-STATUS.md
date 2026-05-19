@@ -1,12 +1,12 @@
 # Project Status — titan-chordpro-lib
 
-_Last updated: 2026-05-19T00:00:00Z_
+_Last updated: 2026-05-19T14:30:00Z_
 
 ## Active Initiatives
 
 | Slug | Status | Started | Branch | Next Action |
 |------|--------|---------|--------|-------------|
-| titan-phase-c | planning | 2026-05-19 | main | Read docs/superpowers/handoff-to-phase-c.md + answer 5 open scope decisions with Henry, then draft the Phase C plan |
+| titan-phase-c | active | 2026-05-19 | main | Execute T60: pyproject [validation] extra + docs/setup-validation.md + gitignore |
 
 ## Recently Archived
 
