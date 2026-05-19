@@ -10,43 +10,66 @@ import re
 from typing import Any
 
 _TITAN_TO_MIR: tuple[tuple[re.Pattern[str], str], ...] = (
-    # Slash chord with min7 quality: "Cm7/Eb" → "C:min7/Eb"
+    # === Slash-chord variants (most specific first) ===
+    # Slash with min7 quality: "Cm7/Eb" → "C:min7/Eb"
     (re.compile(r"^([A-G][#b]?)m7/([A-G][#b]?)$"), r"\1:min7/\2"),
-    # Slash chord with maj7 quality: "Cmaj7/E" → "C:maj7/E"
+    # Slash with maj7 quality: "Cmaj7/E" → "C:maj7/E"
     (re.compile(r"^([A-G][#b]?)maj7/([A-G][#b]?)$"), r"\1:maj7/\2"),
-    # Brazilian "7M" notation for maj7 (e.g., F7M = Fmaj7); slash variant first
+    # Brazilian "7M" notation for maj7 — slash variant
     (re.compile(r"^([A-G][#b]?)7M/([A-G][#b]?)$"), r"\1:maj7/\2"),
-    # Slash chord with min quality: "Am/C" → "A:min/C"
+    # Slash with min: "Am/C" → "A:min/C"
     (re.compile(r"^([A-G][#b]?)m/([A-G][#b]?)$"), r"\1:min/\2"),
-    # Slash chord plain major: "F/A" → "F:maj/A"
+    # Slash plain major: "F/A" → "F:maj/A"
     (re.compile(r"^([A-G][#b]?)/([A-G][#b]?)$"), r"\1:maj/\2"),
-    # Quality min7: "Gm7" → "G:min7"
+    # === Non-slash qualities ===
     (re.compile(r"^([A-G][#b]?)m7$"), r"\1:min7"),
-    # Quality maj7: "Cmaj7" → "C:maj7"
     (re.compile(r"^([A-G][#b]?)maj7$"), r"\1:maj7"),
-    # Brazilian "7M" notation for maj7 (e.g., F7M, C7M)
+    # Brazilian "7M" notation
     (re.compile(r"^([A-G][#b]?)7M$"), r"\1:maj7"),
-    # Suspended chords — mir_eval majmin rejects sus2/sus4; collapse to
-    # root major for majmin-vocabulary scoring (suspended ≈ major in coarse
-    # comparison). Handle slash variant first.
+    # Suspended chords collapse to root major in majmin vocab.
     (re.compile(r"^([A-G][#b]?)sus[24]?/([A-G][#b]?)$"), r"\1:maj/\2"),
     (re.compile(r"^([A-G][#b]?)sus[24]?$"), r"\1:maj"),
-    # Quality dim: "F#dim" → "F#:dim"
+    # Diminished
     (re.compile(r"^([A-G][#b]?)dim$"), r"\1:dim"),
-    # Quality min: "Gm" → "G:min"
+    (re.compile(r"^([A-G][#b]?)°$"), r"\1:dim"),
+    # Augmented
+    (re.compile(r"^([A-G][#b]?)aug$"), r"\1:aug"),
+    (re.compile(r"^([A-G][#b]?)\+$"), r"\1:aug"),
+    # Minor (must come before "m9"/"m6")
+    (re.compile(r"^([A-G][#b]?)m9$"), r"\1:min"),
+    (re.compile(r"^([A-G][#b]?)m6$"), r"\1:min"),
     (re.compile(r"^([A-G][#b]?)m$"), r"\1:min"),
-    # Quality 7: "C7" → "C:7"
+    # Dominant 7th
     (re.compile(r"^([A-G][#b]?)7$"), r"\1:7"),
+    # Brazilian "9" / "6" extensions — collapse to root major in majmin vocab.
+    # Phase C T70 iter: corpus song "Tua vontade" had 'D9' which the spec's
+    # majmin scorer rejects; treat add9 ≈ major (lossy but consistent).
+    (re.compile(r"^([A-G][#b]?)9$"), r"\1:maj"),
+    (re.compile(r"^([A-G][#b]?)6$"), r"\1:maj"),
     # Plain major: "C" → "C:maj"
     (re.compile(r"^([A-G][#b]?)$"), r"\1:maj"),
 )
 
 
+# Catch-all fallback: when no specific pattern matches but the symbol
+# starts with a recognizable root letter (e.g., 'Bm7b5', 'C7sus4', exotic
+# Brazilian extensions), extract the root and collapse to major. This
+# preserves WCSR-majmin coarse comparison without letting one unknown
+# suffix kill the whole song's metric.
+_ROOT_PREFIX_RE = re.compile(r"^([A-G][#b]?)")
+
+
 def to_mir_eval_chord(symbol: str) -> str:
     """Convert a Titan chord symbol to mir_eval's vocabulary.
 
-    No-chord ("N") is returned as-is. Unknown shapes are returned as-is
-    too — mir_eval will treat them as a single unique class (not crash).
+    No-chord ("N") is returned as-is.
+
+    Catch-all (Phase C T70 iter): when no pattern matches, extract the
+    root letter and collapse to major. This handles exotic suffixes
+    (Brazilian 11, 13, m7b5, etc.) gracefully without crashing
+    mir_eval — at the cost of lossy comparison in majmin vocab (which
+    is the right tradeoff: an add-tone chord IS a major chord in coarse
+    comparison).
     """
     if symbol == "N":
         return "N"
@@ -54,6 +77,16 @@ def to_mir_eval_chord(symbol: str) -> str:
         new = pat.sub(repl, symbol)
         if new != symbol:
             return new
+    # No regex matched. Try the catch-all root-prefix extraction.
+    m = _ROOT_PREFIX_RE.match(symbol)
+    if m:
+        # Heuristic: if 'm' immediately follows the root and is followed by
+        # a digit (e.g., 'Bm7b5'), classify as minor; otherwise major.
+        root = m.group(1)
+        remainder = symbol[len(root) :]
+        if remainder.startswith("m") and not remainder.startswith("maj"):
+            return f"{root}:min"
+        return f"{root}:maj"
     return symbol
 
 

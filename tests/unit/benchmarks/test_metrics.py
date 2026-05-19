@@ -31,6 +31,19 @@ class TestToMirEvalChord:
             ("Csus2", "C:maj"),
             ("Asus4", "A:maj"),
             ("Esus/B", "E:maj/B"),
+            # Brazilian add9 / 6 — surfaced by "Tua vontade" with 'D9'
+            ("D9", "D:maj"),
+            ("G9", "G:maj"),
+            ("C6", "C:maj"),
+            ("Am9", "A:min"),
+            ("Am6", "A:min"),
+            # Augmented + symbol
+            ("Caug", "C:aug"),
+            ("C+", "C:aug"),
+            # Catch-all: exotic suffix falls back to root major/min
+            ("Bm7b5", "B:min"),
+            ("C13", "C:maj"),
+            ("Cmaj9", "C:maj"),
         ],
     )
     def test_to_mir_eval_chord(self, titan: str, expected: str) -> None:
