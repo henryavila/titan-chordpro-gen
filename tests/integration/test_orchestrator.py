@@ -17,16 +17,13 @@ from titan_chordpro.orchestrator import transcribe
 
 @pytest.mark.integration
 def test_real_factory_smoke_on_silent_wav(silent_wav: Path) -> None:
-    """End-to-end: silent.wav through whatever real engines are present.
+    """End-to-end smoke with force_mock=True: silent.wav through deterministic mocks.
 
-    The factory falls back to mocks for missing extras, so this test is
-    expected to pass in every environment — bare CI (all mocks), dev Mac
-    with [mac] extras (real Beat/Sep/Trans/Align + mock or real Chord/Lang),
-    or a fully-set-up box.
-
-    We only assert no crash and that a ChordProDocument is produced.
+    Post v0.1.0-b1 (Codex review F-002): factory no longer silently falls back to
+    mocks when real deps are missing — callers must opt in via force_mock=True.
+    This smoke asserts the no-crash contract under the deterministic mock path.
     """
-    doc = transcribe(silent_wav, language="pt", output_profile="inline_slash")
+    doc = transcribe(silent_wav, language="pt", output_profile="inline_slash", force_mock=True)
     assert isinstance(doc, ChordProDocument)
     # Document should have metadata even on silent input.
     assert doc.metadata is not None
@@ -40,20 +37,20 @@ class TestTranscribePipeline:
     def test_returns_chord_pro_document(self, tmp_path: Path) -> None:
         audio = tmp_path / "silent.wav"
         audio.write_bytes(b"RIFF" + b"\x00" * 44)
-        doc = transcribe(audio)
+        doc = transcribe(audio, force_mock=True)
         assert isinstance(doc, ChordProDocument)
 
     def test_document_has_provenance(self, tmp_path: Path) -> None:
         audio = tmp_path / "song.wav"
         audio.write_bytes(b"RIFF" + b"\x00" * 44)
-        doc = transcribe(audio)
+        doc = transcribe(audio, force_mock=True)
         assert doc.provenance.titan_version
         assert doc.provenance.audio_id
 
     def test_to_string_returns_non_empty(self, tmp_path: Path) -> None:
         audio = tmp_path / "song.wav"
         audio.write_bytes(b"RIFF" + b"\x00" * 44)
-        doc = transcribe(audio)
+        doc = transcribe(audio, force_mock=True)
         out = doc.to_string()
         assert out.startswith("{title:")
         assert "{meta: titan_version" in out
@@ -62,7 +59,7 @@ class TestTranscribePipeline:
         audio = tmp_path / "song.wav"
         audio.write_bytes(b"RIFF" + b"\x00" * 44)
         out_path = tmp_path / "song.chordpro"
-        doc = transcribe(audio)
+        doc = transcribe(audio, force_mock=True)
         doc.write(out_path)
         assert out_path.exists()
         assert len(out_path.read_text()) > 0
@@ -95,7 +92,7 @@ class TestTranscribePipeline:
 
         audio = tmp_path / "song.wav"
         audio.write_bytes(b"RIFF" + b"\x00" * 44)
-        transcribe(audio)
+        transcribe(audio, force_mock=True)
 
         # harmonic_mix should be the original audio file, NOT a bass stem path.
         assert captured["harmonic_mix"] == audio, (

@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from titan_chordpro import factory
 from titan_chordpro.core.schemas import (
@@ -21,9 +22,11 @@ from titan_chordpro.core.schemas import (
     Metadata,
     Provenance,
     Section,
+    StageConfidence,
     SyllableEvent,
     TimeStamp,
     WordEvent,
+    aggregate_stage_confidence,
 )
 from titan_chordpro.fusion import (
     melisma as melisma_module,
@@ -42,27 +45,25 @@ def transcribe(
     output_profile: str = "inline_slash",
     keep_stems: bool = False,
     cache: bool = False,
-    force_mock: bool = False,
-    backend: str | None = None,
+    **engine_overrides: Any,
 ) -> ChordProDocument:
     """Run the full transcription pipeline on an audio file.
 
     Returns a ChordProDocument ready for rendering via doc.to_string() / doc.write().
 
     Args:
-        force_mock: If True, all engines will use mock implementations.
-        backend: Backend hint for torch engines (e.g. "mps", "cuda", "cpu").
+        **engine_overrides: passed through to factory.select_* — supports
+            `force_mock=True`, `backend="mps"|"cuda"|"cpu"`, and engine-
+            specific kwargs like `model_id="base"` for transcription.
     """
     started_at = datetime.now(UTC)
     audio_id = _sha256_id(audio)
 
-    factory_kwargs: dict[str, object] = {"force_mock": force_mock, "backend": backend}
-
-    sep_engine = factory.select_separation(**factory_kwargs)  # type: ignore[arg-type]
-    trans_engine = factory.select_transcription(**factory_kwargs)  # type: ignore[arg-type]
-    align_engine = factory.select_alignment(**factory_kwargs)  # type: ignore[arg-type]
-    chord_engine = factory.select_chord_recognition(**factory_kwargs)  # type: ignore[arg-type]
-    beat_engine = factory.select_beat_tracking(**factory_kwargs)  # type: ignore[arg-type]
+    sep_engine = factory.select_separation(**engine_overrides)
+    trans_engine = factory.select_transcription(**engine_overrides)
+    align_engine = factory.select_alignment(**engine_overrides)
+    chord_engine = factory.select_chord_recognition(**engine_overrides)
+    beat_engine = factory.select_beat_tracking(**engine_overrides)
 
     stems = sep_engine.separate(audio)
 
@@ -81,7 +82,7 @@ def transcribe(
     detected_lang = trans_result.detected_language or language or "en"
     syll_engine = factory.select_syllabification(
         language=detected_lang,
-        **factory_kwargs,  # type: ignore[arg-type]
+        **engine_overrides,
     )
     syllables: list[SyllableEvent] = syll_engine.syllabify(words, phonemes)
 
@@ -105,6 +106,13 @@ def transcribe(
 
     completed_at = datetime.now(UTC)
 
+    confidence_aggregates: list[StageConfidence] = [
+        aggregate_stage_confidence("transcription", trans_result.words),
+        aggregate_stage_confidence("alignment", words),
+        aggregate_stage_confidence("chord_recognition", chords),
+        aggregate_stage_confidence("syllabification", syllables),
+    ]
+
     provenance = Provenance(
         titan_version=_titan_version(),
         audio_id=audio_id,
@@ -118,7 +126,7 @@ def transcribe(
         ),
         started_at=started_at,
         completed_at=completed_at,
-        confidence=[],
+        confidence=confidence_aggregates,
     )
 
     return ChordProDocument(
@@ -192,7 +200,14 @@ def _place_all_chords(
             line_syls = [
                 s for gi in global_indices if gi >= 0 for s in syl_by_global_word.get(gi, [])
             ]
-            line_chords = [c for c in chords if _chord_in_span(c, section.timestamp)]
+            if line_words:
+                line_span = TimeStamp(
+                    start=line_words[0].timestamp.start,
+                    end=line_words[-1].timestamp.end,
+                )
+            else:
+                line_span = section.timestamp
+            line_chords = [c for c in chords if _chord_in_span(c, line_span)]
             placed, _orphans = placer.place_chords_in_line(
                 line_text=line.text,
                 words=line_words,

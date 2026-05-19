@@ -7,9 +7,10 @@ invalid data raises pydantic.ValidationError at construction time.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
@@ -257,6 +258,37 @@ class StageConfidence(BaseModel):
     mean: Confidence
     median: Confidence
     p10: Confidence  # bottom 10%
+
+
+def aggregate_stage_confidence(
+    stage: Literal[
+        "separation",
+        "transcription",
+        "alignment",
+        "chord_recognition",
+        "beat_tracking",
+        "syllabification",
+        "fusion",
+    ],
+    events: Iterable[Any],
+) -> StageConfidence:
+    """Aggregate per-event `.confidence` into mean/median/p10 for one stage.
+
+    Events with no `confidence` attribute are skipped. Empty input yields a
+    1.0-everywhere placeholder (preserves provenance shape without claiming
+    information the stage cannot provide).
+    """
+    confs = [float(e.confidence) for e in events if hasattr(e, "confidence")]
+    if not confs:
+        return StageConfidence(stage=stage, mean=1.0, median=1.0, p10=1.0)
+    confs.sort()
+    n = len(confs)
+    return StageConfidence(
+        stage=stage,
+        mean=sum(confs) / n,
+        median=confs[n // 2],
+        p10=confs[max(0, n // 10)],
+    )
 
 
 class EngineRegistry(BaseModel):
