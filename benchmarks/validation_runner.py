@@ -112,9 +112,14 @@ def run_validation(
 
             # F-004 (Codex review): probe duration from the DOWNLOADED AUDIO
             # (not Titan's last interval).
-            import soundfile as sf
+            #
+            # Phase C T70 iteration: switched from soundfile.info to
+            # librosa.get_duration. soundfile bundles libsndfile which does
+            # NOT support AAC/m4a (yt-dlp's default container). librosa
+            # falls back to audioread+ffmpeg for codecs libsndfile rejects.
+            import librosa
 
-            duration = float(sf.info(str(audio)).duration)
+            duration = float(librosa.get_duration(path=str(audio)))
             if duration <= 0.0:
                 raise ValueError(f"audio duration invalid for {audio}")
             if not est_intervals:
