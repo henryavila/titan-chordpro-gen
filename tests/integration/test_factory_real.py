@@ -17,39 +17,44 @@ class TestFactoryRealSelection:
         engine = select_beat_tracking()
         assert isinstance(engine, BeatThisEngine)
 
-    def test_select_beat_tracking_falls_back_to_mock(self) -> None:
+    def test_select_beat_tracking_raises_when_unavailable(self) -> None:
+        from titan_chordpro.core.exceptions import EngineUnavailableError
         from titan_chordpro.factory import select_beat_tracking
-        from titan_chordpro.mocks import MockBeatTrackingEngine
 
-        # Simulate beat_this missing.
+        # Codex F-002: missing real dep without force_mock → fail-fast.
         with patch.dict("sys.modules", {"beat_this": None, "beat_this.inference": None}):
-            engine = select_beat_tracking()
-        assert isinstance(engine, MockBeatTrackingEngine)
+            with pytest.raises(EngineUnavailableError):
+                select_beat_tracking()
 
-    def test_select_chord_recognition_falls_back_when_no_vamp(self) -> None:
+    def test_select_chord_recognition_raises_when_no_vamp(self) -> None:
+        from titan_chordpro.core.exceptions import EngineUnavailableError
         from titan_chordpro.factory import select_chord_recognition
-        from titan_chordpro.mocks import MockChordRecognitionEngine
 
         with patch.dict(
             "sys.modules",
             {"chord_extractor": None, "chord_extractor.extractors": None},
         ):
-            engine = select_chord_recognition()
-        assert isinstance(engine, MockChordRecognitionEngine)
+            with pytest.raises(EngineUnavailableError):
+                select_chord_recognition()
 
-    def test_select_syllabification_pt(self) -> None:
+    def test_select_syllabification_pt_force_mock(self) -> None:
         from titan_chordpro.factory import select_syllabification
 
-        # gruut may or may not be installed; either way returns something that
-        # conforms to the Protocol with language="pt".
-        engine = select_syllabification(language="pt")
+        engine = select_syllabification(language="pt", force_mock=True)
         assert engine.language == "pt"
 
-    def test_select_syllabification_en(self) -> None:
+    def test_select_syllabification_en_force_mock(self) -> None:
         from titan_chordpro.factory import select_syllabification
 
-        engine = select_syllabification(language="en")
+        engine = select_syllabification(language="en", force_mock=True)
         assert engine.language == "en"
+
+    def test_select_syllabification_pt_br_normalizes(self) -> None:
+        """Codex F-005: pt-BR / pt_BR must normalize to the PT engine path."""
+        from titan_chordpro.factory import select_syllabification
+
+        engine = select_syllabification(language="pt-BR", force_mock=True)
+        assert engine.language == "pt-BR"  # original tag preserved on the engine
 
     def test_explicit_override_force_mock(self) -> None:
         from titan_chordpro.factory import select_beat_tracking

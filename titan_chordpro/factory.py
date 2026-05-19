@@ -56,29 +56,30 @@ def last_selection() -> dict[str, dict[str, Any]]:
     return {k: dict(v) for k, v in _LAST_SELECTION.items()}
 
 
+def _missing_real_engine(stage: str, module: str, engine: str) -> EngineUnavailableError:
+    return EngineUnavailableError(
+        f"{module!r} is not installed; pass force_mock=True for explicit mock mode",
+        stage=stage,
+        engine=engine,
+    )
+
+
 def select_separation(
     *,
     force_mock: bool = False,
     backend: str | None = None,
     **_ignored: Any,
 ) -> SourceSeparationEngine:
-    if force_mock or not _have_module("audio_separator"):
-        _record(
-            "separation",
-            "mock",
-            False,
-            "audio_separator not installed" if not force_mock else "force_mock",
-        )
+    if force_mock:
+        _record("separation", "mock", False, "force_mock")
         return MockSourceSeparationEngine()
-    try:
-        from titan_chordpro.engines.separation.htdemucs import HtdemucsEngine
+    if not _have_module("audio_separator"):
+        raise _missing_real_engine("separation", "audio_separator", "htdemucs_ft")
+    from titan_chordpro.engines.separation.htdemucs import HtdemucsEngine
 
-        engine = HtdemucsEngine(backend=backend)
-        _record("separation", "htdemucs_ft", True, "audio_separator importable")
-        return engine
-    except EngineUnavailableError as exc:
-        _record("separation", "mock", False, f"htdemucs init failed: {exc}")
-        return MockSourceSeparationEngine()
+    engine = HtdemucsEngine(backend=backend)
+    _record("separation", "htdemucs_ft", True, "audio_separator importable")
+    return engine
 
 
 def select_transcription(
@@ -87,23 +88,16 @@ def select_transcription(
     model_id: str = "base",
     **_ignored: Any,
 ) -> TranscriptionEngine:
-    if force_mock or not _have_module("pywhispercpp"):
-        _record(
-            "transcription",
-            "mock",
-            False,
-            "pywhispercpp not installed" if not force_mock else "force_mock",
-        )
+    if force_mock:
+        _record("transcription", "mock", False, "force_mock")
         return MockTranscriptionEngine()
-    try:
-        from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
+    if not _have_module("pywhispercpp"):
+        raise _missing_real_engine("transcription", "pywhispercpp", "whisper_cpp")
+    from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
 
-        engine = WhisperCppEngine(model_id=model_id)
-        _record("transcription", "whisper_cpp", True, "pywhispercpp importable")
-        return engine
-    except EngineUnavailableError as exc:
-        _record("transcription", "mock", False, f"whisper_cpp init failed: {exc}")
-        return MockTranscriptionEngine()
+    engine = WhisperCppEngine(model_id=model_id)
+    _record("transcription", "whisper_cpp", True, "pywhispercpp importable")
+    return engine
 
 
 def select_alignment(
@@ -112,23 +106,16 @@ def select_alignment(
     backend: str | None = None,
     **_ignored: Any,
 ) -> AlignmentEngine:
-    if force_mock or not _have_module("torchaudio"):
-        _record(
-            "alignment",
-            "mock",
-            False,
-            "torchaudio not installed" if not force_mock else "force_mock",
-        )
+    if force_mock:
+        _record("alignment", "mock", False, "force_mock")
         return MockAlignmentEngine()
-    try:
-        from titan_chordpro.engines.alignment.torchaudio_align import TorchaudioAlignEngine
+    if not _have_module("torchaudio"):
+        raise _missing_real_engine("alignment", "torchaudio", "torchaudio_align")
+    from titan_chordpro.engines.alignment.torchaudio_align import TorchaudioAlignEngine
 
-        engine = TorchaudioAlignEngine(backend=backend)
-        _record("alignment", "torchaudio_align", True, "torchaudio importable")
-        return engine
-    except EngineUnavailableError as exc:
-        _record("alignment", "mock", False, f"torchaudio_align init failed: {exc}")
-        return MockAlignmentEngine()
+    engine = TorchaudioAlignEngine(backend=backend)
+    _record("alignment", "torchaudio_align", True, "torchaudio importable")
+    return engine
 
 
 def select_chord_recognition(
@@ -136,23 +123,16 @@ def select_chord_recognition(
     force_mock: bool = False,
     **_ignored: Any,
 ) -> ChordRecognitionEngine:
-    if force_mock or not _have_module("chord_extractor"):
-        _record(
-            "chord_recognition",
-            "mock",
-            False,
-            "chord_extractor not installed" if not force_mock else "force_mock",
-        )
+    if force_mock:
+        _record("chord_recognition", "mock", False, "force_mock")
         return MockChordRecognitionEngine()
-    try:
-        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+    if not _have_module("chord_extractor"):
+        raise _missing_real_engine("chord_recognition", "chord_extractor", "chordino")
+    from titan_chordpro.engines.chord.chordino import ChordinoEngine
 
-        engine = ChordinoEngine()
-        _record("chord_recognition", "chordino", True, "chord_extractor importable")
-        return engine
-    except EngineUnavailableError as exc:
-        _record("chord_recognition", "mock", False, f"chordino init failed: {exc}")
-        return MockChordRecognitionEngine()
+    engine = ChordinoEngine()
+    _record("chord_recognition", "chordino", True, "chord_extractor importable")
+    return engine
 
 
 def select_beat_tracking(
@@ -161,23 +141,21 @@ def select_beat_tracking(
     backend: str | None = None,
     **_ignored: Any,
 ) -> BeatTrackingEngine:
-    if force_mock or not _have_module("beat_this"):
-        _record(
-            "beat_tracking",
-            "mock",
-            False,
-            "beat_this not installed" if not force_mock else "force_mock",
-        )
+    if force_mock:
+        _record("beat_tracking", "mock", False, "force_mock")
         return MockBeatTrackingEngine()
-    try:
-        from titan_chordpro.engines.beat.beatthis import BeatThisEngine
+    if not _have_module("beat_this"):
+        raise _missing_real_engine("beat_tracking", "beat_this", "beat_this")
+    from titan_chordpro.engines.beat.beatthis import BeatThisEngine
 
-        engine = BeatThisEngine(backend=backend)
-        _record("beat_tracking", "beat_this", True, "beat_this importable")
-        return engine
-    except EngineUnavailableError as exc:
-        _record("beat_tracking", "mock", False, f"beatthis init failed: {exc}")
-        return MockBeatTrackingEngine()
+    engine = BeatThisEngine(backend=backend)
+    _record("beat_tracking", "beat_this", True, "beat_this importable")
+    return engine
+
+
+def _normalize_lang(lang: str) -> str:
+    """Strip region suffix and lowercase: pt-BR → pt, en_US → en."""
+    return lang.split("-", 1)[0].split("_", 1)[0].lower()
 
 
 def select_syllabification(
@@ -186,44 +164,30 @@ def select_syllabification(
     force_mock: bool = False,
     **_ignored: Any,
 ) -> SyllabificationEngine:
-    if language == "pt":
-        if force_mock or not _have_module("gruut"):
-            _record(
-                "syllabification",
-                "mock",
-                False,
-                "gruut not installed" if not force_mock else "force_mock",
-            )
-            return MockSyllabificationEngine(language=language)
-        try:
-            from titan_chordpro.engines.lang.portuguese import PortugueseSyllabifierEngine
+    if force_mock:
+        _record("syllabification", "mock", False, "force_mock")
+        return MockSyllabificationEngine(language=language)
 
-            pt_engine: SyllabificationEngine = PortugueseSyllabifierEngine()
-            _record("syllabification", "gruut_pt", True, "gruut importable")
-            return pt_engine
-        except EngineUnavailableError as exc:
-            _record("syllabification", "mock", False, f"gruut_pt init failed: {exc}")
-            return MockSyllabificationEngine(language=language)
+    base = _normalize_lang(language)
+    if base == "pt":
+        if not _have_module("gruut"):
+            raise _missing_real_engine("syllabification", "gruut", "gruut_pt")
+        from titan_chordpro.engines.lang.portuguese import PortugueseSyllabifierEngine
 
-    if language == "en":
-        if force_mock or not _have_module("g2p_en"):
-            _record(
-                "syllabification",
-                "mock",
-                False,
-                "g2p_en not installed" if not force_mock else "force_mock",
-            )
-            return MockSyllabificationEngine(language=language)
-        try:
-            from titan_chordpro.engines.lang.english import EnglishSyllabifierEngine
+        pt_engine: SyllabificationEngine = PortugueseSyllabifierEngine()
+        _record("syllabification", "gruut_pt", True, "gruut importable")
+        return pt_engine
 
-            en_engine: SyllabificationEngine = EnglishSyllabifierEngine()
-            _record("syllabification", "g2p_en", True, "g2p_en importable")
-            return en_engine
-        except EngineUnavailableError as exc:
-            _record("syllabification", "mock", False, f"g2p_en init failed: {exc}")
-            return MockSyllabificationEngine(language=language)
+    if base == "en":
+        if not _have_module("g2p_en"):
+            raise _missing_real_engine("syllabification", "g2p_en", "g2p_en")
+        from titan_chordpro.engines.lang.english import EnglishSyllabifierEngine
 
-    # Unknown language → always mock with passed language for parent tracking.
+        en_engine: SyllabificationEngine = EnglishSyllabifierEngine()
+        _record("syllabification", "g2p_en", True, "g2p_en importable")
+        return en_engine
+
+    # Unknown language → mock with passed language for parent tracking.
+    # Not raising: unknown-language is a content/data classification, not a missing dependency.
     _record("syllabification", "mock", False, f"unknown language {language!r}; using mock")
     return MockSyllabificationEngine(language=language)
