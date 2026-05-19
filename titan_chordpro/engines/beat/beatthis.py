@@ -23,10 +23,16 @@ _BEAT_THIS_VERSION_FALLBACK = "0.1.0"
 _log = logging.getLogger(__name__)
 
 
-def _load_file2beats(backend: Backend) -> Any:
-    """Import beat_this lazily; raise EngineUnavailableError if missing."""
+def _load_audio2beats(backend: Backend) -> Any:
+    """Import beat_this lazily; raise EngineUnavailableError if missing.
+
+    Phase C T70 iter: use Audio2Beats (in-memory ndarray API) instead of
+    File2Beats (which delegates to torchaudio.load → torchcodec → ffmpeg 4
+    ABI; fails on Homebrew ffmpeg 8). The wrapper loads audio via librosa
+    and passes the ndarray + sample rate to Audio2Beats.__call__.
+    """
     try:
-        from beat_this.inference import File2Beats
+        from beat_this.inference import Audio2Beats
     except ImportError as exc:
         raise EngineUnavailableError(
             "beat_this is not installed; install with `pip install -e .[mac]` "
@@ -36,8 +42,7 @@ def _load_file2beats(backend: Backend) -> Any:
         ) from exc
 
     device = "cpu" if backend == "cpu" else backend
-    # File2Beats accepts a 'device' string ("cuda", "mps", or "cpu").
-    return File2Beats(device=device)
+    return Audio2Beats(device=device)
 
 
 class BeatThisEngine:
@@ -49,7 +54,7 @@ class BeatThisEngine:
 
     def __init__(self, backend: str | None = None) -> None:
         self._backend: Backend = detect_backend(prefer=backend)
-        self._file2beats = _load_file2beats(self._backend)
+        self._audio2beats = _load_audio2beats(self._backend)
 
     @property
     def info(self) -> EngineInfo:
@@ -75,11 +80,18 @@ class BeatThisEngine:
     def track(self, audio: Path) -> BeatGrid:
         """Run BeatThis on the audio file and return a BeatGrid.
 
-        Raises BeatTrackingError when the model returns no beats (defensive —
-        fusion engine cannot proceed without beats).
+        Phase C T70 iter: load via librosa (handles m4a/opus via ffmpeg
+        fallback) and feed ndarray to Audio2Beats — bypasses torchaudio
+        2.11+ torchcodec ffmpeg ABI mismatch.
+
+        Raises BeatTrackingError when the model returns no beats.
         """
         try:
-            beats, downbeats = self._file2beats(str(audio))
+            import librosa
+
+            # BeatThis expects 22050 Hz mono per beat_this.utils.load_audio.
+            signal, sr = librosa.load(str(audio), sr=22050, mono=True)
+            beats, downbeats = self._audio2beats(signal, sr)
         except Exception as exc:  # noqa: BLE001 — wrap third-party error
             raise BeatTrackingError(
                 f"beat_this inference failed on {audio.name}",

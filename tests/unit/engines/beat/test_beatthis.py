@@ -64,9 +64,11 @@ class TestBeatThisEngineTrack:
 
         engine = BeatThisEngine.__new__(BeatThisEngine)
         engine._backend = "cpu"
-        engine._file2beats = MagicMock(return_value=(fake_beats, fake_downbeats))
+        engine._audio2beats = MagicMock(return_value=(fake_beats, fake_downbeats))
 
-        grid = engine.track(fake_audio)
+        # Phase C T70 iter: track() now calls librosa.load before audio2beats.
+        with patch("librosa.load", return_value=([0.0] * 1024, 22050)):
+            grid = engine.track(fake_audio)
         assert grid.beats == fake_beats
         assert grid.downbeat_indices == [0, 3]
         assert grid.bpm == pytest.approx(120.0, abs=2.0)
@@ -78,7 +80,8 @@ class TestBeatThisEngineTrack:
 
         engine = BeatThisEngine.__new__(BeatThisEngine)
         engine._backend = "cpu"
-        engine._file2beats = MagicMock(return_value=([], []))
+        engine._audio2beats = MagicMock(return_value=([], []))
 
-        with pytest.raises(BeatTrackingError, match="empty"):
-            engine.track(tmp_path / "x.wav")
+        with patch("librosa.load", return_value=([0.0] * 1024, 22050)):
+            with pytest.raises(BeatTrackingError, match="empty"):
+                engine.track(tmp_path / "x.wav")
