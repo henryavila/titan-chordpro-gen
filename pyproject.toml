@@ -33,7 +33,7 @@ dev = [
 mac = [
     "torch>=2.1",
     "torchaudio>=2.1",
-    "python-audio-separator>=0.17",
+    "audio-separator>=0.17",
     "pywhispercpp>=1.2",
     "beat-this @ git+https://github.com/CPJKU/beat_this.git@main",
     "chord-extractor>=0.1.3,<0.2",
@@ -47,7 +47,7 @@ mac = [
 cuda = [
     "torch>=2.1",
     "torchaudio>=2.1",
-    "python-audio-separator>=0.17",
+    "audio-separator>=0.17",
     "pywhispercpp>=1.2",
     "beat-this @ git+https://github.com/CPJKU/beat_this.git@main",
     "chord-extractor>=0.1.3,<0.2",
@@ -75,6 +75,10 @@ packages = ["titan_chordpro"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.uv.extra-build-dependencies]
+# vamp's source dist doesn't declare numpy as a build dep; tell uv.
+vamp = ["numpy"]
 
 [tool.ruff]
 line-length = 100

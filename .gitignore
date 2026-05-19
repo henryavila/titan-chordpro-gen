@@ -47,3 +47,4 @@ chordpros.csv/
 benchmarks/reports/*
 !benchmarks/reports/README.md
 !benchmarks/reports/.gitignore
+.venv-py312/
