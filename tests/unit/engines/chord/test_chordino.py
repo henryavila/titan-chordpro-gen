@@ -30,10 +30,11 @@ class TestChordinoEngineInit:
         assert info.name == "chordino"
         assert info.backend == "cpu"
         assert engine.vocabulary == "majmin"
-        # Chordino does NOT decode inversions natively. Bass is supplied
-        # separately when the bass stem is passed; the wrapper synthesizes
-        # slash chords via bass_note.
-        assert engine.supports_inversions is False
+        # Phase C T64: F-004 active. Chordino still does NOT decode
+        # inversions natively, but the wrapper now synthesizes slash
+        # chords via bass_chroma.extract_bass_note when a bass_stem is
+        # provided to detect().
+        assert engine.supports_inversions is True
 
 
 @pytest.mark.unit
@@ -153,3 +154,141 @@ class TestChordinoEngineDetect:
 
         with pytest.raises(ChordRecognitionError, match="chordino"):
             engine.detect(audio)
+
+
+class TestBassNoteIntegration:
+    """F-004: ChordinoEngine emits bass_note when bass_chroma detects an inversion."""
+
+    def test_supports_inversions_is_true(self) -> None:
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        with patch("titan_chordpro.engines.chord.chordino._load_extractor"):
+            engine = ChordinoEngine()
+        assert engine.supports_inversions is True
+
+    def test_no_bass_stem_leaves_bass_note_none(self) -> None:
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord_a = MagicMock()
+        chord_a.chord = "C:maj"
+        chord_a.timestamp = 0.0
+        chord_b = MagicMock()
+        chord_b.chord = "G:maj"
+        chord_b.timestamp = 2.0
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord_a, chord_b]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch(
+                "titan_chordpro.engines.chord.chordino._probe_duration",
+                return_value=4.0,
+            ):
+                engine = ChordinoEngine()
+                events = engine.detect(Path("fake.wav"), bass_stem=None)
+        assert all(e.bass_note is None for e in events)
+
+    def test_bass_note_emitted_when_chroma_differs_from_root(self, tmp_path: Path) -> None:
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord = MagicMock()
+        chord.chord = "F:maj"
+        chord.timestamp = 0.0
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"\x00" * 100)
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch("titan_chordpro.engines.chord.chordino._probe_duration", return_value=4.0):
+                with patch(
+                    "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                    return_value=("A", 0.85),
+                ):
+                    engine = ChordinoEngine()
+                    events = engine.detect(Path("fake.wav"), bass_stem=bass)
+
+        assert len(events) == 1
+        assert events[0].symbol == "F"
+        assert events[0].bass_note == "A"
+
+    def test_bass_note_suppressed_when_matches_root(self, tmp_path: Path) -> None:
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord = MagicMock()
+        chord.chord = "F:maj"
+        chord.timestamp = 0.0
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"\x00" * 100)
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch("titan_chordpro.engines.chord.chordino._probe_duration", return_value=4.0):
+                with patch(
+                    "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                    return_value=("F", 0.85),
+                ):
+                    engine = ChordinoEngine()
+                    events = engine.detect(Path("fake.wav"), bass_stem=bass)
+
+        assert events[0].bass_note is None
+
+    def test_bass_note_suppressed_when_low_confidence(self, tmp_path: Path) -> None:
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord = MagicMock()
+        chord.chord = "C:maj"
+        chord.timestamp = 0.0
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"\x00" * 100)
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch("titan_chordpro.engines.chord.chordino._probe_duration", return_value=4.0):
+                with patch(
+                    "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                    return_value=(None, 0.3),
+                ):
+                    engine = ChordinoEngine()
+                    events = engine.detect(Path("fake.wav"), bass_stem=bass)
+
+        assert events[0].bass_note is None
+
+    def test_bass_note_chord_with_quality_extracts_root(self, tmp_path: Path) -> None:
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord = MagicMock()
+        chord.chord = "G:min7"
+        chord.timestamp = 0.0
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"\x00" * 100)
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch("titan_chordpro.engines.chord.chordino._probe_duration", return_value=4.0):
+                with patch(
+                    "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                    return_value=("D", 0.8),
+                ):
+                    engine = ChordinoEngine()
+                    events = engine.detect(Path("fake.wav"), bass_stem=bass)
+
+        assert events[0].symbol == "Gm7"
+        assert events[0].bass_note == "D"
