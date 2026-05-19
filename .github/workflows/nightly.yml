@@ -1,0 +1,66 @@
+name: nightly-corpus
+
+on:
+  schedule:
+    # 06:00 UTC daily — past midnight Brazil (Henry's timezone)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      sample_size:
+        description: 'Number of songs to validate (max 151)'
+        required: false
+        default: '151'
+
+jobs:
+  validate:
+    name: Tier 2.5 — full corpus validation
+    runs-on: macos-14
+    timeout-minutes: 360       # 6h cap; full 151 expected ~3-5h
+    continue-on-error: true    # informational until v0.1.0-c0 ships
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[mac,validation]"
+
+      - name: Cache audio downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/titan-chordpro/audio
+          key: titan-corpus-audio-v1
+
+      - name: Cache transcribe stages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/titan-chordpro/cache
+          key: titan-stage-cache-${{ github.sha }}
+
+      - name: Fetch corpus
+        env:
+          CORPUS_URL: ${{ secrets.CORPUS_URL }}
+        run: |
+          if [ -z "$CORPUS_URL" ]; then
+            echo "CORPUS_URL secret not set — skipping corpus fetch (job will skip)"
+            exit 0
+          fi
+          mkdir -p chordpros.csv
+          curl -fsSL "$CORPUS_URL" -o chordpros.csv/songs.csv
+
+      - name: Run full corpus validation
+        env:
+          BENCHMARKS_SAMPLE_SIZE: ${{ github.event.inputs.sample_size || '151' }}
+        run: pytest -m corpus_full -v --log-cli-level=INFO
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: top-divergences
+          path: benchmarks/reports/
+          retention-days: 30
