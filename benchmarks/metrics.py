@@ -108,6 +108,20 @@ def chord_events_to_intervals(
     return intervals, labels
 
 
+_SLASH_BASS_RE = re.compile(r"/[A-G][#b]?$")
+
+
+def _strip_slash_for_majmin(label: str) -> str:
+    """mir_eval.chord.majmin treats slash bass as out-of-vocabulary when
+    the bass is an absolute pitch class (e.g., 'E:maj/G#'). Strip the
+    bass for the scoring pass — bass info is preserved in the original
+    label trail and can be re-introduced when v0.2 supports inversions.
+
+    Phase C T70 iter (corpus 'Tua vontade': 'E/G#' / 'G/B' etc).
+    """
+    return _SLASH_BASS_RE.sub("", label)
+
+
 def compute_wcsr_majmin(
     ref_intervals: list[tuple[float, float]],
     ref_labels: list[str],
@@ -124,13 +138,18 @@ def compute_wcsr_majmin(
     if not ref_intervals or not est_intervals:
         return 0.0
 
+    # Strip slash-bass from labels for majmin scoring (mir_eval rejects
+    # E:maj/G# etc — majmin vocab is root+quality only).
+    ref_labels_majmin = [_strip_slash_for_majmin(lbl) for lbl in ref_labels]
+    est_labels_majmin = [_strip_slash_for_majmin(lbl) for lbl in est_labels]
+
     ref_intervals_np = np.array(ref_intervals)
     est_intervals_np = np.array(est_intervals)
 
     end = float(ref_intervals_np[-1, 1])
     est_intervals_np, est_labels_clipped = mir_eval.util.adjust_intervals(
         est_intervals_np,
-        list(est_labels),
+        list(est_labels_majmin),
         t_min=0.0,
         t_max=end,
         start_label="N",
@@ -138,7 +157,7 @@ def compute_wcsr_majmin(
     )
 
     merged_intervals, ref_aligned, est_aligned = mir_eval.util.merge_labeled_intervals(
-        ref_intervals_np, list(ref_labels), est_intervals_np, est_labels_clipped
+        ref_intervals_np, list(ref_labels_majmin), est_intervals_np, est_labels_clipped
     )
     durations = mir_eval.util.intervals_to_durations(merged_intervals)
     scores = mir_eval.chord.majmin(ref_aligned, est_aligned)
