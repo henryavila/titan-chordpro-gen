@@ -245,14 +245,19 @@ class TestSanitizeForMms:
         "raw,expected",
         [
             ("hello world", "helloworld"),
-            ("Tudo que há de bom em mim", "Tudoquehádebomemmim"),
-            ("Senhor,", "Senhor"),
+            # PT-BR diacritics transliterated to ASCII (MMS_FA is ASCII-only).
+            ("Tudo que há de bom em mim", "tudoquehadebomemmim"),
+            ("Senhor,", "senhor"),
+            ("Coração", "coracao"),
+            ("Não", "nao"),
+            ("É", "e"),
             ("a-b-c", "abc"),
             ("a'b", "ab"),
             ("123 abc", "abc"),
             ("", ""),
             ("   ", ""),
-            ("é à õ ç", "éàõç"),  # PT-BR accents preserved
+            # Output is always lowercased (MMS dict is lowercase).
+            ("HELLO", "hello"),
         ],
     )
     def test_sanitize(self, raw: str, expected: str) -> None:

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import math
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -56,17 +57,25 @@ _log = logging.getLogger(__name__)
 
 
 def _sanitize_for_mms(text: str) -> str:
-    """Strip characters MMS_FA's tokenizer doesn't accept (whitespace,
-    punctuation, brackets, digits). Preserves Unicode letters including
-    PT-BR accents (á, é, ã, õ, ç, ...) since the multilingual MMS
-    tokenizer covers them.
+    """Strip characters MMS_FA's tokenizer doesn't accept.
 
-    Phase C T70 iter: whisper.cpp returns multi-word segments with spaces
-    and occasional punctuation; tokenizing those directly raises KeyError
-    on ' ' or ',' or '.'. Sanitizing at the alignment-wrapper boundary
-    keeps the upstream transcription engine's API unchanged.
+    MMS_FA's dictionary is ASCII-only (no diacritics, no punctuation, no
+    digits, no whitespace). For PT-BR alignment, we must transliterate:
+      'Coração' -> 'coracao'  (ã -> a, ç -> c after NFD decomposition)
+      'Não'     -> 'nao'
+      'É'       -> 'e'
+      'Hello world,' -> 'helloworld'
+
+    Phase C T70 iter: whisper.cpp returns multi-word segments with spaces,
+    punctuation, and PT-BR diacritics; tokenizing directly raised KeyError
+    on ' ' / 'ã' / 'ç'. Sanitizing at the alignment-wrapper boundary keeps
+    the upstream transcription engine's API unchanged.
     """
-    return "".join(c for c in text if c.isalpha())
+    # NFD splits composed chars: 'á' -> 'a' + combining-acute-accent.
+    nfd = unicodedata.normalize("NFD", text)
+    # Keep ASCII letters only (drops combining marks, punctuation, digits,
+    # whitespace, non-Latin scripts).
+    return "".join(c for c in nfd if c.isascii() and c.isalpha()).lower()
 
 
 def _load_bundle(backend: Backend) -> Any:
@@ -294,33 +303,39 @@ class TorchaudioAlignEngine:
         # forward on 4-5 min audio exhausts 11+ GiB of MPS activations.
         emissions = self._generate_emissions(waveform_1d)
 
-        # Build target token sequence by tokenizing each word individually.
-        # Phase C T70 iter: whisper.cpp returns multi-word segments ("Tudo
-        # que há de bom em mim") and the MMS tokenizer has no entry for
-        # space/punctuation → KeyError. Sanitize each segment by stripping
-        # characters outside the tokenizer's alphabet before tokenizing.
-        # The aligner still receives one entry per WordEvent (preserving
-        # the word_idx contract), but multi-word segments collapse to
-        # their letter-only form for tokenization purposes — alignment
-        # boundaries land on segment endpoints, not internal word breaks.
-        tokens_per_word: list[list[int]] = []
-        for w in words:
-            sanitized = _sanitize_for_mms(w.text.lower())
-            if not sanitized:
-                tokens_per_word.append([])
-                continue
-            try:
-                tokens_per_word.append(list(self._tokenizer(sanitized)))
-            except KeyError as exc:
-                # Belt-and-suspenders: skip a word whose surviving chars
-                # somehow still hit a vocab miss, rather than crash the run.
-                _log.warning(
-                    "tokenizer rejected %r (sanitized to %r); skipping (cause=%s)",
-                    w.text,
-                    sanitized,
-                    exc,
-                )
-                tokens_per_word.append([])
+        # Build target token sequence (Phase C T70 iter).
+        #
+        # MMS_FA tokenizer API: __call__(transcript: List[str]) where each
+        # str is ONE word. Returns List[List[int]] — token IDs per word.
+        # Calling it with a single string instead would make it iterate
+        # char-by-char and return a nested list shape that crashes
+        # forced_align with 'targets must be 2-D'.
+        #
+        # MMS_FA's dictionary is ASCII-only; PT-BR diacritics + whitespace
+        # + punctuation must be stripped via _sanitize_for_mms before
+        # tokenization (NFD transliteration + ASCII letter filter).
+        sanitized_words = [_sanitize_for_mms(w.text) for w in words]
+        # Pair each sanitized word with its original index so we can
+        # reconstruct tokens_per_word with [] entries for skipped words.
+        non_empty_pairs = [(i, s) for i, s in enumerate(sanitized_words) if s]
+        if not non_empty_pairs:
+            return []
+        non_empty_indices = [i for i, _ in non_empty_pairs]
+        non_empty_words = [s for _, s in non_empty_pairs]
+
+        try:
+            compact_tokens: list[list[int]] = self._tokenizer(non_empty_words)
+        except KeyError as exc:
+            _log.warning(
+                "MMS tokenizer rejected character in sanitized words "
+                "(cause=%s); skipping alignment for this audio",
+                exc,
+            )
+            return []
+
+        tokens_per_word: list[list[int]] = [[] for _ in words]
+        for orig_idx, toks in zip(non_empty_indices, compact_tokens, strict=True):
+            tokens_per_word[orig_idx] = list(toks)
         target_tokens: list[int] = [t for word_tokens in tokens_per_word for t in word_tokens]
 
         if not target_tokens:
