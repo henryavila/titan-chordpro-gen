@@ -55,6 +55,20 @@ _CHUNK_CONTEXT_SEC = 2.0
 _log = logging.getLogger(__name__)
 
 
+def _sanitize_for_mms(text: str) -> str:
+    """Strip characters MMS_FA's tokenizer doesn't accept (whitespace,
+    punctuation, brackets, digits). Preserves Unicode letters including
+    PT-BR accents (á, é, ã, õ, ç, ...) since the multilingual MMS
+    tokenizer covers them.
+
+    Phase C T70 iter: whisper.cpp returns multi-word segments with spaces
+    and occasional punctuation; tokenizing those directly raises KeyError
+    on ' ' or ',' or '.'. Sanitizing at the alignment-wrapper boundary
+    keeps the upstream transcription engine's API unchanged.
+    """
+    return "".join(c for c in text if c.isalpha())
+
+
 def _load_bundle(backend: Backend) -> Any:
     """Import torchaudio + load MMS bundle. Returns (model, tokenizer, blank_id, device)."""
     try:
@@ -281,7 +295,32 @@ class TorchaudioAlignEngine:
         emissions = self._generate_emissions(waveform_1d)
 
         # Build target token sequence by tokenizing each word individually.
-        tokens_per_word: list[list[int]] = [list(self._tokenizer(w.text.lower())) for w in words]
+        # Phase C T70 iter: whisper.cpp returns multi-word segments ("Tudo
+        # que há de bom em mim") and the MMS tokenizer has no entry for
+        # space/punctuation → KeyError. Sanitize each segment by stripping
+        # characters outside the tokenizer's alphabet before tokenizing.
+        # The aligner still receives one entry per WordEvent (preserving
+        # the word_idx contract), but multi-word segments collapse to
+        # their letter-only form for tokenization purposes — alignment
+        # boundaries land on segment endpoints, not internal word breaks.
+        tokens_per_word: list[list[int]] = []
+        for w in words:
+            sanitized = _sanitize_for_mms(w.text.lower())
+            if not sanitized:
+                tokens_per_word.append([])
+                continue
+            try:
+                tokens_per_word.append(list(self._tokenizer(sanitized)))
+            except KeyError as exc:
+                # Belt-and-suspenders: skip a word whose surviving chars
+                # somehow still hit a vocab miss, rather than crash the run.
+                _log.warning(
+                    "tokenizer rejected %r (sanitized to %r); skipping (cause=%s)",
+                    w.text,
+                    sanitized,
+                    exc,
+                )
+                tokens_per_word.append([])
         target_tokens: list[int] = [t for word_tokens in tokens_per_word for t in word_tokens]
 
         if not target_tokens:

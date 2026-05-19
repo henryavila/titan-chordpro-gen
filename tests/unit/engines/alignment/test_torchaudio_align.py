@@ -234,3 +234,28 @@ class TestChunkedEmissions:
         # Final length ≈ 2*1500 - 1250 = 1750 frames.
         assert fake_model.call_count == 2
         assert out.shape[1] == 1750
+
+
+@pytest.mark.unit
+class TestSanitizeForMms:
+    """Phase C T70 iter: whisper returns multi-word segments with spaces/
+    punctuation that crash the MMS tokenizer. Sanitizer strips them."""
+
+    @pytest.mark.parametrize(
+        "raw,expected",
+        [
+            ("hello world", "helloworld"),
+            ("Tudo que há de bom em mim", "Tudoquehádebomemmim"),
+            ("Senhor,", "Senhor"),
+            ("a-b-c", "abc"),
+            ("a'b", "ab"),
+            ("123 abc", "abc"),
+            ("", ""),
+            ("   ", ""),
+            ("é à õ ç", "éàõç"),  # PT-BR accents preserved
+        ],
+    )
+    def test_sanitize(self, raw: str, expected: str) -> None:
+        from titan_chordpro.engines.alignment.torchaudio_align import _sanitize_for_mms
+
+        assert _sanitize_for_mms(raw) == expected
