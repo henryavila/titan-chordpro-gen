@@ -184,8 +184,11 @@ class MockSyllabificationEngine:
         phonemes: list[PhonemeEvent] | None = None,
     ) -> list[SyllableEvent]:
         result: list[SyllableEvent] = []
-        for word in words:
-            result.extend(syllabify_word_orthographic(word, self._language))
+        for idx, word in enumerate(words):
+            word_syls = syllabify_word_orthographic(word, self._language)
+            for syl in word_syls:
+                object.__setattr__(syl, "parent_word_idx", idx)
+            result.extend(word_syls)
         return result
 
     @property
