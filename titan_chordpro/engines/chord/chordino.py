@@ -92,9 +92,13 @@ class ChordinoEngine:
 
     @property
     def supports_inversions(self) -> bool:
-        # Chordino's chord-class output excludes inversions; we synthesize
-        # slash chords only when a bass stem is provided AND a bass-detection
-        # pass is run (Phase C — out of scope here).
+        # Spec §406 mandates v0.1 Chordino "vocab=majmin + bass note → derive
+        # inversions". This v0.1.0-b1 release ships without bass-stem chroma
+        # analysis — slash chords F/A, G/B, C/E in the PT-BR corpus collapse
+        # to root position. Codex cross-model review F-004 (2026-05-18-2116)
+        # flags this as a known v0.1 gap; implementation moves to Phase C
+        # alongside the validation harness (bass chroma analysis requires
+        # librosa/numpy + per-interval pitch detection, not a single edit).
         return False
 
     def detect(
