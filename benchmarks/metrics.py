@@ -14,6 +14,8 @@ _TITAN_TO_MIR: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^([A-G][#b]?)m7/([A-G][#b]?)$"), r"\1:min7/\2"),
     # Slash chord with maj7 quality: "Cmaj7/E" → "C:maj7/E"
     (re.compile(r"^([A-G][#b]?)maj7/([A-G][#b]?)$"), r"\1:maj7/\2"),
+    # Brazilian "7M" notation for maj7 (e.g., F7M = Fmaj7); slash variant first
+    (re.compile(r"^([A-G][#b]?)7M/([A-G][#b]?)$"), r"\1:maj7/\2"),
     # Slash chord with min quality: "Am/C" → "A:min/C"
     (re.compile(r"^([A-G][#b]?)m/([A-G][#b]?)$"), r"\1:min/\2"),
     # Slash chord plain major: "F/A" → "F:maj/A"
@@ -22,6 +24,13 @@ _TITAN_TO_MIR: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^([A-G][#b]?)m7$"), r"\1:min7"),
     # Quality maj7: "Cmaj7" → "C:maj7"
     (re.compile(r"^([A-G][#b]?)maj7$"), r"\1:maj7"),
+    # Brazilian "7M" notation for maj7 (e.g., F7M, C7M)
+    (re.compile(r"^([A-G][#b]?)7M$"), r"\1:maj7"),
+    # Suspended chords — mir_eval majmin rejects sus2/sus4; collapse to
+    # root major for majmin-vocabulary scoring (suspended ≈ major in coarse
+    # comparison). Handle slash variant first.
+    (re.compile(r"^([A-G][#b]?)sus[24]?/([A-G][#b]?)$"), r"\1:maj/\2"),
+    (re.compile(r"^([A-G][#b]?)sus[24]?$"), r"\1:maj"),
     # Quality dim: "F#dim" → "F#:dim"
     (re.compile(r"^([A-G][#b]?)dim$"), r"\1:dim"),
     # Quality min: "Gm" → "G:min"

@@ -38,9 +38,10 @@ class TestWhisperCppEngineInit:
 class TestWhisperCppEngineTranscribe:
     def test_transcribe_builds_words_only(self, tmp_path: Path) -> None:
         """whisper.cpp output → list[WordEvent], phonemes=None."""
+        import numpy as np
+
         from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
 
-        # Fake pywhispercpp Segment-like with t0/t1 in centiseconds and text.
         seg = MagicMock()
         seg.t0 = 100  # 1.00s (whisper.cpp uses centiseconds)
         seg.t1 = 150  # 1.50s
@@ -53,7 +54,9 @@ class TestWhisperCppEngineTranscribe:
         engine._model_id = "base"
         engine._model = fake_model
 
-        result = engine.transcribe(tmp_path / "vocals.wav", language="en")
+        # Phase C T70 iter: wrapper now resamples via librosa.load; patch it.
+        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+            result = engine.transcribe(tmp_path / "vocals.wav", language="en")
 
         assert result.phonemes is None
         assert len(result.words) == 1
@@ -67,6 +70,8 @@ class TestWhisperCppEngineTranscribe:
 
     def test_transcribe_empty_audio_returns_empty_words(self, tmp_path: Path) -> None:
         """No segments returned → words=[], phonemes=None, no exception."""
+        import numpy as np
+
         from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
 
         fake_model = MagicMock()
@@ -76,7 +81,8 @@ class TestWhisperCppEngineTranscribe:
         engine._model_id = "base"
         engine._model = fake_model
 
-        result = engine.transcribe(tmp_path / "silent.wav")
+        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+            result = engine.transcribe(tmp_path / "silent.wav")
 
         assert result.words == []
         assert result.phonemes is None

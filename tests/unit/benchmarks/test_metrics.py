@@ -22,6 +22,15 @@ class TestToMirEvalChord:
             ("F/A", "F:maj/A"),
             ("Gm/Bb", "G:min/Bb"),
             ("N", "N"),
+            # Brazilian "7M" notation for maj7 (T70 iter)
+            ("F7M", "F:maj7"),
+            ("C7M", "C:maj7"),
+            ("F7M/A", "F:maj7/A"),
+            # Suspended chords collapse to root major (T70 iter — surfaced by corpus song "Entrega")
+            ("Esus", "E:maj"),
+            ("Csus2", "C:maj"),
+            ("Asus4", "A:maj"),
+            ("Esus/B", "E:maj/B"),
         ],
     )
     def test_to_mir_eval_chord(self, titan: str, expected: str) -> None:

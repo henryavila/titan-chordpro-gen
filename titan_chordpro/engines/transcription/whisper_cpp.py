@@ -68,8 +68,16 @@ class WhisperCppEngine:
         if language is not None:
             kwargs["language"] = language
 
+        # whisper.cpp requires 16 kHz mono PCM. htdemucs writes 44.1 kHz
+        # stereo by default; passing the file path directly raises
+        # "WAV file must be 16000 Hz". Resample via librosa (audioread+
+        # ffmpeg fallback for non-WAV inputs) and pass an ndarray.
+        # Phase C T70 iter: discovered when running real corpus samples.
         try:
-            segments = self._model.transcribe(str(vocals), **kwargs)
+            import librosa
+
+            audio_data, _ = librosa.load(str(vocals), sr=16000, mono=True)
+            segments = self._model.transcribe(audio_data, **kwargs)
         except Exception as exc:  # noqa: BLE001
             raise TranscriptionError(
                 f"whisper_cpp transcription failed on {vocals.name}",
