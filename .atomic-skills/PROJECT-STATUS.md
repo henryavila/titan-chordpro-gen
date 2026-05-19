@@ -6,6 +6,7 @@ _Last updated: 2026-05-19T00:00:00Z_
 
 | Slug | Status | Started | Branch | Next Action |
 |------|--------|---------|--------|-------------|
+| titan-phase-c | planning | 2026-05-19 | main | Read docs/superpowers/handoff-to-phase-c.md + answer 5 open scope decisions with Henry, then draft the Phase C plan |
 
 ## Recently Archived
 
