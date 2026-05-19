@@ -2,9 +2,9 @@
 
 > **Living document** — Atualize sempre que mudar status de uma tarefa, terminar uma fase, ou repriorizar. Substitui o `docs/research/00-original-roadmap.md` (artefato histórico de pesquisa inicial).
 >
-> **Última atualização:** 2026-05-17 (Phase B)
-> **Fase atual:** Phase B completa — v0.1.0-b0 tagueado
-> **Próxima milestone:** Phase C (validation harness)
+> **Última atualização:** 2026-05-19 (hot-fix v0.1.0-b1)
+> **Fase atual:** Phase B + Codex hot-fix completos — v0.1.0-b1 tagueado
+> **Próxima milestone:** Phase C (validation harness + F-004 bass-note inversions)
 
 ## Status legend
 
@@ -172,6 +172,7 @@
 | `benchmarks/divergence_ranker.py` (severity scoring CRITICAL/HIGH/MEDIUM/LOW/NEGLIGIBLE) | ⏳ |
 | `.github/workflows/nightly.yml` (cron daily 06:00 UTC) | ⏳ |
 | Tier 2 sample stratification (slash chords, 6/8, melisma, etc.) | ⏳ |
+| **F-004:** Chordino bass-note inversion derivation (spec §406) — chromagram do bass stem | ⏳ Codex-deferred from v0.1.0-b1 |
 
 ### Week 9 — Tier 2 nightly + iteração + polish
 
@@ -295,6 +296,15 @@ Projetos separados deste repo:
 ## Updates log
 
 > Adicione aqui mudanças significativas no roadmap. Mantenha cronológico, mais recente em cima.
+
+### 2026-05-19 (Codex hot-fix v0.1.0-b1)
+- ✅ Cross-model review (gpt-5-codex) do full Phase A+B contra spec consolidado — 9 findings (0B/4C/5M).
+- ✅ 8/9 fixes aplicados: F-001 (export public API), F-002 (fail-fast factory), F-003 (per-line chord span),
+  F-005 (normalize pt-BR/en_US), F-006 (StageConfidence aggregation), F-007 (restore `**engine_overrides`),
+  F-008 (fail-fast hardware backend), F-009 (Mock parent_word_idx parity). 320 passed / 10 skipped.
+- ⏸ F-004 deferred: Chordino bass-note inversion → Phase C alongside corpus harness (needs bass-stem chroma).
+- ✅ `v0.1.0-b1` tagueado (annotated) e pushed.
+- 📌 Próximo: Phase C plan + execução.
 
 ### 2026-05-17 (Phase B)
 - ✅ Phase B completa — 7 engines integrados (BeatThis, htdemucs_ft, whisper.cpp,

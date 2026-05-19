@@ -1,12 +1,13 @@
 ---
 initiative_id: titan-codex-fixes-v0.1.0-b1
 title: Hot-fix v0.1.0-b1 — apply Codex cross-model review findings (full-codebase-vs-spec)
-status: active
+status: archived
 branch: main
 started: 2026-05-18
-last_updated: 2026-05-18T21:30:00Z
+last_updated: 2026-05-19T00:00:00Z
+archived: 2026-05-19
 plan_link: .atomic-skills/reviews/2026-05-18-2116-phase-a-b-full-codebase-vs-spec-codex.md
-next_action: "All 8 fixes applied + pytest green (320 passed / 10 skipped). Awaiting user decision on commit message granularity (one per finding vs single bundle) and tag v0.1.0-b1."
+next_action: "ARCHIVED — v0.1.0-b1 tagged + pushed (254d88b on main). Continue to Phase C (F-004 bass-note + corpus harness)."
 max_stack_depth_warning: 3
 stack: []
 tasks:
@@ -19,7 +20,7 @@ tasks:
   F-007: {title: "Orchestrator: restore **engine_overrides signature (spec §API)", status: done}
   F-008: {title: "Hardware: fail-fast when explicit prefer backend unavailable", status: done}
   F-009: {title: "MockSyllabificationEngine: preserve parent_word_idx", status: done}
-  TAG: {title: "Tag v0.1.0-b1 + update roadmap + archive initiative", status: pending}
+  TAG: {title: "Tag v0.1.0-b1 + update roadmap + archive initiative", status: done}
 parked: []
 emerged: []
 ---
