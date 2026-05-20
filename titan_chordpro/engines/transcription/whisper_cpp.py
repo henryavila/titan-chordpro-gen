@@ -79,7 +79,18 @@ class WhisperCppEngine:
         vocals: Path,
         language: str | None = None,
     ) -> TranscriptionResult:
-        kwargs: dict[str, object] = {}
+        # Phase C T70-iter2 follow-up: ask whisper.cpp for WORD-level
+        # timestamps, not segment-level. Default returns whole phrases as
+        # single "words" (14-19s spans) — placer then has one anchor per
+        # phrase and clumps every chord at the line start. With
+        # token_timestamps + max_len=1 + split_on_word, each WordEvent
+        # carries its own narrow timestamp and the placer can distribute
+        # chord markers across the lyric text.
+        kwargs: dict[str, object] = {
+            "token_timestamps": True,
+            "max_len": 1,
+            "split_on_word": True,
+        }
         if language is not None:
             kwargs["language"] = language
 

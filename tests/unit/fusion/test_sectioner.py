@@ -201,57 +201,75 @@ class TestInferSectionsIntroVerseOutro:
 
 @pytest.mark.unit
 class TestInferSectionsAlternation:
+    """Phase C T70-iter2: thresholds are now adaptive to inter-word gap
+    statistics (median × multiplier, floored at MIN_INSTRUMENTAL_GAP_SEC =
+    4.0s). These fixtures use dense word streams (small gaps) and a single
+    long gap that exceeds the floor to trigger a block boundary."""
+
     def test_two_lyric_blocks_alternate_verse_chorus(self) -> None:
-        # 120bpm → 4 beats = 2s. Use a 3s gap (6 beats > threshold) between blocks.
+        # Verse block (small gaps ~0.1s) → 10s gap (well above 4s floor) → chorus block.
         words = [
-            _word("verse", 0.0, 0.5),
-            _word("one", 0.5, 1.0),
-            _word("the", 4.0, 4.3),  # 3s gap from prev
-            _word("chorus", 4.3, 5.0),
+            _word("v", 0.0, 0.4),
+            _word("e", 0.5, 0.9),
+            _word("r", 1.0, 1.4),
+            _word("s", 1.5, 1.9),
+            _word("e", 2.0, 2.4),
+            # 10s gap here
+            _word("c", 12.4, 12.8),
+            _word("h", 12.9, 13.3),
+            _word("o", 13.4, 13.8),
+            _word("r", 13.9, 14.3),
         ]
         sections = infer_sections(
             words,
             [],
-            _beat_grid(bpm=120.0, duration=5.0),
-            duration=5.0,
+            _beat_grid(bpm=120.0, duration=15.0),
+            duration=15.0,
         )
         lyric_sections = [s for s in sections if s.type in ("verse", "chorus")]
         assert [s.type for s in lyric_sections] == ["verse", "chorus"]
         assert [s.label for s in lyric_sections] == ["Verse 1", "Chorus"]
 
     def test_three_blocks_verse_chorus_verse(self) -> None:
-        words = [
-            _word("a", 0.0, 0.5),
-            _word("b", 4.0, 4.5),
-            _word("c", 8.0, 8.5),
-        ]
+        # Three dense blocks separated by 10s gaps.
+        def block(start: float) -> list:
+            return [
+                _word("a", start, start + 0.4),
+                _word("b", start + 0.5, start + 0.9),
+                _word("c", start + 1.0, start + 1.4),
+            ]
+
+        words = block(0.0) + block(11.4) + block(22.8)
         sections = infer_sections(
             words,
             [],
-            _beat_grid(bpm=120.0, duration=9.0),
-            duration=9.0,
+            _beat_grid(bpm=120.0, duration=25.0),
+            duration=25.0,
         )
         lyric_sections = [s for s in sections if s.type in ("verse", "chorus")]
         assert [s.type for s in lyric_sections] == ["verse", "chorus", "verse"]
         assert [s.label for s in lyric_sections] == ["Verse 1", "Chorus", "Verse 2"]
 
     def test_instrumental_break_between_lyric_blocks(self) -> None:
-        # Long gap between blocks → an Instrumental section appears between them
+        # Two dense blocks with a long gap → an Instrumental section appears between.
         words = [
-            _word("a", 0.0, 0.5),
-            _word("b", 5.0, 5.5),  # 4.5s gap = 9 beats at 120bpm
+            _word("a", 0.0, 0.4),
+            _word("b", 0.5, 0.9),
+            _word("c", 1.0, 1.4),
+            # 10s gap
+            _word("d", 11.4, 11.8),
+            _word("e", 11.9, 12.3),
         ]
-        chords = [_chord("X", 1.0, 4.5)]  # chord in the gap
+        chords = [_chord("X", 2.0, 10.0)]  # chord in the gap
         sections = infer_sections(
             words,
             chords,
-            _beat_grid(bpm=120.0, duration=6.0),
-            duration=6.0,
+            _beat_grid(bpm=120.0, duration=13.0),
+            duration=13.0,
         )
         types = [s.type for s in sections]
         assert "instrumental" in types
         instr = next(s for s in sections if s.type == "instrumental")
-        # The mid-gap chord X is assigned to the instrumental section
         instr_line = instr.lines[0]
         assert isinstance(instr_line, InstrumentalLine)
         assert any(c.symbol == "X" for c in instr_line.chords)
@@ -283,26 +301,55 @@ class TestInferSectionsChordPartitioning:
 
 
 @pytest.mark.unit
-class TestInferSectionsTempoSensitivity:
-    def test_threshold_scales_with_bpm(self) -> None:
-        # At 60bpm, 4 beats = 4s. A 3s gap is SUB-threshold → same section.
-        # Same 3s gap at 180bpm = 9 beats → OVER threshold → split.
-        words = [_word("a", 0.0, 0.5), _word("b", 3.5, 4.0)]
-        # 60bpm: should be ONE verse (no split)
-        sections_slow = infer_sections(
+class TestInferSectionsAdaptiveThreshold:
+    """Phase C T70-iter2: thresholds derive from inter-word gap median
+    with an absolute floor (MIN_INSTRUMENTAL_GAP_SEC=4.0). BPM no longer
+    directly drives the threshold — a fast (often mis-detected) BPM does
+    not over-fragment songs into instrumentals.
+    """
+
+    def test_threshold_floor_holds_under_fast_bpm(self) -> None:
+        """A 3s gap should NOT trigger a break even at 180 BPM
+        (regression for the Phase C "Jesus tu és a minha vida" case
+        where BeatThis detected BPM=187 and old formula split on every
+        breath pause)."""
+        words = [
+            _word("a", 0.0, 0.4),
+            _word("b", 0.5, 0.9),
+            _word("c", 1.0, 1.4),
+            _word("d", 4.4, 4.8),  # 3.0s gap — under the 4.0s floor
+            _word("e", 4.9, 5.3),
+        ]
+        sections = infer_sections(
             words,
             [],
-            _beat_grid(bpm=60.0, duration=4.0),
-            duration=4.0,
+            _beat_grid(bpm=180.0, duration=6.0),
+            duration=6.0,
         )
-        verse_sections_slow = [s for s in sections_slow if s.type == "verse"]
-        assert len(verse_sections_slow) == 1
-        # 180bpm: should split into verse + chorus
-        sections_fast = infer_sections(
-            words,
-            [],
-            _beat_grid(bpm=180.0, duration=4.0),
-            duration=4.0,
+        lyric_sections = [s for s in sections if s.type in ("verse", "chorus")]
+        # Under old beat-based logic: 4 × 60/180 = 1.33s threshold → 2 sections.
+        # Under adaptive floor: 3s gap < 4s floor → 1 section.
+        assert len(lyric_sections) == 1, (
+            f"3s gap with median ~0.1s should stay below 4s floor; "
+            f"got sections {[(s.type, s.label) for s in sections]}"
         )
-        lyric_sections_fast = [s for s in sections_fast if s.type in ("verse", "chorus")]
-        assert len(lyric_sections_fast) == 2
+
+    def test_long_gap_triggers_break_regardless_of_bpm(self) -> None:
+        """A clearly-instrumental gap (10s) breaks the section at any BPM."""
+        words = [
+            _word("a", 0.0, 0.4),
+            _word("b", 0.5, 0.9),
+            _word("c", 11.0, 11.4),  # 10.1s gap — well above any floor
+            _word("d", 11.5, 11.9),
+        ]
+        for bpm in (60.0, 120.0, 180.0):
+            sections = infer_sections(
+                words,
+                [],
+                _beat_grid(bpm=bpm, duration=12.5),
+                duration=12.5,
+            )
+            lyric_sections = [s for s in sections if s.type in ("verse", "chorus")]
+            assert len(lyric_sections) >= 2, (
+                f"10s gap should split at BPM={bpm}; got {[(s.type, s.label) for s in sections]}"
+            )

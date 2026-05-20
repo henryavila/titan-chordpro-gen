@@ -25,6 +25,8 @@ Spec reference: docs/superpowers/specs/2026-05-09-titan-v0.1-design.md → Secti
 
 from __future__ import annotations
 
+import statistics
+
 from titan_chordpro.core.schemas import (
     BeatGrid,
     ChordEvent,
@@ -36,8 +38,52 @@ from titan_chordpro.core.schemas import (
     WordEvent,
 )
 
-INSTRUMENTAL_GAP_BEATS = 4  # gap > this many beats → instrumental break
-LYRIC_LINE_GAP_BEATS = 2  # gap > this many beats within a block → new LyricLine
+INSTRUMENTAL_GAP_BEATS = 4  # legacy beat-based fallback (rarely active now)
+LYRIC_LINE_GAP_BEATS = 2  # legacy beat-based fallback (rarely active now)
+
+# Phase C T70-iter2 follow-up: word-level whisper timestamps (one
+# WordEvent per word, not per phrase) exposed real breath pauses that
+# segment-level whisper had hidden inside long "word" spans. The legacy
+# beat-based thresholds tuned for segment-level whisper now over-fire on
+# fast-tempo songs because 4 × beat_period falls below typical breath
+# pauses (~2s). Switch to adaptive thresholds derived from the song's
+# own inter-word gap distribution, floored at an absolute minimum.
+#
+# `INSTRUMENTAL_GAP_MULT * median(inter_word_gap)` captures the song's
+# rhythm — a song with tight phrasing gets a tighter threshold; one with
+# long sustained phrases gets a relaxed one. The floor prevents tiny
+# breath pauses from registering as breaks when the median is unusually
+# small (busy chorus, etc).
+INSTRUMENTAL_GAP_MULT = 8.0
+LYRIC_LINE_GAP_MULT = 2.5
+MIN_INSTRUMENTAL_GAP_SEC = 4.0
+MIN_LYRIC_LINE_GAP_SEC = 1.0
+
+
+def _compute_adaptive_thresholds(
+    words: list[WordEvent],
+    beat_grid: BeatGrid,
+) -> tuple[float, float]:
+    """Return (instrumental_gap_sec, lyric_line_gap_sec) adapted to the song.
+
+    With < 2 words, falls back to the legacy beat-based formula. Otherwise
+    derives from the median of positive inter-word gaps, floored at the
+    MIN_*_SEC constants.
+    """
+    beat_period = _beat_period(beat_grid)
+    if len(words) < 2:
+        return (
+            max(INSTRUMENTAL_GAP_BEATS * beat_period, MIN_INSTRUMENTAL_GAP_SEC),
+            max(LYRIC_LINE_GAP_BEATS * beat_period, MIN_LYRIC_LINE_GAP_SEC),
+        )
+    gaps = [words[i + 1].timestamp.start - words[i].timestamp.end for i in range(len(words) - 1)]
+    gaps = [g for g in gaps if g > 0.0]
+    if not gaps:
+        return MIN_INSTRUMENTAL_GAP_SEC, MIN_LYRIC_LINE_GAP_SEC
+    median_gap = statistics.median(gaps)
+    instrumental = max(INSTRUMENTAL_GAP_MULT * median_gap, MIN_INSTRUMENTAL_GAP_SEC)
+    line = max(LYRIC_LINE_GAP_MULT * median_gap, MIN_LYRIC_LINE_GAP_SEC)
+    return instrumental, line
 
 
 def infer_sections(
@@ -53,8 +99,7 @@ def infer_sections(
     if duration <= 0:
         return []
 
-    beat_period = _beat_period(beat_grid)
-    gap_threshold = INSTRUMENTAL_GAP_BEATS * beat_period
+    gap_threshold, line_gap_threshold = _compute_adaptive_thresholds(words, beat_grid)
 
     # Case 1: no lyrics → entire audio is one instrumental section.
     if not words:
@@ -129,6 +174,7 @@ def infer_sections(
                 label=label,
                 section_type=section_type,
                 timestamp=TimeStamp(start=block_start, end=block_end),
+                line_gap=line_gap_threshold,
             )
         )
         cursor = block_end
@@ -233,13 +279,20 @@ def _make_lyric_section(
     label: str,
     section_type: str,
     timestamp: TimeStamp,
+    line_gap: float | None = None,
 ) -> Section:
     """Build a lyric Section with one LyricLine per phrasal group.
 
     The placer (T20) is responsible for filling LyricLine.chord_markers later.
     Here we just wire the LyricLines with their word_alignments.
+
+    `line_gap` is the threshold (in seconds) for splitting a block into
+    multiple LyricLines. When None, falls back to the legacy beat-based
+    formula (LYRIC_LINE_GAP_BEATS × beat_period) — kept for back-compat
+    with callers that don't pass the adaptive value (e.g. unit tests).
     """
-    line_gap = LYRIC_LINE_GAP_BEATS * _beat_period(beat_grid)
+    if line_gap is None:
+        line_gap = LYRIC_LINE_GAP_BEATS * _beat_period(beat_grid)
     line_word_groups = _group_words_into_lines(words, line_gap)
 
     lines: list[Line] = []

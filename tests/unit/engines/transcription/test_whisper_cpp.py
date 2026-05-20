@@ -62,6 +62,37 @@ class TestWhisperCppDefaultModel:
 
 
 @pytest.mark.unit
+class TestWhisperWordLevelTimestamps:
+    """Phase C T70-iter2 follow-up: wrapper must request word-level
+    timestamps from pywhispercpp so the placer can distribute chord
+    markers across syllables."""
+
+    def test_passes_token_timestamps_max_len_split_on_word(self, tmp_path: Path) -> None:
+        from unittest.mock import MagicMock, patch
+
+        import numpy as np
+
+        from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
+
+        fake_model = MagicMock()
+        fake_model.transcribe = MagicMock(return_value=[])
+        engine = WhisperCppEngine.__new__(WhisperCppEngine)
+        engine._model_id = "medium"
+        engine._model = fake_model
+
+        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+            engine.transcribe(tmp_path / "vocals.wav", language="pt")
+
+        _args, kwargs = fake_model.transcribe.call_args
+        assert kwargs.get("token_timestamps") is True, (
+            f"expected token_timestamps=True, got {kwargs!r}"
+        )
+        assert kwargs.get("max_len") == 1, f"expected max_len=1, got {kwargs!r}"
+        assert kwargs.get("split_on_word") is True, f"expected split_on_word=True, got {kwargs!r}"
+        assert kwargs.get("language") == "pt"
+
+
+@pytest.mark.unit
 class TestWhisperCppEngineTranscribe:
     def test_transcribe_builds_words_only(self, tmp_path: Path) -> None:
         """whisper.cpp output → list[WordEvent], phonemes=None."""
