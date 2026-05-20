@@ -91,6 +91,32 @@ class TestWhisperWordLevelTimestamps:
         assert kwargs.get("split_on_word") is True, f"expected split_on_word=True, got {kwargs!r}"
         assert kwargs.get("language") == "pt"
 
+    def test_passes_anti_hallucination_thresholds(self, tmp_path: Path) -> None:
+        """Phase C T70-iter2 anti-hallucination: empirical tests on
+        the iasdermelinda corpus showed whisper inserting placeholder
+        Portuguese phrases ('A CIDADE NO BRASIL') and repetition loops
+        in noisy/silent regions of htdemucs-separated vocals. Tightened
+        entropy_thold (2.4 -> 2.2) and no_speech_thold (0.6 -> 0.7) to
+        suppress these failure modes."""
+        from unittest.mock import MagicMock, patch
+
+        import numpy as np
+
+        from titan_chordpro.engines.transcription.whisper_cpp import WhisperCppEngine
+
+        fake_model = MagicMock()
+        fake_model.transcribe = MagicMock(return_value=[])
+        engine = WhisperCppEngine.__new__(WhisperCppEngine)
+        engine._model_id = "medium"
+        engine._model = fake_model
+
+        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+            engine.transcribe(tmp_path / "vocals.wav", language="pt")
+
+        _args, kwargs = fake_model.transcribe.call_args
+        assert kwargs.get("entropy_thold") == 2.2, f"expected entropy_thold=2.2, got {kwargs!r}"
+        assert kwargs.get("no_speech_thold") == 0.7, f"expected no_speech_thold=0.7, got {kwargs!r}"
+
 
 @pytest.mark.unit
 class TestWhisperCppEngineTranscribe:

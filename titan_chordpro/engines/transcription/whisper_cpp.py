@@ -86,10 +86,27 @@ class WhisperCppEngine:
         # token_timestamps + max_len=1 + split_on_word, each WordEvent
         # carries its own narrow timestamp and the placer can distribute
         # chord markers across the lyric text.
+        # Anti-hallucination knobs (Phase C T70-iter2, after empirical test
+        # of medium/v2/v3/v3-turbo on the iasdermelinda corpus). whisper.cpp
+        # defaults are tuned for transcription of clean dictation; on
+        # htdemucs-separated vocals stems with residual instrumental noise,
+        # the model occasionally inserts placeholder Portuguese phrases
+        # ("A CIDADE NO BRASIL") or repetition loops in silent/noisy
+        # regions. Tightening these two thresholds suppresses both:
+        #
+        # - `entropy_thold` (default 2.4): segments whose token-distribution
+        #   entropy exceeds the threshold are rejected and retried with a
+        #   higher temperature. Lower = stricter = more rejection of
+        #   hallucinated text where the model is uncertain.
+        # - `no_speech_thold` (default 0.6): when the probability of the
+        #   special `<|nospeech|>` token exceeds this value, the segment
+        #   is dropped. Higher = stricter silence detection.
         kwargs: dict[str, object] = {
             "token_timestamps": True,
             "max_len": 1,
             "split_on_word": True,
+            "entropy_thold": 2.2,
+            "no_speech_thold": 0.7,
         }
         if language is not None:
             kwargs["language"] = language
