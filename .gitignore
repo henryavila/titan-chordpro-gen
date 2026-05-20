@@ -44,7 +44,14 @@ WIP.md
 # Phase C — validation harness
 chordpros.csv/
 .titan-cache/
+# Default output dir of HtdemucsEngine when run from repo root
+# (see titan_chordpro/engines/separation/htdemucs.py:94). Holds 4 stems
+# per song at ~49 MB each — pure local cache, never for VCS.
+.titan-stems/
 benchmarks/reports/*
 !benchmarks/reports/README.md
 !benchmarks/reports/.gitignore
 .venv-py312/
+
+# macOS Finder metadata
+.DS_Store
