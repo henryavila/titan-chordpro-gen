@@ -1,9 +1,9 @@
 ---
-lastUpdated: 2026-06-24T18:14:38Z
+lastUpdated: 2026-06-25T00:51:51Z
 schemaVersion: '0.1'
-activePlans: 1
+activePlans: 0
 activeInitiatives: 0
-archivedCount: 0
+archivedCount: 1
 ---
 
 # Project Status Index
@@ -22,7 +22,7 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 | Slug | Status | Current Phase | Branch | Started |
 |------|--------|---------------|--------|---------|
-| titan-core-decoupling | active | F0 | plan/titan-core-decoupling | 2026-06-24T18:13:43.582Z |
+| _(empty)_ | | | | |
 
 ## Active Initiatives (standalone)
 
@@ -34,7 +34,9 @@ _(initiatives not anchored to a plan — run `atomic-skills:project new initiati
 
 ## Recently Archived (last 10)
 
-_(empty — closed phase initiatives move to `<plan-slug>/phases/archive/`; legacy flat `plans/archive/` + `initiatives/archive/`)_
+| Slug | Status | Branch | Archived |
+|------|--------|--------|----------|
+| titan-core-decoupling | archived | plan/titan-core-decoupling | 2026-06-25T00:51:51Z |
 
 ## Ad-Hoc Sessions Log (last 5)
 
