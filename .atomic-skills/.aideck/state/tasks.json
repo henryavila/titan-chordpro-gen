@@ -1,0 +1,47 @@
+[
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "initiativeId": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
+    "phaseId": "F0",
+    "id": "T0.1",
+    "title": "Add import-isolation regression coverage",
+    "summary": "Cria o teste que captura vazamento de imports do domínio musical.",
+    "status": "done",
+    "closedAt": "2026-06-24T23:40:40Z",
+    "lastUpdated": "2026-06-24T23:40:40Z",
+    "blocked": false,
+    "blockedBy": [],
+    "blockedByText": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "initiativeId": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
+    "phaseId": "F0",
+    "id": "T0.2",
+    "title": "Implement lazy package-root exports",
+    "summary": "Torna os exports do pacote raiz lazy sem quebrar a API pública.",
+    "status": "done",
+    "closedAt": "2026-06-24T23:40:40Z",
+    "lastUpdated": "2026-06-24T23:40:40Z",
+    "blocked": false,
+    "blockedBy": [],
+    "blockedByText": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "initiativeId": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
+    "phaseId": "F0",
+    "id": "T0.3",
+    "title": "Document and version the hardware contract",
+    "summary": "Documenta a API pública de hardware e alinha a versão beta.",
+    "status": "done",
+    "closedAt": "2026-06-24T23:43:14Z",
+    "lastUpdated": "2026-06-24T23:43:14Z",
+    "blocked": false,
+    "blockedBy": [],
+    "blockedByText": ""
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "planTitle": "Titan Core Hardware Decoupling",
+    "id": "F0",
+    "slug": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
+    "title": "Root import decoupling and contract release",
+    "status": "done",
+    "dependsOn": [],
+    "summary": "Isola o import de hardware e publica o contrato externo mínimo.",
+    "index": 0,
+    "isCurrent": true,
+    "tasksText": "3/3"
+  }
+]
