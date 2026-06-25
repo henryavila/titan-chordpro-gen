@@ -40,7 +40,7 @@
     "id": "F0-G4",
     "description": "The full existing test suite remains green after the lazy root export and public contract release changes.",
     "status": "met",
-    "verifierLabel": "test: pytest tests",
+    "verifierLabel": "shell: uv run --extra dev --extra validation pytest tests",
     "evidenceSummary": "passed · 489 tests · 2026-06-24"
   }
 ]

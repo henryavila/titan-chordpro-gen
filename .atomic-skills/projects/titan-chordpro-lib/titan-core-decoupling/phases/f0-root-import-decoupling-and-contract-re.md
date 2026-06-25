@@ -93,18 +93,17 @@ exitGates:
     status: met
     metAt: 2026-06-24T23:45:35Z
     verifier:
-      kind: test
-      runner: pytest
-      pattern: tests
+      kind: shell
+      command: uv run --extra dev --extra validation pytest tests
     evidence:
-      verifierKind: test
+      verifierKind: shell
       verifiedAt: 2026-06-24T23:45:35Z
       passed: true
       exitCode: 0
       testsCollected: 489
       outputSummary: "uv run --extra dev --extra validation pytest tests: collected
         489 items / 5 skipped; 478 passed, 16 skipped, 20 warnings in 47.16s"
-    verifierLabel: "test: pytest tests"
+    verifierLabel: "shell: uv run --extra dev --extra validation pytest tests"
     evidenceSummary: passed · 489 tests · 2026-06-24
 stack:
   - id: 1

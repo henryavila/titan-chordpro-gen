@@ -102,11 +102,10 @@ phases:
           status: met
           metAt: 2026-06-24T23:45:35Z
           verifier:
-            kind: test
-            runner: pytest
-            pattern: tests
+            kind: shell
+            command: uv run --extra dev --extra validation pytest tests
           evidence:
-            verifierKind: test
+            verifierKind: shell
             verifiedAt: 2026-06-24T23:45:35Z
             passed: true
             exitCode: 0
