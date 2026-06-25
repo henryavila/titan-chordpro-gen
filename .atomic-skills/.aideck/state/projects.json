@@ -1,0 +1,33 @@
+[
+  {
+    "id": "titan-chordpro-lib",
+    "name": "Titan Chordpro Lib",
+    "totalPlans": 1,
+    "activeCount": 1,
+    "blockedCount": 0,
+    "concludedCount": 0,
+    "isParallel": false,
+    "hasActiveFront": true,
+    "mode": "isolado",
+    "parallelTone": "success",
+    "dotTone": "info",
+    "plansSummary": "1 · 0 ✓",
+    "phasesActiveText": "1/1",
+    "fronts": [
+      {
+        "projectId": "titan-chordpro-lib",
+        "slug": "titan-core-decoupling",
+        "title": "Titan Core Hardware Decoupling",
+        "nextAction": "Commit current WIP so reviewGate.at can point at the post-fix SHA.",
+        "phaseId": "F0",
+        "dotTone": "info"
+      }
+    ],
+    "moreText": "",
+    "idleText": "",
+    "bannerTitle": "1 frente ativa",
+    "bannerSub": "1 planos · 0 tasks travadas",
+    "moreFrontsText": "",
+    "updatedRel": "4m"
+  }
+]

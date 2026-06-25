@@ -5,7 +5,7 @@ title: Titan Core Hardware Decoupling
 version: "1.0"
 status: active
 started: 2026-06-24T18:13:43.582Z
-lastUpdated: 2026-06-24T18:13:43.582Z
+lastUpdated: 2026-06-24T23:45:35Z
 branch: plan/titan-core-decoupling
 currentPhase: F0
 parallelismAllowed: false
@@ -50,36 +50,68 @@ phases:
           description: Importing `titan_chordpro.core.hardware` in a fresh interpreter
             does not load blocked ChordPro-domain modules or lazy optional
             dependencies.
-          status: pending
+          status: met
+          metAt: 2026-06-24T23:45:35Z
           verifier:
             kind: test
             runner: pytest
             pattern: tests/unit/core/test_import_isolation.py
+          evidence:
+            verifierKind: test
+            verifiedAt: 2026-06-24T23:45:35Z
+            passed: true
+            exitCode: 0
+            testsCollected: 3
+            outputSummary: "env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests/unit/core/test_import_isolation.py: collected 3 items; 3 passed in 0.48s"
         - id: F0-G2
           description: The package top-level public API remains importable after lazy
             export conversion.
-          status: pending
+          status: met
+          metAt: 2026-06-24T23:45:35Z
           verifier:
             kind: test
             runner: pytest
             pattern: tests/unit/core/test_import_isolation.py tests/unit/test_smoke.py
+          evidence:
+            verifierKind: test
+            verifiedAt: 2026-06-24T23:45:35Z
+            passed: true
+            exitCode: 0
+            testsCollected: 4
+            outputSummary: "env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests/unit/core/test_import_isolation.py tests/unit/test_smoke.py: collected 4 items; 4 passed in 0.31s"
         - id: F0-G3
-          description: The external infra contract is documented with the exact
-            public hardware functions, exclusions, and target `0.1.0b2` version.
-          status: pending
+          description: The external infra contract is documented with the exact public
+            hardware functions, exclusions, and target `0.1.0b2` version.
+          status: met
+          metAt: 2026-06-24T23:45:35Z
           verifier:
             kind: test
             runner: pytest
             pattern: tests/unit/test_public_infra_contract.py tests/unit/test_smoke.py
               tests/unit/core/test_hardware.py
+          evidence:
+            verifierKind: test
+            verifiedAt: 2026-06-24T23:45:35Z
+            passed: true
+            exitCode: 0
+            testsCollected: 13
+            outputSummary: "env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests/unit/test_public_infra_contract.py tests/unit/test_smoke.py tests/unit/core/test_hardware.py: collected 13 items; 10 passed, 3 skipped in 0.10s"
         - id: F0-G4
           description: The full existing test suite remains green after the lazy root
             export and public contract release changes.
-          status: pending
+          status: met
+          metAt: 2026-06-24T23:45:35Z
           verifier:
             kind: test
             runner: pytest
             pattern: tests
+          evidence:
+            verifierKind: test
+            verifiedAt: 2026-06-24T23:45:35Z
+            passed: true
+            exitCode: 0
+            testsCollected: 489
+            outputSummary: "uv run --extra dev --extra validation pytest tests: collected 489 items / 5 skipped; 478 passed, 16 skipped, 20 warnings in 47.16s"
     status: active
 references:
   - kind: file
@@ -91,6 +123,8 @@ references:
   - kind: file
     path: /Volumes/External/code/curta/PATHFINDER-2026-06-23/11-titan-core-decoupling-prompt.md
     label: Curta decoupling prompt
+planActive: true
+planTitle: Titan Core Hardware Decoupling
 ---
 
 # Titan Core Hardware Decoupling

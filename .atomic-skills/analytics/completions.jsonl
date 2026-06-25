@@ -1,0 +1,3 @@
+{"ts":"2026-06-24T23:41:15.419Z","event":"task-done","projectId":"titan-chordpro-lib","planSlug":"titan-core-decoupling","phaseId":"F0","taskId":"T0.1","weight":2,"weightBasis":"proxy"}
+{"ts":"2026-06-24T23:41:21.373Z","event":"task-done","projectId":"titan-chordpro-lib","planSlug":"titan-core-decoupling","phaseId":"F0","taskId":"T0.2","weight":2,"weightBasis":"proxy"}
+{"ts":"2026-06-24T23:43:35.381Z","event":"task-done","projectId":"titan-chordpro-lib","planSlug":"titan-core-decoupling","phaseId":"F0","taskId":"T0.3","weight":3,"weightBasis":"proxy"}
