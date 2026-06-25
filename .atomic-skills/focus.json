@@ -1,6 +1,6 @@
 {
   "schemaVersion": "0.1",
-  "generatedAt": "2026-06-25T00:05:35.261Z",
+  "generatedAt": "2026-06-25T00:41:47.427Z",
   "projectId": "titan-chordpro-lib",
   "plan": {
     "slug": "titan-core-decoupling",
@@ -33,7 +33,7 @@
   "sources": [
     {
       "path": ".atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/plan.md",
-      "lastUpdated": "2026-06-25T00:04:10Z"
+      "lastUpdated": "2026-06-25T00:41:30Z"
     },
     {
       "path": ".atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/phases/f0-root-import-decoupling-and-contract-re.md",

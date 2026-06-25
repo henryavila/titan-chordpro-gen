@@ -5,7 +5,7 @@ title: Titan Core Hardware Decoupling
 version: "1.0"
 status: active
 started: 2026-06-24T18:13:43.582Z
-lastUpdated: 2026-06-25T00:04:10Z
+lastUpdated: 2026-06-25T00:41:30Z
 branch: plan/titan-core-decoupling
 currentPhase: F0
 parallelismAllowed: false
@@ -128,6 +128,9 @@ references:
   - kind: file
     path: /Volumes/External/code/curta/PATHFINDER-2026-06-23/11-titan-core-decoupling-prompt.md
     label: Curta decoupling prompt
+  - kind: url
+    path: https://github.com/henryavila/titan-chordpro-lib/pull/1
+    label: "PR #1"
 planActive: true
 planTitle: Titan Core Hardware Decoupling
 ---
