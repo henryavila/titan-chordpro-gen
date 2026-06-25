@@ -6,6 +6,22 @@ Audio-to-ChordPro Python library with chord-on-syllable placement.
 
 **Supported platform:** macOS Apple Silicon (M-series) only at this time. Linux/CUDA paths are wired in `pyproject.toml` (extra `[cuda]`) and `scripts/install_vamp.sh` (Linux branch) but are not exercised in the current dev loop; treat them as best-effort. Windows is unsupported.
 
+## Public infra contract for `curta`
+
+Version: `0.1.0b2`
+
+The public infra API consumed outside this project is limited to these hardware
+helpers:
+
+- `titan_chordpro.core.hardware.detect_backend`
+- `titan_chordpro.core.hardware.hardware_to_torch_device`
+- `titan_chordpro.core.hardware.release_gpu_memory`
+
+`titan_chordpro.core.cache` and ChordPro-domain modules are outside the `curta`
+contract. ChordPro-domain modules are outside the `curta` contract whether they
+live at package root, in orchestration/factory/fusion code, or under
+`titan_chordpro.core.schemas`.
+
 ## Setup (fresh clone)
 
 One command installs everything `scripts/render_from_url.py` needs to run: Homebrew prerequisites (`python@3.12`, `ffmpeg`, `git`, `vamp-plugin-sdk`, `boost`), the project virtualenv at `.venv-py312/`, all Python deps including the ML extras, and the Chordino Vamp plugin built from source for Apple Silicon.
