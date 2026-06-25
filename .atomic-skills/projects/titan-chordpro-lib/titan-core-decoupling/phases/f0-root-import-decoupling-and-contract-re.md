@@ -6,11 +6,11 @@ summary: Isola o import de hardware e publica o contrato externo mínimo.
 goal: Replace the eager package-root imports with lazy public exports, prove
   `titan_chordpro.core.hardware` imports without ChordPro-domain modules, and
   publish the narrow hardware contract as version `0.1.0b2`.
-status: active
+status: done
 branch: plan/titan-core-decoupling
 started: 2026-06-24T18:13:43.582Z
-lastUpdated: 2026-06-24T23:45:35Z
-nextAction: Commit current WIP so reviewGate.at can point at the post-fix SHA.
+lastUpdated: 2026-06-25T00:04:10Z
+nextAction: Decide whether to mark/archive titan-core-decoupling plan.
 parentPlan: titan-core-decoupling
 phaseId: F0
 tasksDone: 3
@@ -253,30 +253,25 @@ _(record decisions here as they are made)_
 
 _(plan doc, external refs)_
 
+## Self-review against code-quality gates
+
+- **G1 read-before-claim**: 3 tasks closed, each with `outputs[]` and `evidence.outputSummary` from the verifier run.
+- **G2 soft-language**: scanned `nextAction`, task descriptions, and criterion descriptions; 0 violations in the completion claims.
+- **G6 reference-or-strike**: 4 exit criteria met with `evidence.passed: true`; 0 deferred; 0 unverified.
+- **Codex review**: local review-code gate ran at HEAD = `ca07f8d7ecb70bf48fa7c7143cf8641b09d164be`, verdict `0 blocker/critical/major/minor findings`, file `.atomic-skills/reviews/2026-06-24-2048-titan-core-decoupling-f0-local.md`.
+- **Review gate (G2)**: recorded on the phase descriptor as `reviewGate: { status: passed, at: ca07f8d7ecb70bf48fa7c7143cf8641b09d164be, mode: local }`.
+- **Lessons (G1)**: no lessons distilled (clean phase).
+
 ## Session handoff
-- **Narrative:** F0 has 3/3 tasks closed with `evidence.passed: true` in `.atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/phases/f0-root-import-decoupling-and-contract-re.md`. The four F0 exit gates are `met` with passing evidence in both the phase initiative and `.atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/plan.md`. A local phase review was saved at `.atomic-skills/reviews/2026-06-24-2048-titan-core-decoupling-f0-local.md`; final `phase-done` was not run because `reviewGate.at` requires a post-fix commit SHA and this tree is still WIP.
+- **Narrative:** F0 is closed: 3/3 tasks are `done`, 4/4 exit gates are `met`, and `.atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/plan.md` records `phases[0].reviewGate.at: ca07f8d7ecb70bf48fa7c7143cf8641b09d164be`. The code/doc/test payload landed in commit `ca07f8d7ecb70bf48fa7c7143cf8641b09d164be`. The plan is still `active` so the operator can decide whether to mark/archive `titan-core-decoupling`.
 - **Decision log:** Routing stayed Mode 1 because `.atomic-skills/status/routing.json` is absent. `T0.1` produced the failing import-isolation regression first; its first verifier run failed with leaked modules from eager package-root imports, then `T0.2` changed only `titan_chordpro/__init__.py` and both `T0.1` and `T0.2` verifiers passed. `F0-G4` uses `uv run --extra dev --extra validation pytest tests` because `pytest tests` in the dev-only environment failed on `ModuleNotFoundError: No module named 'librosa'`. The review-code gate ran local inline with degraded isolation because this session's subagent tool policy allows subagents only when the user explicitly requests delegation.
-- **Single nextAction:** Commit current WIP so `reviewGate.at` can point at the post-fix SHA.
+- **Single nextAction:** Decide whether to mark/archive titan-core-decoupling plan.
 - **Verbatim state:** Commands and observed outputs:
   - `rtk proxy env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests/unit/core/test_import_isolation.py` -> `collected 3 items` and `3 passed in 0.48s`
   - `rtk proxy env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests/unit/core/test_import_isolation.py tests/unit/test_smoke.py` -> `collected 4 items` and `4 passed in 0.31s`
   - `rtk proxy env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests/unit/test_public_infra_contract.py tests/unit/test_smoke.py tests/unit/core/test_hardware.py` -> `collected 13 items` and `10 passed, 3 skipped in 0.10s`
   - `rtk uv run --extra dev --extra validation pytest tests` -> `collected 489 items / 5 skipped` and `478 passed, 16 skipped, 20 warnings in 47.16s`
   - `rtk node /Volumes/External/code/atomic-skills/scripts/validate-state.js .atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/plan.md .atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/phases/f0-root-import-decoupling-and-contract-re.md` -> `All 2 file(s) valid, 1 plan(s) cross-validated (schemaVersion 0.1/0.2)`
+  - `rtk git commit -m "feat(core): decouple hardware import contract"` -> `ca07f8d feat(core): decouple hardware import contract`
   - Failed environment probe before validation extra: `rtk proxy env PATH=/Volumes/External/code/titan-chordpro-lib/.worktrees/titan-core-decoupling/.venv/bin:$PATH pytest tests` -> `ModuleNotFoundError: No module named 'librosa'`
-- **Uncommitted changes:**
-  ```text
-   M .atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/phases/f0-root-import-decoupling-and-contract-re.md
-   M .atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/plan.md
-   M README.md
-   M pyproject.toml
-   M tests/unit/test_smoke.py
-   M titan_chordpro/__init__.py
-   M titan_chordpro/version.py
-  ?? .atomic-skills/.aideck/
-  ?? .atomic-skills/analytics/
-  ?? .atomic-skills/focus.json
-  ?? .atomic-skills/reviews/2026-06-24-2048-titan-core-decoupling-f0-local.md
-  ?? tests/unit/core/test_import_isolation.py
-  ?? tests/unit/test_public_infra_contract.py
-  ```
+- **Uncommitted changes:** clean tree after committing the phase-close state.

@@ -6,17 +6,17 @@
     "status": "active",
     "branch": "plan/titan-core-decoupling",
     "started": "2026-06-24T18:13:43.582Z",
-    "lastUpdated": "2026-06-24T23:45:35Z",
+    "lastUpdated": "2026-06-25T00:04:10Z",
     "currentPhase": "F0",
     "currentPhaseText": "Root import decoupling and contract release",
-    "phasesText": "0/1 fases",
-    "phasesSummary": "0/1 fases",
-    "roteiroSub": "0/1 fases concluídas",
+    "phasesText": "1/1 fases",
+    "phasesSummary": "1/1 fases",
+    "roteiroSub": "1/1 fases concluídas",
     "switcherCaption": "active · Root import decoupling and contract release",
-    "nextText": "Commit current WIP so reviewGate.at can point at the post-fix SHA.",
+    "nextText": "Decide whether to mark/archive titan-core-decoupling plan.",
     "focusTasksText": "3/3",
     "focusTasksPct": 100,
     "focusMeta": "gates 4/4 · 1 frame",
-    "updatedRel": "4m"
+    "updatedRel": "1m"
   }
 ]

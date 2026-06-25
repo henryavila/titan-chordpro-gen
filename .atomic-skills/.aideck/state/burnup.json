@@ -6,5 +6,13 @@
     "plannedValue": null,
     "earnedCount": 0,
     "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-06-25",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
   }
 ]

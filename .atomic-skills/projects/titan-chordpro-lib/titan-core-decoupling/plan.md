@@ -5,7 +5,7 @@ title: Titan Core Hardware Decoupling
 version: "1.0"
 status: active
 started: 2026-06-24T18:13:43.582Z
-lastUpdated: 2026-06-24T23:45:35Z
+lastUpdated: 2026-06-25T00:04:10Z
 branch: plan/titan-core-decoupling
 currentPhase: F0
 parallelismAllowed: false
@@ -112,7 +112,13 @@ phases:
             exitCode: 0
             testsCollected: 489
             outputSummary: "uv run --extra dev --extra validation pytest tests: collected 489 items / 5 skipped; 478 passed, 16 skipped, 20 warnings in 47.16s"
-    status: active
+    status: done
+    reviewGate:
+      status: passed
+      mode: local
+      at: ca07f8d7ecb70bf48fa7c7143cf8641b09d164be
+      reviewFile: .atomic-skills/reviews/2026-06-24-2048-titan-core-decoupling-f0-local.md
+      verifiedAt: 2026-06-25T00:04:10Z
 references:
   - kind: file
     path: .atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/design.md
