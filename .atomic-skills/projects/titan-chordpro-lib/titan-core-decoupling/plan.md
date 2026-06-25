@@ -3,9 +3,9 @@ schemaVersion: "0.1"
 slug: titan-core-decoupling
 title: Titan Core Hardware Decoupling
 version: "1.0"
-status: active
+status: archived
 started: 2026-06-24T18:13:43.582Z
-lastUpdated: 2026-06-25T00:41:30Z
+lastUpdated: 2026-06-25T00:51:51Z
 branch: plan/titan-core-decoupling
 currentPhase: F0
 parallelismAllowed: false
@@ -131,7 +131,7 @@ references:
   - kind: url
     path: https://github.com/henryavila/titan-chordpro-lib/pull/1
     label: "PR #1"
-planActive: true
+planActive: false
 planTitle: Titan Core Hardware Decoupling
 ---
 

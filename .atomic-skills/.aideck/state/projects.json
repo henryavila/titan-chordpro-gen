@@ -3,31 +3,22 @@
     "id": "titan-chordpro-lib",
     "name": "Titan Chordpro Lib",
     "totalPlans": 1,
-    "activeCount": 1,
+    "activeCount": 0,
     "blockedCount": 0,
-    "concludedCount": 0,
+    "concludedCount": 1,
     "isParallel": false,
-    "hasActiveFront": true,
-    "mode": "isolado",
-    "parallelTone": "success",
-    "dotTone": "info",
-    "plansSummary": "1 · 0 ✓",
+    "hasActiveFront": false,
+    "mode": "ocioso",
+    "parallelTone": "neutral",
+    "dotTone": "neutral",
+    "plansSummary": "1 · 1 ✓",
     "phasesActiveText": "0/1",
-    "fronts": [
-      {
-        "projectId": "titan-chordpro-lib",
-        "slug": "titan-core-decoupling",
-        "title": "Titan Core Hardware Decoupling",
-        "nextAction": "Decide whether to mark/archive titan-core-decoupling plan.",
-        "phaseId": "F0",
-        "dotTone": "info"
-      }
-    ],
+    "fronts": [],
     "moreText": "",
-    "idleText": "",
-    "bannerTitle": "1 frente ativa",
+    "idleText": "sem frente ativa",
+    "bannerTitle": "Sem frente ativa",
     "bannerSub": "1 planos · 0 tasks travadas",
     "moreFrontsText": "",
-    "updatedRel": "17s"
+    "updatedRel": "2m"
   }
 ]

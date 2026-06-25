@@ -3,20 +3,20 @@
     "projectId": "titan-chordpro-lib",
     "slug": "titan-core-decoupling",
     "title": "Titan Core Hardware Decoupling",
-    "status": "active",
+    "status": "archived",
     "branch": "plan/titan-core-decoupling",
     "started": "2026-06-24T18:13:43.582Z",
-    "lastUpdated": "2026-06-25T00:41:30Z",
+    "lastUpdated": "2026-06-25T00:51:51Z",
     "currentPhase": "F0",
     "currentPhaseText": "Root import decoupling and contract release",
     "phasesText": "1/1 fases",
     "phasesSummary": "1/1 fases",
     "roteiroSub": "1/1 fases concluídas",
-    "switcherCaption": "active · Root import decoupling and contract release",
-    "nextText": "Decide whether to mark/archive titan-core-decoupling plan.",
+    "switcherCaption": "archived · Root import decoupling and contract release",
+    "nextText": "Archived; no next action.",
     "focusTasksText": "3/3",
     "focusTasksPct": 100,
     "focusMeta": "gates 4/4 · 1 frame",
-    "updatedRel": "17s"
+    "updatedRel": "2m"
   }
 ]

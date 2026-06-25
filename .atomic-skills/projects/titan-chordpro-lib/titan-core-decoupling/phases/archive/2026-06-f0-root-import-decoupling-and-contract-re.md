@@ -6,11 +6,11 @@ summary: Isola o import de hardware e publica o contrato externo mínimo.
 goal: Replace the eager package-root imports with lazy public exports, prove
   `titan_chordpro.core.hardware` imports without ChordPro-domain modules, and
   publish the narrow hardware contract as version `0.1.0b2`.
-status: done
+status: archived
 branch: plan/titan-core-decoupling
 started: 2026-06-24T18:13:43.582Z
-lastUpdated: 2026-06-25T00:04:10Z
-nextAction: Decide whether to mark/archive titan-core-decoupling plan.
+lastUpdated: 2026-06-25T00:51:51Z
+nextAction: Archived; no next action.
 parentPlan: titan-core-decoupling
 phaseId: F0
 tasksDone: 3

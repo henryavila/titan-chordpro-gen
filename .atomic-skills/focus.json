@@ -1,43 +1,16 @@
 {
   "schemaVersion": "0.1",
-  "generatedAt": "2026-06-25T00:41:47.427Z",
-  "projectId": "titan-chordpro-lib",
-  "plan": {
-    "slug": "titan-core-decoupling",
-    "title": "Titan Core Hardware Decoupling",
-    "status": "active"
-  },
-  "phase": {
-    "id": "F0",
-    "slug": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
-    "title": "Root import decoupling and contract release",
-    "index": 1,
-    "total": 1,
-    "status": "done"
-  },
-  "tasks": {
-    "done": 3,
-    "total": 3,
-    "blocked": 0
-  },
-  "gates": {
-    "met": 4,
-    "total": 4
-  },
-  "nextAction": "Decide whether to mark/archive titan-core-decoupling plan.",
+  "generatedAt": "2026-06-25T00:53:28.506Z",
+  "projectId": null,
+  "plan": null,
+  "phase": null,
+  "tasks": null,
+  "gates": null,
+  "nextAction": null,
   "flags": {
     "drift": false,
     "multipleActivePlans": false,
     "unclaimedBranch": false
   },
-  "sources": [
-    {
-      "path": ".atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/plan.md",
-      "lastUpdated": "2026-06-25T00:41:30Z"
-    },
-    {
-      "path": ".atomic-skills/projects/titan-chordpro-lib/titan-core-decoupling/phases/f0-root-import-decoupling-and-contract-re.md",
-      "lastUpdated": "2026-06-25T00:04:10Z"
-    }
-  ]
+  "sources": []
 }
