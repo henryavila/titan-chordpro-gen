@@ -56,6 +56,20 @@ cuda = [
     "librosa>=0.10",
 ]
 
+# Audio-analysis engines only — beat/downbeats (BeatThis), stem separation
+# (htdemucs via audio-separator), transcription (whisper.cpp) and torchaudio
+# alignment. NO chord/lyric stack (chord-extractor/gruut/g2p), so a consumer
+# that only needs music analysis (e.g. curta's beat-sync / mood) can depend on
+# this without the Vamp/Chordino host or the pt-br lexicons. Subset of [mac].
+audio = [
+    "torch>=2.1",
+    "torchaudio>=2.1",
+    "librosa>=0.10",
+    "beat-this @ git+https://github.com/CPJKU/beat_this.git@main",
+    "audio-separator>=0.17",
+    "pywhispercpp>=1.2",
+]
+
 # Validation harness against the iasdermelinda corpus (Tier 2 / Tier 3).
 # Decoupled from [mac]/[cuda] so a CI runner can install validation without
 # pulling the full ML stack (yt-dlp + mir_eval do not need GPU).
