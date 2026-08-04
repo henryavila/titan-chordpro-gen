@@ -355,6 +355,155 @@ class TestInferSectionsAdaptiveThreshold:
             )
 
 
+@pytest.mark.unit
+class TestInferSectionsLyricRepetition:
+    """RC2: chorus detection via lyric self-similarity + soft gap breaks.
+
+    Worship charts often have <4s between verse and chorus. Pure gap+i%2
+    labeling swallows the first chorus into Verse 1 and mislabels later
+    blocks. Repeated lyric fingerprints should label choruses and allow
+    soft (2–4s) section breaks before repeated material.
+    """
+
+    def test_soft_gap_before_repeated_chorus_splits_sections(self) -> None:
+        """Verse A, 2.5s gap, chorus C, long gap, verse B → verse, chorus, verse."""
+        # Distinct verses (not lyric-repeated) so only the chorus fingerprint fires.
+        verse1 = [
+            _word("andei", 0.0, 0.4),
+            _word("tao", 0.5, 0.8),
+            _word("cego", 0.9, 1.3),
+            _word("sem", 1.4, 1.7),
+            _word("rumo", 1.8, 2.2),
+        ]
+        # 2.5s soft gap (under 4s hard floor) before first chorus
+        chorus1 = [
+            _word("ao", 4.7, 5.0),
+            _word("olhar", 5.1, 5.5),
+            _word("pra", 5.6, 5.9),
+            _word("cruz", 6.0, 6.4),
+            _word("eu", 6.5, 6.8),
+            _word("vejo", 6.9, 7.3),
+        ]
+        # Long instrumental gap, then a *different* verse
+        verse2 = [
+            _word("buscando", 18.0, 18.5),
+            _word("descanso", 18.6, 19.1),
+            _word("em", 19.2, 19.4),
+            _word("outros", 19.5, 19.9),
+            _word("lugares", 20.0, 20.6),
+        ]
+        # Soft gap >2s then repeated chorus (establishes fingerprint)
+        chorus2 = [
+            _word("ao", 23.0, 23.3),
+            _word("olhar", 23.4, 23.8),
+            _word("pra", 23.9, 24.2),
+            _word("cruz", 24.3, 24.7),
+            _word("eu", 24.8, 25.1),
+            _word("vejo", 25.2, 25.6),
+        ]
+        words = verse1 + chorus1 + verse2 + chorus2
+        duration = 27.0
+        sections = infer_sections(
+            words,
+            [],
+            _beat_grid(bpm=70.0, duration=duration),
+            duration=duration,
+        )
+        lyric = [s for s in sections if s.type in ("verse", "chorus")]
+        types = [s.type for s in lyric]
+        assert types[:3] == ["verse", "chorus", "verse"], (
+            f"expected verse/chorus/verse…, got {[(s.type, s.label) for s in lyric]}"
+        )
+        # First chorus must not be swallowed into Verse 1
+        assert lyric[0].label.startswith("Verse")
+        assert lyric[1].type == "chorus"
+        # Chorus text present in a chorus section
+        chorus_text = " ".join(
+            ln.text for s in lyric if s.type == "chorus" for ln in s.lines if hasattr(ln, "text")
+        )
+        assert "olhar" in chorus_text
+        assert "cruz" in chorus_text
+        # Four lyric sections when second chorus also separates
+        assert len(lyric) >= 3
+
+    def test_repeated_chorus_blocks_both_labeled_chorus(self) -> None:
+        """Identical lyric blocks separated by long gaps → both chorus."""
+
+        def chorus_block(start: float) -> list:
+            return [
+                _word("gloria", start, start + 0.4),
+                _word("ao", start + 0.5, start + 0.8),
+                _word("cordeiro", start + 0.9, start + 1.5),
+            ]
+
+        # Intro verse-like unique block, then two identical choruses.
+        words = (
+            [
+                _word("unique", 0.0, 0.4),
+                _word("verse", 0.5, 0.9),
+                _word("line", 1.0, 1.4),
+            ]
+            + chorus_block(12.0)
+            + chorus_block(24.0)
+        )
+        sections = infer_sections(
+            words,
+            [],
+            _beat_grid(bpm=100.0, duration=28.0),
+            duration=28.0,
+        )
+        lyric = [s for s in sections if s.type in ("verse", "chorus")]
+        chorus_sections = [s for s in lyric if s.type == "chorus"]
+        assert len(chorus_sections) >= 2, [(s.type, s.label) for s in lyric]
+        # Both repeated blocks labeled chorus
+        for cs in chorus_sections:
+            text = " ".join(ln.text for ln in cs.lines if hasattr(ln, "text"))
+            assert "gloria" in text and "cordeiro" in text
+
+    def test_no_repeat_song_still_covers_duration(self) -> None:
+        """Without lyric repeats, still contiguous [0, duration] coverage."""
+        words = [
+            _word("alpha", 1.0, 1.4),
+            _word("beta", 1.5, 1.9),
+            _word("gamma", 2.0, 2.4),
+            # long gap
+            _word("delta", 12.0, 12.4),
+            _word("epsilon", 12.5, 12.9),
+        ]
+        duration = 15.0
+        sections = infer_sections(
+            words,
+            [_chord("C", 0.0, 1.0), _chord("G", 14.0, 15.0)],
+            _beat_grid(bpm=120.0, duration=duration),
+            duration=duration,
+        )
+        assert sections[0].timestamp.start == pytest.approx(0.0)
+        assert sections[-1].timestamp.end == pytest.approx(duration)
+        for t in (0.5, 7.0, 12.2, 14.5):
+            assert any(s.timestamp.start <= t <= s.timestamp.end for s in sections)
+
+    def test_short_breath_without_repeat_does_not_split(self) -> None:
+        """2.5s breath inside unique material stays one verse (no false chorus)."""
+        words = [
+            _word("line", 0.0, 0.4),
+            _word("one", 0.5, 0.9),
+            _word("words", 1.0, 1.4),
+            # 2.5s breath — under hard floor, no repeated fingerprint after
+            _word("line", 3.9, 4.3),
+            _word("two", 4.4, 4.8),
+            _word("more", 4.9, 5.3),
+        ]
+        sections = infer_sections(
+            words,
+            [],
+            _beat_grid(bpm=120.0, duration=6.0),
+            duration=6.0,
+        )
+        lyric = [s for s in sections if s.type in ("verse", "chorus")]
+        assert len(lyric) == 1
+        assert lyric[0].type == "verse"
+
+
 def _section_covers_time(section, t: float) -> bool:
     """Whether section.timestamp owns time t (half-open [start, end), end inclusive for last)."""
     return section.timestamp.start <= t <= section.timestamp.end
