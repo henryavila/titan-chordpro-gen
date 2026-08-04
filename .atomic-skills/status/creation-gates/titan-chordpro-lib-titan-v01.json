@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "0.1",
+  "kind": "adopt",
+  "slug": "titan-v01",
+  "projectId": "titan-chordpro-lib",
+  "sourcePath": "docs/superpowers/plans/2026-08-04-titan-v01-adopt-source.md",
+  "stage": "ready",
+  "businessIntentAccepted": true,
+  "filesPlanned": [
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/plan.md",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f0-phase-a-foundation.md",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f1-phase-b-ml-integration.source.json",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f2-phase-c-validation-and-quality.source.json",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f3-phase-d-pre-release.source.json"
+  ],
+  "filesWritten": [
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/plan.md",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f0-phase-a-foundation.md",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f1-phase-b-ml-integration.source.json",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f2-phase-c-validation-and-quality.source.json",
+    ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f3-phase-d-pre-release.source.json"
+  ],
+  "status": "ready",
+  "updatedAt": "2026-08-04T16:10:45Z",
+  "supersedes": "legacy-flat titan-v01 + phase initiatives",
+  "note": "F0/F1 closed as shipped; F2 activated mid-flight"
+}

@@ -1,0 +1,49 @@
+{
+  "captureVersion": "0.1",
+  "phaseId": "F3",
+  "slug": "titan-v01-f3-phase-d-pre-release",
+  "title": "Phase D Pre-release",
+  "goal": "User docs, demo, CHANGELOG to 0.1.0, known-issues, snapshot tests, final tag `v0.1.0`. Blocked until F2 tags `v0.1.0-c0`.",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "User docs",
+      "description": "Write `docs/method.md`, `docs/profiles.md`, `docs/troubleshooting.md`."
+    },
+    {
+      "id": "T-002",
+      "title": "Demo artifact",
+      "description": "GIF or short video of CLI / render_from_url path."
+    },
+    {
+      "id": "T-003",
+      "title": "Release package",
+      "description": "CHANGELOG `[0.1.0]`, confirm LICENSE MIT, tag `v0.1.0` + GitHub release (PyPI optional)."
+    },
+    {
+      "id": "T-004",
+      "title": "DoD orphans",
+      "description": "Snapshot tests for 5 profiles; `chordpro` CLI parse of `chordpro_ref`; `docs/known-issues.md`; final P0 review."
+    }
+  ],
+  "exitGates": [
+    {
+      "id": "F3-G1",
+      "description": "docs/method.md profiles.md troubleshooting.md exist",
+      "verifier": {
+        "kind": "shell",
+        "command": "test -f docs/method.md && test -f docs/profiles.md && test -f docs/troubleshooting.md"
+      },
+      "status": "pending"
+    },
+    {
+      "id": "F3-G2",
+      "description": "Tag v0.1.0 exists",
+      "verifier": {
+        "kind": "shell",
+        "command": "git rev-parse v0.1.0"
+      },
+      "status": "pending"
+    }
+  ]
+}

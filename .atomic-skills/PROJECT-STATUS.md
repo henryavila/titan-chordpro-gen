@@ -1,37 +1,17 @@
-# Project Status — titan-chordpro-lib
+---
+lastUpdated: 2026-08-04T16:10:45Z
+schemaVersion: '0.1'
+---
 
-_Last updated: 2026-05-26T15:00:00Z_
+# Project Status Index
 
-## Active Plans
+**Canonical state is nested:** `.atomic-skills/projects/titan-chordpro-lib/PROJECT-STATUS.md`
 
-| Slug | Title | Current Phase | Status |
-|------|-------|---------------|--------|
-| titan-v01 | Titan ChordPro Lib v0.1 — from research to release | F2 (Phase C) | active |
+Legacy flat `plans/` + `initiatives/` for `titan-v01` were retired on 2026-08-04 via
+`project adopt` and stored under `.atomic-skills/legacy-flat-pre-adopt-2026-08-04/`.
 
-## Active Initiatives
+## Quick status
 
-| Slug | Phase | Status | Branch | Next Action |
-|------|-------|--------|--------|-------------|
-| titan-phase-c | F2 | active | main | Resolve T70 chord placement blocker → T71-T73 → tag v0.1.0-c0 |
-
-## Pending Initiatives
-
-| Slug | Phase | Status | Blocked by | Next Action |
-|------|-------|--------|-----------|-------------|
-| titan-phase-d-pre-release | F3 | pending | Phase C (v0.1.0-c0) | Write Phase D plan, execute D1–D13, tag v0.1.0 |
-| cuda-mps-validation | — | pending | RTX 5070Ti hardware | Setup workstation, run alignment comparison |
-
-## Recently Archived
-
-| Slug | Status | Archived | Summary |
-|------|--------|----------|---------|
-| titan-codex-fixes-v0.1.0-b1 | archived | 2026-05-19 | Hot-fix v0.1.0-b1 — 8/9 Codex findings applied, F-004 deferred, tag pushed, 320 passed |
-| titan-phase-b | archived | 2026-05-18 | Phase B completa — 7 ML engines, 318 testes, v0.1.0-b0 tagueado + 4 Codex cross-model fixes |
-| titan-phase-a | archived | 2026-05-17 | Phase A completa — 34 tasks, 259 testes, 93% cobertura, v0.1.0-a0 tagueado |
-| v02-roadmap | archived | 2026-05-26 | v0.2 roadmap reference — 10 deferred items, no forward action until v0.1 ships |
-
-## Ad-Hoc Sessions Log
-
-| Timestamp | Description |
-|-----------|-------------|
-| 2026-05-20 | Beat-grid diagnostic tool (render_beatgrid.py), install.sh, render_from_url.py, README quick-start |
+| Plan | Phase | Next |
+|------|-------|------|
+| titan-v01 | F2 active | T-003 T70 quality loop |

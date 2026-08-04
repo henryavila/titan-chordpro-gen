@@ -2,23 +2,32 @@
   {
     "id": "titan-chordpro-lib",
     "name": "Titan Chordpro Lib",
-    "totalPlans": 1,
-    "activeCount": 0,
+    "totalPlans": 2,
+    "activeCount": 1,
     "blockedCount": 0,
     "concludedCount": 1,
     "isParallel": false,
-    "hasActiveFront": false,
-    "mode": "ocioso",
-    "parallelTone": "neutral",
-    "dotTone": "neutral",
-    "plansSummary": "1 · 1 ✓",
-    "phasesActiveText": "0/1",
-    "fronts": [],
+    "hasActiveFront": true,
+    "mode": "isolado",
+    "parallelTone": "success",
+    "dotTone": "info",
+    "plansSummary": "2 · 1 ✓",
+    "phasesActiveText": "1/5",
+    "fronts": [
+      {
+        "projectId": "titan-chordpro-lib",
+        "slug": "titan-v01",
+        "title": "Titan ChordPro Lib v0.1 — from research to release",
+        "nextAction": "Execute T-003: T70 quality loop (detection and placement)",
+        "phaseId": "F2",
+        "dotTone": "info"
+      }
+    ],
     "moreText": "",
-    "idleText": "sem frente ativa",
-    "bannerTitle": "Sem frente ativa",
-    "bannerSub": "1 planos · 0 tasks travadas",
+    "idleText": "",
+    "bannerTitle": "1 frente ativa",
+    "bannerSub": "2 planos · 0 tasks travadas",
     "moreFrontsText": "",
-    "updatedRel": "2m"
+    "updatedRel": "6m"
   }
 ]

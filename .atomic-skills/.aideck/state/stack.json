@@ -9,5 +9,16 @@
     "title": "Root import decoupling and contract release",
     "type": "task",
     "openedAt": "2026-06-24T18:13:43.582Z"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f2-phase-c-validation-and-quality",
+    "phaseId": "F2",
+    "index": 0,
+    "id": 1,
+    "title": "Phase C Validation and quality",
+    "type": "task",
+    "openedAt": "2026-08-04T16:08:35Z"
   }
 ]

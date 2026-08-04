@@ -2,11 +2,22 @@
   {
     "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
-    "asOf": "2026-06-25T00:53:28.519Z",
+    "asOf": "2026-08-04T16:17:34.203Z",
     "started": "2026-06-24T18:13:43.582Z",
     "deadline": null,
     "weightTotal": 7,
     "tasksTotal": 3,
+    "spiProxy": null,
+    "spiCount": null
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "asOf": "2026-08-04T16:17:34.203Z",
+    "started": "2026-05-08T00:00:00Z",
+    "deadline": null,
+    "weightTotal": 12,
+    "tasksTotal": 10,
     "spiProxy": null,
     "spiCount": null
   }

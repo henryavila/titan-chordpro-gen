@@ -1,7 +1,7 @@
 ---
-lastUpdated: 2026-06-25T00:51:51Z
+lastUpdated: 2026-08-04T16:10:45Z
 schemaVersion: '0.1'
-activePlans: 0
+activePlans: 1
 activeInitiatives: 0
 archivedCount: 1
 ---
@@ -12,24 +12,24 @@ Canonical entry point. Auto-updated by `atomic-skills:project`. Read first every
 
 This repo follows a 3-level model under `projects/<project-id>/`:
 
-- **Plan** — multi-phase project with narrative, principles, phases, exit gates (`<plan-slug>/plan.md`)
-- **Initiative** — one phase of a plan (`<plan-slug>/phases/f<N>-<slug>.md`). A standalone unit of work is a degenerate 1-phase plan (same nested shape).
-- **Task** — atomic action inside a phase initiative (lives in its frontmatter `tasks[]`)
-
-(Legacy/un-migrated trees may still carry flat `plans/<slug>.md` + `initiatives/<slug>.md`; `atomic-skills:project migrate` cuts them over.)
+- **Plan** — multi-phase project (`<plan-slug>/plan.md`)
+- **Initiative** — one phase (`<plan-slug>/phases/f<N>-<slug>.md`)
+- **Task** — atomic action inside a phase initiative (`tasks[]`)
 
 ## Active Plans
 
 | Slug | Status | Current Phase | Branch | Started |
 |------|--------|---------------|--------|---------|
-| _(empty)_ | | | | |
+| titan-v01 | active | F2 — Phase C Validation and quality | plan/titan-v01 | 2026-05-08 |
+
+### titan-v01 — active phase initiatives
+
+| Slug | Phase | Status | Next Action |
+|------|-------|--------|-------------|
+| titan-v01-f2-phase-c-validation-and-quality | F2 | active | Execute T-003: T70 quality loop (detection and placement) |
 
 ## Active Initiatives (standalone)
 
-_(initiatives not anchored to a plan — run `atomic-skills:project new initiative <slug>` to start one)_
-
-| Slug | Status | Branch | Started | Next Action |
-|------|--------|--------|---------|-------------|
 | _(empty)_ | | | | |
 
 ## Recently Archived (last 10)
@@ -40,4 +40,6 @@ _(initiatives not anchored to a plan — run `atomic-skills:project new initiati
 
 ## Ad-Hoc Sessions Log (last 5)
 
-_(empty — explicit "no anchor" sessions are appended here for traceability)_
+| Timestamp | Description |
+|-----------|-------------|
+| 2026-08-04 | adopt titan-v01 nested; legacy flat → legacy-flat-pre-adopt-2026-08-04 |

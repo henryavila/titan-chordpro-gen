@@ -1,0 +1,68 @@
+{
+  "captureVersion": "0.1",
+  "phaseId": "F2",
+  "slug": "titan-v01-f2-phase-c-validation-and-quality",
+  "title": "Phase C Validation and quality",
+  "goal": "Validation harness over the 151-song corpus, F-004 bass inversions, stage cache, and quality loop until sample WCSR and placement are release-credible; then CLI polish and tag `v0.1.0-c0`.",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Validation harness (T60–T69)",
+      "description": "Extra `[validation]`, corpus loader, yt-dlp downloader, runner/metrics/parser, divergence ranker, nightly workflow, F-004 `bass_chroma`, cache dump/load + orchestrator wiring. **Already in tree.**"
+    },
+    {
+      "id": "T-002",
+      "title": "T70 structural placement fixes",
+      "description": "Local `parent_word_idx` reindex, melisma remap, orphan InstrumentalLines, sectioner midpoint coverage, stress single-source, beat_snap end clamp. **Landed 2026-08-04; sample mean WCSR still ~0.21.**"
+    },
+    {
+      "id": "T-003",
+      "title": "T70 quality loop (detection and placement)",
+      "description": "Reduce stacking, improve chord/time agreement vs ground truth on the 3-song sample then broader corpus; target mean WCSR-majmin ≥ 0.70 and Henry GO on top divergences."
+    },
+    {
+      "id": "T-004",
+      "title": "T71 CLI polish",
+      "description": "Rich progress bars and `--validate` flag on `titan-chordpro` CLI."
+    },
+    {
+      "id": "T-005",
+      "title": "T72 README validation section",
+      "description": "Badges plus validation harness docs (setup/quick-start already exist)."
+    },
+    {
+      "id": "T-006",
+      "title": "T73 close Phase C",
+      "description": "Sync roadmap, write CHANGELOG `[0.1.0c0]`, bump package to `0.1.0c0`, final review, Henry tags `v0.1.0-c0`."
+    }
+  ],
+  "exitGates": [
+    {
+      "id": "F2-G1",
+      "description": "Sample or Tier 2.5 mean WCSR-majmin ≥ 0.70",
+      "verifier": {
+        "kind": "manual",
+        "description": "Confirm benchmarks/reports latest mean WCSR ≥ 0.70"
+      },
+      "status": "pending"
+    },
+    {
+      "id": "F2-G2",
+      "description": "Henry GO on top divergences (≤ 3 Titan-wrong in top-N)",
+      "verifier": {
+        "kind": "manual",
+        "description": "Owner review of top-divergences.md"
+      },
+      "status": "pending"
+    },
+    {
+      "id": "F2-G3",
+      "description": "Tag v0.1.0-c0 exists after T73",
+      "verifier": {
+        "kind": "shell",
+        "command": "git rev-parse v0.1.0-c0"
+      },
+      "status": "pending"
+    }
+  ]
+}

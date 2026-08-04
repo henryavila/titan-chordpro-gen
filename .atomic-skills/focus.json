@@ -1,16 +1,43 @@
 {
   "schemaVersion": "0.1",
-  "generatedAt": "2026-06-25T00:53:28.506Z",
-  "projectId": null,
-  "plan": null,
-  "phase": null,
-  "tasks": null,
-  "gates": null,
-  "nextAction": null,
+  "generatedAt": "2026-08-04T16:17:34.182Z",
+  "projectId": "titan-chordpro-lib",
+  "plan": {
+    "slug": "titan-v01",
+    "title": "Titan ChordPro Lib v0.1 — from research to release",
+    "status": "active"
+  },
+  "phase": {
+    "id": "F2",
+    "slug": "titan-v01-f2-phase-c-validation-and-quality",
+    "title": "Phase C Validation and quality",
+    "index": 3,
+    "total": 4,
+    "status": "active"
+  },
+  "tasks": {
+    "done": 2,
+    "total": 6,
+    "blocked": 0
+  },
+  "gates": {
+    "met": 0,
+    "total": 3
+  },
+  "nextAction": "Execute T-003: T70 quality loop (detection and placement)",
   "flags": {
     "drift": false,
     "multipleActivePlans": false,
     "unclaimedBranch": false
   },
-  "sources": []
+  "sources": [
+    {
+      "path": ".atomic-skills/projects/titan-chordpro-lib/titan-v01/plan.md",
+      "lastUpdated": "2026-08-04T16:12:00Z"
+    },
+    {
+      "path": ".atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f2-phase-c-validation-and-quality.md",
+      "lastUpdated": "2026-08-04T16:08:35Z"
+    }
+  ]
 }

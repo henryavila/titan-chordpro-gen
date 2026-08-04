@@ -1,0 +1,40 @@
+{
+  "captureVersion": "0.1",
+  "phaseId": "F1",
+  "slug": "titan-v01-f1-phase-b-ml-integration",
+  "title": "Phase B ML Integration",
+  "goal": "Seven real ML engines on Mac-first hardware with factory fail-fast and Codex hot-fix to `v0.1.0-b1`.",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Integrate seven engines",
+      "description": "BeatThis, htdemucs_ft, whisper.cpp, torchaudio align, Chordino, gruut PT, g2p_en EN under `titan_chordpro/engines/`."
+    },
+    {
+      "id": "T-002",
+      "title": "Codex hot-fix b1",
+      "description": "Apply 8/9 A+B findings; defer F-004 bass inversions to Phase C; tag `v0.1.0-b1`."
+    }
+  ],
+  "exitGates": [
+    {
+      "id": "F1-G1",
+      "description": "Real engines selectable via factory on Apple Silicon path",
+      "verifier": {
+        "kind": "test",
+        "runner": "pytest",
+        "pattern": "tests/integration/test_factory_real.py"
+      },
+      "status": "pending"
+    },
+    {
+      "id": "F1-G2",
+      "description": "Tag v0.1.0-b1 exists",
+      "verifier": {
+        "kind": "shell",
+        "command": "git rev-parse v0.1.0-b1"
+      },
+      "status": "pending"
+    }
+  ]
+}

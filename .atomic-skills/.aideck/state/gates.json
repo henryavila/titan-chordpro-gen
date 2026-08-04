@@ -42,5 +42,82 @@
     "status": "met",
     "verifierLabel": "shell: uv run --extra dev --extra validation pytest tests",
     "evidenceSummary": "passed · 489 tests · 2026-06-24"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f2-phase-c-validation-and-quality",
+    "phaseId": "F2",
+    "id": "F2-G1",
+    "description": "Sample or Tier 2.5 mean WCSR-majmin ≥ 0.70",
+    "status": "pending",
+    "verifierLabel": "manual",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f2-phase-c-validation-and-quality",
+    "phaseId": "F2",
+    "id": "F2-G2",
+    "description": "Henry GO on top divergences (≤ 3 Titan-wrong in top-N)",
+    "status": "pending",
+    "verifierLabel": "manual",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f2-phase-c-validation-and-quality",
+    "phaseId": "F2",
+    "id": "F2-G3",
+    "description": "Tag v0.1.0-c0 exists after T73",
+    "status": "pending",
+    "verifierLabel": "shell: git rev-parse v0.1.0-c0",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f0-phase-a-foundation",
+    "phaseId": "F0",
+    "id": "F0-G1",
+    "description": "Pipeline with mocks produces valid ChordPro end-to-end",
+    "status": "met",
+    "verifierLabel": "test: pytest tests/unit/test_smoke.py tests/integration/test_cli.…",
+    "evidenceSummary": "passed · 1 tests · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f0-phase-a-foundation",
+    "phaseId": "F0",
+    "id": "F0-G2",
+    "description": "Tag v0.1.0-a0 exists on the remote",
+    "status": "met",
+    "verifierLabel": "shell: git rev-parse v0.1.0-a0",
+    "evidenceSummary": "passed · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f1-phase-b-ml-integration",
+    "phaseId": "F1",
+    "id": "F1-G1",
+    "description": "Real engines selectable via factory on Apple Silicon path",
+    "status": "met",
+    "verifierLabel": "test: pytest tests/integration/test_factory_real.py",
+    "evidenceSummary": "passed · 1 tests · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "initiativeId": "titan-v01-f1-phase-b-ml-integration",
+    "phaseId": "F1",
+    "id": "F1-G2",
+    "description": "Tag v0.1.0-b1 exists",
+    "status": "met",
+    "verifierLabel": "shell: git rev-parse v0.1.0-b1",
+    "evidenceSummary": "passed · 2026-08-04"
   }
 ]

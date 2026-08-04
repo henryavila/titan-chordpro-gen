@@ -12,5 +12,67 @@
     "index": 0,
     "isCurrent": true,
     "tasksText": "3/3"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "planTitle": "Titan ChordPro Lib v0.1 — from research to release",
+    "id": "F0",
+    "slug": "titan-v01-f0-phase-a-foundation",
+    "title": "Phase A Foundation",
+    "status": "done",
+    "dependsOn": [],
+    "summary": "Core puro Python + fusion + writer + CLI.",
+    "index": 0,
+    "isCurrent": false,
+    "tasksText": "2/2"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "planTitle": "Titan ChordPro Lib v0.1 — from research to release",
+    "id": "F1",
+    "slug": "titan-v01-f1-phase-b-ml-integration",
+    "title": "Phase B ML Integration",
+    "status": "done",
+    "dependsOn": [
+      "F0"
+    ],
+    "summary": "Sete engines ML + hot-fix b1.",
+    "index": 1,
+    "isCurrent": false,
+    "tasksText": "2/2"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "planTitle": "Titan ChordPro Lib v0.1 — from research to release",
+    "id": "F2",
+    "slug": "titan-v01-f2-phase-c-validation-and-quality",
+    "title": "Phase C Validation and quality",
+    "status": "active",
+    "dependsOn": [
+      "F1"
+    ],
+    "summary": "Harness + quality loop até tag c0.",
+    "index": 2,
+    "isCurrent": true,
+    "tasksText": "2/6"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "planTitle": "Titan ChordPro Lib v0.1 — from research to release",
+    "id": "F3",
+    "slug": "titan-v01-f3-phase-d-pre-release",
+    "title": "Phase D Pre-release",
+    "status": "pending",
+    "dependsOn": [
+      "F2"
+    ],
+    "summary": "Docs, demo, tag v0.1.0.",
+    "index": 3,
+    "isCurrent": false,
+    "tasksText": "0/0"
   }
 ]

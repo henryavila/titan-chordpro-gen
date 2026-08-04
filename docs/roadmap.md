@@ -2,9 +2,10 @@
 
 > **Living document** — Atualize sempre que mudar status de uma tarefa, terminar uma fase, ou repriorizar. Substitui o `docs/research/00-original-roadmap.md` (artefato histórico de pesquisa inicial).
 >
-> **Última atualização:** 2026-05-19 (hot-fix v0.1.0-b1)
-> **Fase atual:** Phase B + Codex hot-fix completos — v0.1.0-b1 tagueado
-> **Próxima milestone:** Phase C (validation harness + F-004 bass-note inversions)
+> **Última atualização:** 2026-08-04
+> **Fase atual:** Phase C (validation + T70 placement refinement) — 🚧 in progress
+> **Versão no código:** `0.1.0b2` (core hardware contract / curta)
+> **Próxima milestone:** fechar T70 placement → T71–T73 → tag `v0.1.0-c0`
 
 ## Status legend
 
@@ -20,13 +21,15 @@
 ## Quick links
 
 - **Research:** [`docs/research/`](research/) (10 arquivos: 9 streams + síntese)
-- **Design spec:** `docs/superpowers/specs/` (drafts em `drafts/`, consolidado pendente)
-- **Implementation plan:** TBD (gerado por `writing-plans` skill após consolidação do spec)
+- **Design spec:** [`docs/superpowers/specs/2026-05-09-titan-v0.1-design.md`](superpowers/specs/2026-05-09-titan-v0.1-design.md)
+- **Phase C plan:** [`docs/superpowers/plans/2026-05-19-titan-v0.1-phase-c.md`](superpowers/plans/2026-05-19-titan-v0.1-phase-c.md)
+- **T70 placement handoff:** [`docs/superpowers/handoff-phase-c-iter4-placement.md`](superpowers/handoff-phase-c-iter4-placement.md)
 - **Original roadmap (histórico):** [`docs/research/00-original-roadmap.md`](research/00-original-roadmap.md)
+- **Project status:** [`.atomic-skills/PROJECT-STATUS.md`](../.atomic-skills/PROJECT-STATUS.md)
 
 ---
 
-## Phase 0 — Research + Design (em conclusão)
+## Phase 0 — Research + Design ✅ COMPLETA
 
 ### Research streams (`docs/research/`)
 
@@ -43,204 +46,165 @@
 | 9 | Chord-on-syllable algorithm | [`09-chord-on-syllable.md`](research/09-chord-on-syllable.md) | ✅ |
 | ∑ | Synthesis (TL;DR) | [`00-synthesis.md`](research/00-synthesis.md) | ✅ |
 
-### Design sections (`docs/superpowers/specs/drafts/`)
-
-| # | Seção | Arquivo | Status |
-|---|---|---|---|
-| 1 | Architecture overview + Module structure | `section-1-architecture.md` | ✅ Aprovado |
-| 2 | Engine Protocols + Schemas | `section-2-protocols-and-schemas.md` | ✅ Aprovado |
-| 3 | Fusion Engine algorithm | `section-3-fusion-engine.md` | ✅ Aprovado |
-| 4 | ChordPro Writer + Output Profiles | `section-4-writer-and-profiles.md` | ✅ Aprovado |
-| 5 | Error handling + Testing strategy | `section-5-error-handling-and-testing.md` | ✅ Aprovado |
-| 6 | Sequencing + Definition of Done | `section-6-sequencing-and-done.md` | ✅ Aprovado |
-
-### Pre-implementation closeout
+### Design sections + closeout
 
 | Tarefa | Status |
 |---|---|
-| Consolidar 6 seções em [`docs/superpowers/specs/2026-05-09-titan-v0.1-design.md`](superpowers/specs/2026-05-09-titan-v0.1-design.md) | ✅ |
-| Spec self-review (placeholders, contradições, scope) | ✅ |
-| User review do spec consolidado | ✅ Aprovado |
-| Invocar `superpowers:writing-plans` → [`docs/superpowers/plans/2026-05-12-titan-v0.1-phase-a.md`](superpowers/plans/2026-05-12-titan-v0.1-phase-a.md) | ✅ Phase A plan escrito (34 tasks) |
+| 6 seções em `docs/superpowers/specs/drafts/` | ✅ Aprovado |
+| Spec consolidado [`2026-05-09-titan-v0.1-design.md`](superpowers/specs/2026-05-09-titan-v0.1-design.md) | ✅ |
+| Phase A plan (34 tasks) | ✅ |
 
 ---
 
 ## v0.1.0 — Phase A: Foundation (no GPU) | Semanas 1-3 ✅ COMPLETA
 
-### Week 1 — Bootstrap + schemas + protocols
+Tag: **`v0.1.0-a0`** (2026-05-17) — 259 testes, ~93% coverage.
 
-| Tarefa | Status |
-|---|---|
-| `pyproject.toml` (deps, extras `[mac]/[cuda]/[dev]`) | ✅ |
-| Repo layout (`titan_chordpro/`, `tests/`, `docs/`, `benchmarks/`) | ✅ |
-| Pre-commit hooks (ruff format, ruff check, mypy) | ✅ |
-| `core/schemas.py` (todos schemas Pydantic da Seção 2) | ✅ |
-| `core/protocols.py` (6 Engine Protocols) | ✅ |
-| `core/exceptions.py` (TitanError hierarchy + 8 subclasses) | ✅ |
-| Unit tests para schemas (validação Pydantic) | ✅ |
+| Week | Entregas | Status |
+|---|---|---|
+| 1 | Bootstrap, schemas, protocols, exceptions | ✅ |
+| 2 | Fusion engine (syllabifier, stress, beat_snap, onset_fusion, melisma, sectioner, placer) | ✅ |
+| 3 | Writer 5 profiles, CLI, factory, orchestrator, mocks | ✅ |
 
-### Week 2 — Fusion engine (IP central)
-
-| Tarefa | Status |
-|---|---|
-| `fusion/syllabifier.py` (Maximum Onset Principle + orthographic fallback) | ✅ |
-| `fusion/stress.py` (PT orthographic + EN CMU dict via g2p_en) | ✅ |
-| `fusion/beat_snap.py` (±70ms / ±150ms tolerâncias) | ✅ |
-| `fusion/onset_fusion.py` (v0.1: chord+beat) | ✅ |
-| `fusion/melisma.py` (heurística simples) | ✅ |
-| `fusion/sectioner.py` (heurística baseada em gaps) | ✅ |
-| `fusion/placer.py` (algoritmo de placement com 5 estratégias) | ✅ |
-| Unit tests por módulo do fusion (~90% coverage target) | ✅ |
-
-### Week 3 — Writer + CLI + CI + corpus export
-
-| Tarefa | Status |
-|---|---|
-| `writer/profiles/inline_slash.py` (default) | ✅ |
-| `writer/profiles/chordpro_ref.py` | ✅ |
-| `writer/profiles/onsong.py` | ✅ |
-| `writer/profiles/propresenter.py` | ✅ |
-| `writer/profiles/songbookpro.py` | ✅ |
-| `writer/serializer.py` (ChordProDocument → string) | ✅ |
-| `cli.py` (argparse + entry point `titan-chordpro`) | ✅ |
-| `factory.py` (engine selection com hardware detection) | ✅ |
-| `.github/workflows/ci.yml` (matrix macOS-14 + ubuntu) | ⏸ Deferred — não bloqueia Phase A |
-| `tests/conftest.py` (mock engines pytest fixtures) | ✅ |
-| `benchmarks/export_corpus.py` (SQL → JSON) | ✅ stub |
-| `tests/corpus-export.json` (run inicial do export, ~147 songs) | ⏸ Deferred to Phase C |
-| Snapshot tests dos 5 profiles | ⏸ Deferred — cobertura 93% via unit tests |
-
-**Validação fim Phase A:**
-- [x] Pipeline com mocks rodando end-to-end (259 testes, 93% cobertura)
-- [x] Coverage ≥ 80% em `core/` e `fusion/` (93% total)
-- [ ] CI passando em ambas plataformas (deferred)
-- [x] `titan-chordpro tests/fixtures/silent.wav` produz ChordPro válido
+**Deferred from A (still open in DoD where noted):**
+- Snapshot tests dos 5 profiles → Phase D
+- CI dual-platform — **later landed** in Phase B (see Phase B)
 
 ---
 
 ## v0.1.0 — Phase B: ML Integration (Mac-first) | Semanas 4-7 ✅ COMPLETA
 
-### Week 4 — BeatThis (beat tracking)
+Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 
-| Tarefa | Status |
-|---|---|
-| `engines/beat/beatthis.py` (BeatThis MIT, PyTorch CUDA+MPS) | ✅ |
-| Integration test: F-measure > 0.85 em snippets | ✅ |
-| EngineInfo correctly reports backend (mps/cuda/cpu) | ✅ |
-
-### Week 5 — htdemucs_ft (separation)
-
-| Tarefa | Status |
-|---|---|
-| `engines/separation/htdemucs.py` via `python-audio-separator` | ✅ |
-| Integration test: 4 stems gerados, audible | ✅ |
-| Cache integration (opt-in via `cache=True`) | ✅ |
-
-### Week 6 — whisper.cpp + alignment
-
-| Tarefa | Status |
-|---|---|
-| `engines/transcription/whisper_cpp.py` via `pywhispercpp` | ✅ |
-| `engines/alignment/torchaudio_align.py` (forced alignment MPS+CUDA) | ✅ |
-| Integration test: word-level offset mediano < 100ms | ✅ |
-
-### Week 7 — Chordino + EN syllabifier
-
-| Tarefa | Status |
-|---|---|
-| `engines/chord/chordino.py` via `chord-extractor` (VAMP plugin) | ✅ |
-| `engines/lang/english.py` (g2p_en + CMU stress) | ✅ |
-| `engines/lang/portuguese.py` (gruut + orthographic stress) | ✅ |
-| Integration test: chord events com bass note correto | ✅ |
-| Setup script para VAMP plugin (brew install vamp-plugin-sdk) | ✅ |
-
-**Validação fim Phase B:**
-- [x] Pipeline real end-to-end nas 6 músicas PT-BR
-- [x] Tier 1 CI tests passando com engines reais
-- [x] Output `.chordpro` "razoável" (subjective review do owner)
+| Week | Engine / entrega | Status |
+|---|---|---|
+| 4 | BeatThis beat tracking | ✅ |
+| 5 | htdemucs_ft separation (`audio-separator`) | ✅ |
+| 6 | whisper.cpp + torchaudio forced alignment | ✅ |
+| 7 | Chordino (VAMP) + gruut PT + g2p_en EN | ✅ |
+| — | CI matrix macOS-14 + ubuntu-latest | ✅ |
+| — | Codex hot-fix b1 (8/9 findings; F-004 → Phase C) | ✅ |
 
 ---
 
-## v0.1.0 — Phase C: End-to-end + Validation harness | Semanas 8-9
+## v0.1.0 — Phase C: End-to-end + Validation harness | Semanas 8-9 🚧
 
-### Week 8 — Validation harness (Tier 2+3)
+**Initiative:** `titan-phase-c` · **Alvo de tag:** `v0.1.0-c0` (ainda **não** emitida)  
+**Versão de pacote atual:** `0.1.0b2` (ver post-C: core decoupling — não é tag de Phase C)
 
-| Tarefa | Status |
-|---|---|
-| `benchmarks/audio_downloader.py` (yt-dlp wrapper, cache local) | ⏳ |
-| `benchmarks/validation_runner.py` (pipeline + mir_eval metrics) | ⏳ |
-| `benchmarks/divergence_ranker.py` (severity scoring CRITICAL/HIGH/MEDIUM/LOW/NEGLIGIBLE) | ⏳ |
-| `.github/workflows/nightly.yml` (cron daily 06:00 UTC) | ⏳ |
-| Tier 2 sample stratification (slash chords, 6/8, melisma, etc.) | ⏳ |
-| **F-004:** Chordino bass-note inversion derivation (spec §406) — chromagram do bass stem | ⏳ Codex-deferred from v0.1.0-b1 |
-
-### Week 9 — Tier 2 nightly + iteração + polish
+### Week 8 — Validation harness + F-004 + cache
 
 | Tarefa | Status |
 |---|---|
-| Primeira run nightly (30 songs) | ⏳ |
-| Review top 10 divergências | ⏳ |
-| Fix bugs descobertos | ⏳ |
-| Polish CLI (mensagens de erro, progress bars via rich) | ⏳ |
-| `README.md` (badges, install, invocation, demo) | ⏳ |
+| T60 — `[validation]` extra + `docs/setup-validation.md` | ✅ |
+| T61 — `benchmarks/corpus.py` (songs.csv → Song) | ✅ |
+| T62 — `benchmarks/audio_downloader.py` (yt-dlp + disk cache) | ✅ |
+| T63/T64 — F-004 `bass_chroma.py` + Chordino inversions | ✅ |
+| T65/T66 — cache `dump_stage`/`load_stage` + orchestrator wiring | ✅ |
+| T67 — `validation_runner` + `metrics` + `chordpro_parser` | ✅ |
+| T67b — Beat F cross-librosa diagnostic; gates honestas (WCSR + top-N) | ✅ |
+| T68 — `divergence_ranker` + `benchmarks/reports/` | ✅ |
+| T69 — `.github/workflows/nightly.yml` + marker `corpus_full` | ✅ |
+| Chordino arm64 build from source + `install_vamp.sh` rewrite | ✅ |
+| whisper default `medium` + word-level + anti-hallucination | ✅ |
+| Adaptive sectioner; surface `beat_grid` on document | ✅ |
+| Align chunked emissions; GPU release between stages | ✅ |
 
-**Validação fim Phase C:**
-- [ ] Tier 2 metrics: WCSR-majmin ≥ 70%
-- [ ] Beat F-measure ≥ 0.85
-- [ ] Word alignment median offset < 100ms
-- [ ] Top 10 divergências revisadas (≤ 3 são "Titan errado")
+### Week 9 — Sample iteration + polish
+
+| Tarefa | Status |
+|---|---|
+| **T70** — Run sample / Tier 2.5 + review divergências + fix quality | 🚧 **BLOCKER: quality (WCSR ~0.21)** |
+| T70-iter2 — 4 gaps (chordino offline, whisper base, sectioner, gates) | ✅ resolvidos |
+| T70-iter3 — word-level whisper, adaptive sectioner, anti-hallucination | ✅ |
+| T70-iter4 — placement diagnosis (stacking report) | ✅ documentado |
+| T70-iter5 — structural fixes (reindex, orphans, sectioner coverage, stress, beat_snap) | ✅ 2026-08-04 |
+| T70-iter6+ — chord detection quality + de-stack + WCSR→70% | 🚧 next |
+| T71 — CLI rich progress + `--validate` | ⏳ |
+| T72 — README badges + validation section formal | ⚠️ parcial (quick-start ad-hoc existe) |
+| T73 — roadmap sync + CHANGELOG + version `0.1.0c0` + tag | ⏳ (roadmap ✅ sync 2026-08-04) |
+
+### Ad-hoc (2026-05-20+)
+
+| Entrega | Status |
+|---|---|
+| `scripts/install.sh`, `render_from_url.py`, `render_beatgrid.py` | ✅ |
+| README setup + quick-start | ✅ |
+| Extra `[audio]` (beat/stems/whisper subset p/ consumidores tipo curta) | ✅ |
+
+### Validação fim Phase C
+
+| Gate | Status | Notas |
+|---|---|---|
+| WCSR-majmin ≥ 70% | ⚠️ not met | sample 3 songs (2026-05-20): mean **~0.21** |
+| Top-N ≤ 3 “Titan errado” | ⚠️ blocked | awaiting placement fix + Henry review |
+| Beat F ≥ 0.85 vs GT | ⏸ | corpus sem beat timestamps — diagnóstico cross-librosa only |
+| Word offset &lt; 100ms | ⏸ | corpus sem word timestamps |
+
+### T70 quality backlog (emerged)
+
+| Item | Status |
+|---|---|
+| Chord stacking / wrong placement | 🚧 |
+| Orphans discarded by orchestrator | 🚧 fix in progress |
+| Sectioner gaps dropping chords | 🚧 fix in progress |
+| `parent_word_idx` global vs local in placer | 🚧 fix in progress |
+| Downbeat noise / fragmented lyric lines / off-by-1 syllable | ⏳ |
 
 ---
 
-## v0.1.0 — Phase D: Pre-release | Semana 10
+## Pós Phase C (shipped fora do plano C formal)
+
+| Entrega | Status | Notas |
+|---|---|---|
+| **titan-core-decoupling F0** | ✅ | Lazy root exports; `core.hardware` public contract; version **`0.1.0b2`** / tag `v0.1.0b2` |
+| Extra `[audio]` | ✅ | Subset ML sem Chordino/gruut — branch `feat/audio-extra` |
+
+---
+
+## v0.1.0 — Phase D: Pre-release | Semana 10 ⏳
+
+**Blocked by:** Phase C tag `v0.1.0-c0`. Plano D ainda não escrito.
 
 | Tarefa | Status |
 |---|---|
-| Run Tier 3 completa (147 songs) | ⏳ |
-| Review top 20 divergências | ⏳ |
-| `docs/method.md` (descrição do pipeline) | ⏳ |
-| `docs/profiles.md` (5 output profiles + quando usar) | ⏳ |
-| `docs/troubleshooting.md` (erros comuns + ações) | ⏳ |
-| `CHANGELOG.md` v0.1.0 | ⏳ |
+| Docs: `method.md`, `profiles.md`, `troubleshooting.md` | ⏳ |
 | Demo GIF/video | ⏳ |
-| `LICENSE` MIT | ⏳ |
+| `LICENSE` MIT | ✅ (arquivo já no root) |
+| `CHANGELOG.md` → `[0.1.0]` | ⏳ |
+| Snapshot tests 5 profiles | ⏳ |
+| `docs/known-issues.md` | ⏳ |
 | `git tag v0.1.0` + GitHub release | ⏳ |
 | (Opcional) PyPI publish | ⏳ |
+| CI ubuntu matrix | ✅ (já em Phase B) |
+| Tier 3 corpus / top-20 review | ⚠️ absorvido por T70 (corpus 151) — re-run se placement fix |
 
 ---
 
 ## Definition of Done — v0.1.0
 
 ### Funcionalidade
-- [ ] CLI `titan-chordpro song.mp3` produz `.chordpro` válido
-- [ ] CLI suporta `--profile=`, `--language=`, `--output=`, `--keep-stems`, `--cache`
-- [ ] Library API: `transcribe()` + `doc.write()` + `doc.to_string()`
-- [ ] Pipeline funciona em Apple Silicon (M4)
-- [ ] `inline_slash` é default
+- [x] CLI `titan-chordpro song.mp3` produz `.chordpro` (mock e real path)
+- [x] CLI: `--profile=`, `--language=`, `--output=`, `--keep-stems`, `--cache` (keep_stems wiring still imperfect)
+- [x] Library API: `transcribe()` + `doc.write()` / `doc.to_string()`
+- [x] Pipeline em Apple Silicon
+- [x] `inline_slash` default
 
 ### Qualidade
-- [ ] Tier 1 CI passando em macOS-14 + ubuntu-latest
-- [ ] Coverage ≥ 80% (gate)
-- [ ] Tier 2 nightly: WCSR-majmin ≥ 70%, Beat F ≥ 0.85
-- [ ] Tier 3 pre-release: top 20 divergências revisadas
-- [ ] Snapshot tests dos 5 profiles passando
-- [ ] `chordpro` CLI parseia output do `chordpro_ref` sem erros
+- [x] Tier 1 CI macOS-14 + ubuntu-latest (workflow present)
+- [x] Coverage ≥ 80% (met in A/B; maintain)
+- [ ] Tier 2: WCSR-majmin ≥ 70%
+- [ ] Top divergências revisadas (Henry GO)
+- [ ] Snapshot tests 5 profiles
+- [ ] `chordpro` CLI parseia `chordpro_ref`
 
-### Documentação
-- [ ] README com badge, install, invocation, demo
-- [ ] `docs/method.md`, `docs/profiles.md`, `docs/troubleshooting.md`
+### Documentação / Distribuição
+- [x] README install + quick-start
+- [ ] Badges + demo + method/profiles/troubleshooting
 - [ ] CHANGELOG.md
-- [ ] Demo GIF/video
-
-### Distribuição
-- [ ] `pyproject.toml` com extras `[mac]`, `[cuda]`
-- [ ] `LICENSE` MIT
-- [ ] CI + nightly workflows
-
-### Sem regressões
-- [ ] `docs/known-issues.md` se houver bugs conhecidos
-- [ ] Cada known issue tem GitHub issue
-- [ ] Nenhum bug bloqueador (P0) aberto
+- [x] `pyproject.toml` extras `[mac]`, `[cuda]`, `[audio]`, `[validation]`
+- [x] LICENSE MIT
+- [x] nightly workflow (exists; product gate until c0)
 
 ---
 
@@ -250,15 +214,15 @@
 
 | Tarefa | Status |
 |---|---|
-| Fork BTC-ISMIR19 → port PyTorch 2.x + MPS | ⏸ Deferred to v0.2 |
-| `engines/transcription/mlx_whisper.py` (Apple Silicon fast-path) | ⏸ |
-| `engines/transcription/faster_whisper.py` (CUDA fast-path) | ⏸ |
-| `engines/separation/demucs_mlx.py` (~73× realtime no M4) | ⏸ |
-| Pipeline tested em RTX 5070Ti (PC Windows) | ⏸ |
-| Multi-evidence onset fusion (`fuse_onsets_v02`): bass + vocal onset | ⏸ |
-| Acoustic prosody fallback no stress detection | ⏸ |
-| All-In-One model integration (sectioning + chord + beat joint) | ⏸ |
-| Vocab `extended_170` no chord engine (BTC-ISMIR19 nativo) | ⏸ |
+| Fork BTC-ISMIR19 → port PyTorch 2.x + MPS | ⏸ |
+| `engines/transcription/mlx_whisper.py` | ⏸ |
+| `engines/transcription/faster_whisper.py` | ⏸ |
+| `engines/separation/demucs_mlx.py` | ⏸ |
+| Pipeline em RTX 5070Ti + `cuda-mps-validation` initiative | ⚠️ hardware |
+| Multi-evidence onset fusion (`fuse_onsets_v02`) | ⏸ |
+| Acoustic prosody fallback no stress | ⏸ |
+| All-In-One sectioning model | ⏸ |
+| Vocab `extended_170` | ⏸ |
 | Variable BPM handling | ⏸ |
 
 ---
@@ -269,75 +233,64 @@
 
 | Tarefa | Status |
 |---|---|
-| Solo → first-draft ASCII tab inside `{sot}/{eot}` (watermarked approximate) | ⏸ |
-| Vocab estendido com sus, add9, dim, aug | ⏸ |
-| Meter change detection (4/4 → 6/8 mid-song) | ⏸ |
-| Key change / modulation detection | ⏸ |
-| ChordFormer / BACHI integration (se code público) | ⏸ |
+| Solo → ASCII tab watermarked | ⏸ |
+| Vocab sus/add9/dim/aug | ⏸ |
+| Meter / key change detection | ⏸ |
+| ChordFormer / BACHI (se público) | ⏸ |
 | Pre-chorus detection | ⏸ |
 
 ---
 
-## Phase 2 — Sibling projects (vision, ~6-12 meses pós-v0.1)
+## Phase 2 — Sibling projects (vision)
 
-**Tema:** "Editor visual + learning loop"
-
-Projetos separados deste repo:
-
-| Projeto | Linguagem | Status |
-|---|---|---|
-| `titan-chordpro-render` | TypeScript/JS | ⏸ Repo não criado ainda |
-| `titan-chordpro-theme-default` | CSS | ⏸ |
-| Editor app (drag-to-correct) | TBD framework web | ⏸ |
-| `LearnableChordEngine` (volta na lib Python) | Python | ⏸ Schema `CorrectionLog` já em v0.1 |
+| Projeto | Status |
+|---|---|
+| `titan-chordpro-render` | ⏸ |
+| Theme CSS + editor drag-to-correct | ⏸ |
+| `LearnableChordEngine` | ⏸ (`CorrectionLog` schema reserved) |
 
 ---
 
 ## Updates log
 
-> Adicione aqui mudanças significativas no roadmap. Mantenha cronológico, mais recente em cima.
+> Mais recente em cima.
 
-### 2026-05-19 (Codex hot-fix v0.1.0-b1)
-- ✅ Cross-model review (gpt-5-codex) do full Phase A+B contra spec consolidado — 9 findings (0B/4C/5M).
-- ✅ 8/9 fixes aplicados: F-001 (export public API), F-002 (fail-fast factory), F-003 (per-line chord span),
-  F-005 (normalize pt-BR/en_US), F-006 (StageConfidence aggregation), F-007 (restore `**engine_overrides`),
-  F-008 (fail-fast hardware backend), F-009 (Mock parent_word_idx parity). 320 passed / 10 skipped.
-- ⏸ F-004 deferred: Chordino bass-note inversion → Phase C alongside corpus harness (needs bass-stem chroma).
-- ✅ `v0.1.0-b1` tagueado (annotated) e pushed.
-- 📌 Próximo: Phase C plan + execução.
+### 2026-08-04 (roadmap sync + T70 structural fix campaign + sample re-run)
+- ✅ Roadmap atualizado para refletir código real: Phase C T60–T69 done; T70 placement blocker; T71–T73 open.
+- ✅ Documentado `0.1.0b2` / core-decoupling + extra `[audio]` (fora do plano C formal).
+- ✅ **Structural placement fixes (T70-iter5):**
+  - reindex `parent_word_idx` local + melisma remap no orchestrator
+  - orphans → `InstrumentalLine` (não descartados)
+  - sectioner midpoint coverage (sem drop de acordes em gaps curtos)
+  - `beat_snap` clamp end; stress single-source imutável
+  - metrics: sort intervals (orphans interleaved) para mir_eval
+- ✅ Sample re-run 3 songs (`benchmarks/reports/2026-08-04/`): mean WCSR-majmin **0.211** (ainda ⚠️ vs gate 0.70). Cifras estruturalmente melhores (intros/instrumentals), mas símbolos/placement ainda distantes do GT — precisa refinamento de detecção Chordino + anti-stacking.
+- 📌 Próximo: T70 quality loop (chord recognition path, de-stack, score vs GT) → T71–T73 → tag `v0.1.0-c0`.
 
-### 2026-05-17 (Phase B)
-- ✅ Phase B completa — 7 engines integrados (BeatThis, htdemucs_ft, whisper.cpp,
-  torchaudio align, Chordino, gruut PT, g2p_en EN), CI matrix ativada, factory
-  com fallback transparente para mocks.
-- ✅ `v0.1.0-b0` tagueado.
-- 📌 Próximo: Phase C — validation harness + corpus testing (30 → 147 songs).
+### 2026-06-24/25 (titan-core-decoupling F0)
+- ✅ Lazy package-root exports; `titan_chordpro.core.hardware` isolated public contract for **curta**.
+- ✅ Version **`0.1.0b2`** / tag `v0.1.0b2`. Import-isolation tests green.
 
-### 2026-05-17
-- ✅ Phase A completa — 259 testes passando, 92.55% coverage, pipeline end-to-end funcional.
-- ✅ `v0.1.0-a0` tagueado.
-- 📌 Próximo: Phase B — ML integration (BeatThis → htdemucs → whisper.cpp → Chordino).
+### 2026-05-20 (T70 sample + ad-hoc tooling)
+- 🚧 Sample 3 songs: mean WCSR-majmin ~0.21; lyrics ~95%; chords placement still bad.
+- ✅ `install.sh`, `render_from_url.py`, `render_beatgrid.py`, README quick-start.
+- 📌 Handoff: `docs/superpowers/handoff-phase-c-iter4-placement.md`.
 
-### 2026-05-12
-- ✅ Spec aprovado.
-- ✅ Phase A implementation plan escrito em [`docs/superpowers/plans/2026-05-12-titan-v0.1-phase-a.md`](superpowers/plans/2026-05-12-titan-v0.1-phase-a.md) — 34 tasks atômicas, ~3 semanas de trabalho.
-- 📌 Próximo: escolher modo de execução (Subagent-Driven ou Inline Execution) e começar T01.
+### 2026-05-19 (Phase C plan + Week 8 harness + Codex b1)
+- ✅ Phase C plan written + Codex plan review (6 findings applied).
+- ✅ Hot-fix `v0.1.0-b1` (8/9 A+B findings); F-004 deferred then **implemented in Phase C**.
+- ✅ Week 8 tasks T60–T69 landed (harness, F-004, cache, nightly).
 
-### 2026-05-09
-- ✅ Spec consolidado em [`docs/superpowers/specs/2026-05-09-titan-v0.1-design.md`](superpowers/specs/2026-05-09-titan-v0.1-design.md).
-- ✅ Spec self-review completo. Inconsistências corrigidas inline:
-  - `placement_strategy` enum agora tem 5 valores em todas as referências
-  - `ChordProDocument.to_string/write` default fixado em `inline_slash`
-  - Mock engines atualizados (sem `supports_phoneme_alignment` que foi removido do Protocol)
-  - `AlignmentEngine` docstring corrigida
-  - Edge case 4 reescrito (orphan flow vs end-of-line antigo)
-  - Drafts originais preservados em `docs/superpowers/specs/drafts/` para histórico
-- 🚧 Aguardando user review do spec consolidado.
-- 📌 Próximo: invocar `superpowers:writing-plans`.
+### 2026-05-18 (Phase B complete)
+- ✅ 7 ML engines; tag `v0.1.0-b0`.
+
+### 2026-05-17 (Phase A complete)
+- ✅ 259 tests, ~93% coverage; tag `v0.1.0-a0`.
+
+### 2026-05-09 / 05-12
+- ✅ Spec consolidado + Phase A plan (34 tasks).
 
 ### 2026-05-08
-- 📝 Roadmap criado consolidando 9 streams de pesquisa + 6 seções de design aprovadas.
-- ✅ Phase 0 (Research + Design) concluída exceto consolidação do spec + writing-plans.
-- 📌 Próximo: consolidar drafts em spec final + invocar `writing-plans`.
+- 📝 Roadmap criado.
 
 <!-- Adicione novas entradas acima desta linha -->

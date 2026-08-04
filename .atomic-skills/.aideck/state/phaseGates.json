@@ -38,5 +38,95 @@
     "status": "met",
     "verifierLabel": "shell: uv run --extra dev --extra validation pytest tests",
     "evidenceSummary": "passed · 489 tests · 2026-06-24"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F0",
+    "id": "F0-G1",
+    "description": "Mocks e2e ChordPro",
+    "status": "met",
+    "verifierLabel": "test: pytest tests/unit/test_smoke.py",
+    "evidenceSummary": "passed · 1 tests · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F0",
+    "id": "F0-G2",
+    "description": "Tag v0.1.0-a0",
+    "status": "met",
+    "verifierLabel": "shell: git rev-parse v0.1.0-a0",
+    "evidenceSummary": "passed · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F1",
+    "id": "F1-G1",
+    "description": "Factory real engines",
+    "status": "met",
+    "verifierLabel": "test: pytest tests/integration/test_factory_real.py",
+    "evidenceSummary": "passed · 1 tests · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F1",
+    "id": "F1-G2",
+    "description": "Tag v0.1.0-b1",
+    "status": "met",
+    "verifierLabel": "shell: git rev-parse v0.1.0-b1",
+    "evidenceSummary": "passed · 2026-08-04"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F2",
+    "id": "F2-G1",
+    "description": "Sample or Tier 2.5 mean WCSR-majmin ≥ 0.70",
+    "status": "pending",
+    "verifierLabel": "manual",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F2",
+    "id": "F2-G2",
+    "description": "Henry GO on top divergences (≤ 3 Titan-wrong in top-N)",
+    "status": "pending",
+    "verifierLabel": "manual",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F2",
+    "id": "F2-G3",
+    "description": "Tag v0.1.0-c0 exists after T73",
+    "status": "pending",
+    "verifierLabel": "shell: git rev-parse v0.1.0-c0",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F3",
+    "id": "F3-G1",
+    "description": "docs/method.md profiles.md troubleshooting.md exist",
+    "status": "pending",
+    "verifierLabel": "shell: test -f docs/method.md && test -f docs/profiles.md && test …",
+    "evidenceSummary": ""
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "phaseId": "F3",
+    "id": "F3-G2",
+    "description": "Tag v0.1.0 exists",
+    "status": "pending",
+    "verifierLabel": "shell: git rev-parse v0.1.0",
+    "evidenceSummary": ""
   }
 ]
