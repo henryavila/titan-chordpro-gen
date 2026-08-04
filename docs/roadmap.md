@@ -3,9 +3,9 @@
 > **Living document** — Atualize sempre que mudar status de uma tarefa, terminar uma fase, ou repriorizar. Substitui o `docs/research/00-original-roadmap.md` (artefato histórico de pesquisa inicial).
 >
 > **Última atualização:** 2026-08-04
-> **Fase atual:** Phase C (validation + T70 placement refinement) — 🚧 in progress
-> **Versão no código:** `0.1.0b2` (core hardware contract / curta)
-> **Próxima milestone:** fechar T70 placement → T71–T73 → tag `v0.1.0-c0`
+> **Fase atual:** Phase C — ✅ closed at package `0.1.0c0` (ready for operator tag `v0.1.0-c0`)
+> **Versão no código:** `0.1.0c0`
+> **Próxima milestone:** Henry tags `v0.1.0-c0` after final review → Phase D
 
 ## Status legend
 
@@ -87,10 +87,11 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 
 ---
 
-## v0.1.0 — Phase C: End-to-end + Validation harness | Semanas 8-9 🚧
+## v0.1.0 — Phase C: End-to-end + Validation harness | Semanas 8-9 ✅ CLOSED (c0 ready)
 
-**Initiative:** `titan-phase-c` · **Alvo de tag:** `v0.1.0-c0` (ainda **não** emitida)  
-**Versão de pacote atual:** `0.1.0b2` (ver post-C: core decoupling — não é tag de Phase C)
+**Initiative:** `titan-phase-c` / plan `titan-v01` F2  
+**Package version:** **`0.1.0c0`**  
+**Git tag:** `v0.1.0-c0` — **operator-owned** (do not auto-tag; Henry after final review)
 
 ### Week 8 — Validation harness + F-004 + cache
 
@@ -114,15 +115,15 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 
 | Tarefa | Status |
 |---|---|
-| **T70** — Run sample / Tier 2.5 + review divergências + fix quality | 🚧 **BLOCKER: quality (WCSR ~0.21)** |
-| T70-iter2 — 4 gaps (chordino offline, whisper base, sectioner, gates) | ✅ resolvidos |
+| **T70** — Sample / quality loop (detection + placement) | ⚠️ shipped improvements; WCSR gate **not met** (~0.26 sample) |
+| T70-iter2 — 4 gaps (chordino offline, whisper base, sectioner, gates) | ✅ |
 | T70-iter3 — word-level whisper, adaptive sectioner, anti-hallucination | ✅ |
-| T70-iter4 — placement diagnosis (stacking report) | ✅ documentado |
+| T70-iter4 — placement diagnosis (stacking report) | ✅ |
 | T70-iter5 — structural fixes (reindex, orphans, sectioner coverage, stress, beat_snap) | ✅ 2026-08-04 |
-| T70-iter6+ — chord detection quality + de-stack + WCSR→70% | 🚧 next |
-| T71 — CLI rich progress + `--validate` | ⏳ |
-| T72 — README badges + validation section formal | ⚠️ parcial (quick-start ad-hoc existe) |
-| T73 — roadmap sync + CHANGELOG + version `0.1.0c0` + tag | ⏳ (roadmap ✅ sync 2026-08-04) |
+| T70-iter6 — harmonic mix, chord postprocess, placer destack | ✅ 2026-08-04 (WCSR 0.211→0.259) |
+| T71 — CLI rich progress + `--validate` | ✅ |
+| T72 — README badges + validation section | ✅ |
+| T73 — roadmap + CHANGELOG + version `0.1.0c0` | ✅ (tag left to operator) |
 
 ### Ad-hoc (2026-05-20+)
 
@@ -136,20 +137,22 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 
 | Gate | Status | Notas |
 |---|---|---|
-| WCSR-majmin ≥ 70% | ⚠️ not met | sample 3 songs (2026-05-20): mean **~0.21** |
-| Top-N ≤ 3 “Titan errado” | ⚠️ blocked | awaiting placement fix + Henry review |
+| WCSR-majmin ≥ 70% | ⚠️ not met | sample 3 songs (2026-08-04 post T70): mean **0.259** |
+| Top-N ≤ 3 “Titan errado” | ⚠️ pending Henry GO | report `benchmarks/reports/2026-08-04/top-divergences.md` |
 | Beat F ≥ 0.85 vs GT | ⏸ | corpus sem beat timestamps — diagnóstico cross-librosa only |
 | Word offset &lt; 100ms | ⏸ | corpus sem word timestamps |
+| Package `0.1.0c0` + CHANGELOG | ✅ | tag `v0.1.0-c0` operator |
 
-### T70 quality backlog (emerged)
+### T70 quality backlog (carry-over / known issues)
 
 | Item | Status |
 |---|---|
-| Chord stacking / wrong placement | 🚧 |
-| Orphans discarded by orchestrator | 🚧 fix in progress |
-| Sectioner gaps dropping chords | 🚧 fix in progress |
-| `parent_word_idx` global vs local in placer | 🚧 fix in progress |
-| Downbeat noise / fragmented lyric lines / off-by-1 syllable | ⏳ |
+| Chord stacking / wrong placement | ✅ destack + structural fixes; residual musical error remains |
+| Orphans discarded by orchestrator | ✅ orphans → InstrumentalLine |
+| Sectioner gaps dropping chords | ✅ midpoint coverage |
+| `parent_word_idx` global vs local in placer | ✅ reindex |
+| WCSR → 0.70 (Chordino ceiling + equal-interval GT) | ⚠️ open — needs stronger ACR (v0.2 BTC) and/or timed GT |
+| Downbeat noise / fragmented lyric lines / off-by-1 syllable | ⏳ residual |
 
 ---
 
@@ -193,18 +196,19 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 ### Qualidade
 - [x] Tier 1 CI macOS-14 + ubuntu-latest (workflow present)
 - [x] Coverage ≥ 80% (met in A/B; maintain)
-- [ ] Tier 2: WCSR-majmin ≥ 70%
+- [ ] Tier 2: WCSR-majmin ≥ 70% (Phase C sample ~0.26 — carry to v0.2 ACR)
 - [ ] Top divergências revisadas (Henry GO)
 - [ ] Snapshot tests 5 profiles
 - [ ] `chordpro` CLI parseia `chordpro_ref`
 
 ### Documentação / Distribuição
-- [x] README install + quick-start
-- [ ] Badges + demo + method/profiles/troubleshooting
-- [ ] CHANGELOG.md
+- [x] README install + quick-start + Validation harness
+- [x] Badges (CI / Nightly / License / version)
+- [ ] method/profiles/troubleshooting (Phase D / F3)
+- [x] CHANGELOG.md (`[0.1.0c0]`)
 - [x] `pyproject.toml` extras `[mac]`, `[cuda]`, `[audio]`, `[validation]`
 - [x] LICENSE MIT
-- [x] nightly workflow (exists; product gate until c0)
+- [x] nightly workflow
 
 ---
 
@@ -255,17 +259,34 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 
 > Mais recente em cima.
 
-### 2026-08-04 (roadmap sync + T70 structural fix campaign + sample re-run)
-- ✅ Roadmap atualizado para refletir código real: Phase C T60–T69 done; T70 placement blocker; T71–T73 open.
+### 2026-08-04 (Phase C — v0.1.0c0 ready for tag)
+
+**Status:** ✅ Phase C closed at package **`0.1.0c0`**. Tag `v0.1.0-c0` is **operator-owned**
+(`git tag -a v0.1.0-c0 -m "Phase C closeout"` after final review — do not auto-tag from automate).
+
+Phase C delivers:
+
+1. **Validation harness** — `benchmarks/` (corpus, yt-dlp, mir_eval runner, divergence ranker), nightly cron, `docs/setup-validation.md`.
+2. **F-004 Chordino bass inversions** — `bass_chroma.py` + chordino wiring (T63/T64).
+3. **Cache JSON** — `transcribe(cache=True)` 8-stage dump/load (T65/T66).
+4. **T70 quality loop** — structural placement + harmonic mix + chord postprocess + destack; sample mean WCSR **0.259** (gate 0.70 **not met** — known issue / v0.2 ACR).
+5. **T71 CLI** — `--validate` + rich Progress.
+6. **T72 README** — badges + Validation harness section.
+7. **T73** — CHANGELOG `[0.1.0c0]`, version bump, this roadmap entry.
+
+**Operator tag command (after Henry GO):**
+
+```bash
+git tag -a v0.1.0-c0 -m "Phase C: validation harness + F-004 + cache + CLI polish (0.1.0c0)"
+```
+
+Carry-overs: WCSR ≥ 0.70 (BTC-ISMIR19 / timed GT), Henry top-N GO, Phase D docs (method/profiles/troubleshooting).
+
+### 2026-08-04 earlier (roadmap sync + T70 structural fix campaign + sample re-run)
+- ✅ Roadmap sync: Phase C T60–T69 done; T70 structural placement campaign.
 - ✅ Documentado `0.1.0b2` / core-decoupling + extra `[audio]` (fora do plano C formal).
-- ✅ **Structural placement fixes (T70-iter5):**
-  - reindex `parent_word_idx` local + melisma remap no orchestrator
-  - orphans → `InstrumentalLine` (não descartados)
-  - sectioner midpoint coverage (sem drop de acordes em gaps curtos)
-  - `beat_snap` clamp end; stress single-source imutável
-  - metrics: sort intervals (orphans interleaved) para mir_eval
-- ✅ Sample re-run 3 songs (`benchmarks/reports/2026-08-04/`): mean WCSR-majmin **0.211** (ainda ⚠️ vs gate 0.70). Cifras estruturalmente melhores (intros/instrumentals), mas símbolos/placement ainda distantes do GT — precisa refinamento de detecção Chordino + anti-stacking.
-- 📌 Próximo: T70 quality loop (chord recognition path, de-stack, score vs GT) → T71–T73 → tag `v0.1.0-c0`.
+- ✅ **Structural placement fixes (T70-iter5):** reindex, orphans, sectioner coverage, beat_snap, stress.
+- ✅ Sample re-run mean WCSR-majmin **0.211** pre quality-loop postprocess.
 
 ### 2026-06-24/25 (titan-core-decoupling F0)
 - ✅ Lazy package-root exports; `titan_chordpro.core.hardware` isolated public contract for **curta**.

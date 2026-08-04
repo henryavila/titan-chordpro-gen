@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "titan-chordpro-lib"
-version = "0.1.0b2"
+version = "0.1.0c0"
 description = "Audio-to-ChordPro Python library with chord-on-syllable placement"
 readme = "README.md"
 license = { text = "MIT" }
