@@ -96,34 +96,49 @@ class PortugueseSyllabifierEngine:
         syllables: list[SyllableEvent] = []
         for word_idx, word in enumerate(words):
             if phonemes is not None:
-                # Path 1: phoneme-grounded; defer to fusion's MOP-aware splitter.
                 word_phonemes = [p for p in phonemes if p.parent_word_idx == word_idx]
-                events = _fusion_syllabifier.syllabify_word_from_phonemes(
-                    word=word,
-                    phonemes=word_phonemes,
-                    word_idx=word_idx,
-                    language="pt",
-                )
-                syllables.extend(events)
-                continue
+                # Path 1: phoneme-grounded MOP when inventory is real IPA/ARPABET.
+                # MMS_FA token-id dumps are rejected inside syllabify_word_from_phonemes
+                # and fall back to orthographic + stress (never 1 syl/word collapse).
+                if word_phonemes and _fusion_syllabifier.phoneme_inventory_is_usable(word_phonemes):
+                    events = _fusion_syllabifier.syllabify_word_from_phonemes(
+                        word=word,
+                        phonemes=word_phonemes,
+                        word_idx=word_idx,
+                        language="pt",
+                    )
+                    syllables.extend(events)
+                    continue
+                if word_phonemes:
+                    # Explicit orthographic fallback when ids are unusable so
+                    # we still use gruut PT syllable boundaries when available.
+                    events = self._orthographic_events(word, word_idx)
+                    syllables.extend(events)
+                    continue
 
             # Path 2: orthographic split + linear time interpolation.
-            text_parts = _syllabify_pt_orthographic(word.text)
-            n = max(1, len(text_parts))
-            duration = max(0.0, word.timestamp.end - word.timestamp.start)
-            stress_index = _fusion_stress.stressed_syllable_index(text_parts, language="pt")
-            for i, syl_text in enumerate(text_parts):
-                start = word.timestamp.start + (duration * i / n)
-                end = word.timestamp.start + (duration * (i + 1) / n)
-                syllables.append(
-                    SyllableEvent(
-                        text=syl_text,
-                        phoneme_indices=[],
-                        timestamp=TimeStamp(start=start, end=end),
-                        is_stressed=(i == stress_index),
-                        parent_word_idx=word_idx,
-                        confidence=1.0,
-                    )
-                )
+            syllables.extend(self._orthographic_events(word, word_idx))
 
         return syllables
+
+    def _orthographic_events(self, word: WordEvent, word_idx: int) -> list[SyllableEvent]:
+        """Grapheme/gruut syllable split with linear time + PT stress."""
+        text_parts = _syllabify_pt_orthographic(word.text)
+        n = max(1, len(text_parts))
+        duration = max(0.0, word.timestamp.end - word.timestamp.start)
+        stress_index = _fusion_stress.stressed_syllable_index(text_parts, language="pt")
+        events: list[SyllableEvent] = []
+        for i, syl_text in enumerate(text_parts):
+            start = word.timestamp.start + (duration * i / n)
+            end = word.timestamp.start + (duration * (i + 1) / n)
+            events.append(
+                SyllableEvent(
+                    text=syl_text,
+                    phoneme_indices=[],
+                    timestamp=TimeStamp(start=start, end=end),
+                    is_stressed=(i == stress_index),
+                    parent_word_idx=word_idx,
+                    confidence=1.0,
+                )
+            )
+        return events
