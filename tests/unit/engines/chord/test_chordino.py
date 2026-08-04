@@ -324,3 +324,119 @@ class TestBassNoteIntegration:
 
         assert events[0].symbol == "Gm7"
         assert events[0].bass_note == "D"
+
+
+@pytest.mark.unit
+class TestChordPostprocess:
+    """Phase C T70 quality-loop: merge / key-snap / collapse helpers."""
+
+    def _evt(self, symbol: str, start: float, end: float) -> object:
+        from titan_chordpro.core.schemas import ChordEvent, TimeStamp
+
+        return ChordEvent(
+            symbol=symbol,
+            timestamp=TimeStamp(start=start, end=end),
+            source_engine="mock",
+        )
+
+    def test_merge_short_absorbed_into_longer_neighbour(self) -> None:
+        from titan_chordpro.engines.chord.chordino import merge_short_chords
+
+        events = [
+            self._evt("C", 0.0, 2.0),
+            self._evt("C#", 2.0, 2.3),  # 0.3s flutter
+            self._evt("G", 2.3, 4.0),
+        ]
+        merged = merge_short_chords(events, min_duration=0.6)
+        assert len(merged) == 2
+        assert merged[0].symbol == "C"
+        assert merged[0].timestamp.end == pytest.approx(2.3)
+        assert merged[1].symbol == "G"
+
+    def test_collapse_adjacent_same_majmin_root(self) -> None:
+        from titan_chordpro.engines.chord.chordino import collapse_adjacent_same_root
+
+        events = [
+            self._evt("Am", 0.0, 1.0),
+            self._evt("Am7", 1.0, 2.5),  # same majmin root+quality
+            self._evt("F", 2.5, 4.0),
+        ]
+        out = collapse_adjacent_same_root(events)
+        assert len(out) == 2
+        assert out[0].symbol == "Am7"  # longer segment wins spelling
+        assert out[0].timestamp.start == 0.0
+        assert out[0].timestamp.end == 2.5
+        assert out[1].symbol == "F"
+
+    def test_estimate_key_prefers_c_major_on_c_g_am_f(self) -> None:
+        from titan_chordpro.engines.chord.chordino import estimate_key
+
+        events = [
+            self._evt("C", 0, 2),
+            self._evt("G", 2, 4),
+            self._evt("Am", 4, 6),
+            self._evt("F", 6, 8),
+            self._evt("C", 8, 10),
+        ]
+        root, mode = estimate_key(events)
+        assert root == "C"
+        assert mode == "major"
+
+    def test_snap_out_of_key_to_diatonic(self) -> None:
+        from titan_chordpro.engines.chord.chordino import snap_events_to_key
+
+        events = [
+            self._evt("C", 0, 2),
+            self._evt("C#", 2, 4),  # out of C major
+            self._evt("G", 4, 6),
+        ]
+        snapped = snap_events_to_key(events, "C", "major")
+        roots = [e.symbol for e in snapped]
+        assert roots[0] == "C"
+        assert roots[1] != "C#"  # snapped onto diatonic
+        assert roots[2] == "G"
+
+    def test_postprocess_pipeline_removes_flutter_and_chromatic(self) -> None:
+        from titan_chordpro.engines.chord.chordino import postprocess_chords
+
+        events = [
+            self._evt("C", 0.0, 2.0),
+            self._evt("C#", 2.0, 2.2),  # flutter + chromatic
+            self._evt("G", 2.2, 4.0),
+            self._evt("Ab", 4.0, 6.0),  # chromatic (near G)
+            self._evt("F", 6.0, 8.0),
+        ]
+        out = postprocess_chords(events)
+        symbols = [e.symbol for e in out]
+        # No raw chromatics remain.
+        assert "C#" not in symbols
+        assert "Ab" not in symbols
+        # Coverage preserved roughly end-to-end.
+        assert out[0].timestamp.start == 0.0
+        assert out[-1].timestamp.end == pytest.approx(8.0)
+
+    def test_detect_applies_postprocess(self, tmp_path: Path) -> None:
+        """detect() must run postprocess_chords (flutter gone)."""
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        # C@0, C#@2.0 (flutter to 2.2 via next), G@2.2 → after postprocess C then G.
+        raw = [
+            MagicMock(chord="C:maj", timestamp=0.0),
+            MagicMock(chord="C#:maj", timestamp=2.0),
+            MagicMock(chord="G:maj", timestamp=2.2),
+        ]
+        fake_extractor = MagicMock()
+        fake_extractor.extract = MagicMock(return_value=raw)
+        engine = ChordinoEngine.__new__(ChordinoEngine)
+        engine._extractor = fake_extractor
+        audio = tmp_path / "song.wav"
+        audio.write_bytes(b"x")
+        with patch(
+            "titan_chordpro.engines.chord.chordino._probe_duration",
+            return_value=5.0,
+        ):
+            events = engine.detect(audio)
+        symbols = [e.symbol for e in events]
+        assert "C#" not in symbols
+        assert symbols[0] == "C"
+        assert "G" in symbols

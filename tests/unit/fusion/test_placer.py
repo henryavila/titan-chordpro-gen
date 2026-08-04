@@ -14,6 +14,7 @@ import pytest
 from titan_chordpro.core.schemas import (
     BeatGrid,
     ChordEvent,
+    ChordMarker,
     SyllableEvent,
     TimeStamp,
     WordEvent,
@@ -24,6 +25,7 @@ from titan_chordpro.fusion.placer import (
     _build_word_char_positions,
     _char_pos_of_syllable,
     _closest_word,
+    _destack_markers,
     _find_any_syllable_within,
     _find_melisma_at,
     _find_stressed_syllable_within,
@@ -432,3 +434,76 @@ class TestPlaceChordsInLineMulti:
         )
         assert line.word_alignments == words
         assert line.syllable_alignments == syllables
+
+
+@pytest.mark.unit
+class TestDestackMarkers:
+    """Phase C T70: no two chord markers share a char_position."""
+
+    def test_destack_spreads_same_position_forward(self) -> None:
+        markers = [
+            ChordMarker(
+                chord=_chord("F", 1.0),
+                char_position=0,
+                placement_strategy="before_word",
+            ),
+            ChordMarker(
+                chord=_chord("G", 1.1),
+                char_position=0,
+                placement_strategy="before_word",
+            ),
+        ]
+        kept, orphans = _destack_markers(markers, "meus olhos")
+        assert orphans == []
+        positions = sorted(m.char_position for m in kept)
+        assert positions == [0, 1]
+        assert {m.chord.symbol for m in kept} == {"F", "G"}
+
+    def test_destack_orphans_when_line_exhausted(self) -> None:
+        # line_text length 1 → only positions 0 and 1 available (max_pos = 1).
+        markers = [
+            ChordMarker(
+                chord=_chord("C", 0.0),
+                char_position=0,
+                placement_strategy="before_word",
+            ),
+            ChordMarker(
+                chord=_chord("F", 0.1),
+                char_position=0,
+                placement_strategy="before_word",
+            ),
+            ChordMarker(
+                chord=_chord("G", 0.2),
+                char_position=0,
+                placement_strategy="before_word",
+            ),
+        ]
+        kept, orphans = _destack_markers(markers, "a")
+        assert len(kept) == 2  # positions 0 and 1
+        assert len(orphans) == 1
+        assert orphans[0].symbol == "G"
+
+    def test_place_chords_destacks_stacked_onsets(self) -> None:
+        # Two chords both snap onto the single word start → must not stack.
+        words = [_word("meus", 1.0, 1.4)]
+        syllables = [_syl("meus", 1.0, 1.4, parent=0, stressed=True)]
+        chords = [_chord("F", 0.95), _chord("G", 1.05)]
+        beats = BeatGrid(
+            beats=[0.95, 1.05],
+            downbeat_indices=[0],
+            bpm=120.0,
+            meter=(4, 4),
+            source_engine="mock",
+        )
+        line, orphans = place_chords_in_line(
+            "meus",
+            words,
+            syllables,
+            chords,
+            beats,
+            [],
+            "pt",
+        )
+        positions = [m.char_position for m in line.chord_markers]
+        assert len(positions) == len(set(positions)), "stacked markers after destack"
+        assert len(line.chord_markers) + len(orphans) == 2

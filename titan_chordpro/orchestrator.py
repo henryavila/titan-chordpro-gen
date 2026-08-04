@@ -212,7 +212,14 @@ def transcribe(
         audio_id=audio_id,
         stage="chords",
         item_schema=ChordEvent,
-        compute=lambda: _engine("chord_recognition").detect(audio, bass_stem=stems.bass),
+        # Spec §ChordRecognitionEngine: detect() takes a *harmonic mix*
+        # (other + bass stems), not the full mixed audio. Drums/vocals in the
+        # full mix bias Chordino toward chromatic false positives on dense
+        # worship productions (Phase C T70 quality loop).
+        compute=lambda: _engine("chord_recognition").detect(
+            _harmonic_mix_path(stems, audio_id=audio_id, cache_root=cache_root),
+            bass_stem=stems.bass,
+        ),
     )
     # chord_extractor is a thin Python wrapper; no release.
 
@@ -340,6 +347,84 @@ def _sha256_id(path: Path) -> str:
         return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
     except OSError:
         return hashlib.sha256(str(path).encode()).hexdigest()[:16]
+
+
+def _harmonic_mix_path(
+    stems: StemSet,
+    *,
+    audio_id: str,
+    cache_root: Path | None,
+) -> Path:
+    """Build (or reuse) a mono WAV of ``other + bass`` for chord recognition.
+
+    Spec: ChordRecognitionEngine.detect(harmonic_mix) expects the non-vocal,
+    non-drum harmonic content. We sum the htdemucs ``other`` and ``bass``
+    stems at matching sample rates and write next to the cache (or a temp
+    dir when caching is off). Failures fall back to ``stems.other`` alone so
+    a missing bass stem never blocks the pipeline.
+    """
+    import numpy as np
+
+    try:
+        import soundfile as sf
+    except ImportError:  # pragma: no cover — soundfile is a hard dep in practice
+        return stems.other
+
+    if cache_root is not None:
+        out_dir = Path(cache_root) / audio_id
+    else:
+        out_dir = Path.home() / ".cache" / "titan-chordpro" / "harmonic" / audio_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "harmonic_mix.wav"
+    if out_path.exists() and out_path.stat().st_size > 0:
+        return out_path
+
+    try:
+        other, sr_o = sf.read(str(stems.other), always_2d=False)
+        bass, sr_b = sf.read(str(stems.bass), always_2d=False)
+    except Exception:  # noqa: BLE001
+        return stems.other
+
+    if sr_o != sr_b:
+        # Resample bass to other rate via linear interpolation (no librosa
+        # hard-dep on this path — keeps orchestrator free of torch/librosa).
+        if getattr(bass, "ndim", 1) > 1:
+            bass = np.mean(bass, axis=1)
+        if getattr(other, "ndim", 1) > 1:
+            other = np.mean(other, axis=1)
+        n_target = int(round(len(bass) * sr_o / sr_b))
+        if n_target <= 0:
+            return stems.other
+        x_old = np.linspace(0.0, 1.0, num=len(bass), endpoint=False)
+        x_new = np.linspace(0.0, 1.0, num=n_target, endpoint=False)
+        bass = np.interp(x_new, x_old, bass.astype(np.float64)).astype(np.float32)
+        sr = sr_o
+    else:
+        sr = sr_o
+        if getattr(other, "ndim", 1) > 1:
+            other = np.mean(other, axis=1)
+        if getattr(bass, "ndim", 1) > 1:
+            bass = np.mean(bass, axis=1)
+
+    other = np.asarray(other, dtype=np.float32).reshape(-1)
+    bass = np.asarray(bass, dtype=np.float32).reshape(-1)
+    n = max(other.shape[0], bass.shape[0])
+    mix = np.zeros(n, dtype=np.float32)
+    mix[: other.shape[0]] += other
+    mix[: bass.shape[0]] += bass
+    # Soft peak normalise so Chordino's spectral whitening stays stable.
+    peak = float(np.max(np.abs(mix))) if mix.size else 0.0
+    if peak > 1.0:
+        mix = mix / peak
+
+    # soundfile picks format from extension — use `.tmp.wav` not `.wav.tmp`.
+    tmp = out_path.with_name(out_path.name + ".tmp.wav")
+    try:
+        sf.write(str(tmp), mix, int(sr))
+        tmp.replace(out_path)
+    except Exception:  # noqa: BLE001
+        return stems.other
+    return out_path
 
 
 def _titan_version() -> str:
