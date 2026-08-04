@@ -440,3 +440,48 @@ class TestChordPostprocess:
         assert "C#" not in symbols
         assert symbols[0] == "C"
         assert "G" in symbols
+
+    def test_collapse_does_not_merge_adjacent_different_roots(self) -> None:
+        """RC3: C–G–Am–F mid-loop changes must survive collapse."""
+        from titan_chordpro.engines.chord.chordino import collapse_adjacent_same_root
+
+        events = [
+            self._evt("C", 0.0, 2.0),
+            self._evt("G", 2.0, 4.0),
+            self._evt("Am", 4.0, 6.0),
+            self._evt("F", 6.0, 8.0),
+        ]
+        out = collapse_adjacent_same_root(events)
+        assert [e.symbol for e in out] == ["C", "G", "Am", "F"]
+
+    def test_merge_does_not_absorb_legitimate_short_change(self) -> None:
+        """RC3: different-root events at/above min duration are not merged away."""
+        from titan_chordpro.engines.chord.chordino import merge_short_chords
+
+        # 0.65s G between long C holds — above MIN_CHORD_DURATION_S (0.60).
+        events = [
+            self._evt("C", 0.0, 2.0),
+            self._evt("G", 2.0, 2.65),
+            self._evt("Am", 2.65, 4.5),
+            self._evt("F", 4.5, 6.5),
+        ]
+        merged = merge_short_chords(events, min_duration=0.60)
+        assert [e.symbol for e in merged] == ["C", "G", "Am", "F"]
+        assert merged[1].timestamp.end - merged[1].timestamp.start == pytest.approx(0.65)
+
+    def test_postprocess_preserves_cgamf_loop(self) -> None:
+        from titan_chordpro.engines.chord.chordino import postprocess_chords
+
+        events = [
+            self._evt("C", 0.0, 1.8),
+            self._evt("G", 1.8, 3.6),
+            self._evt("Am", 3.6, 5.4),
+            self._evt("F", 5.4, 7.2),
+            self._evt("C", 7.2, 9.0),
+            self._evt("G", 9.0, 10.8),
+            self._evt("Am", 10.8, 12.6),
+            self._evt("F", 12.6, 14.4),
+        ]
+        out = postprocess_chords(events)
+        symbols = [e.symbol for e in out]
+        assert symbols == ["C", "G", "Am", "F", "C", "G", "Am", "F"]
