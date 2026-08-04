@@ -222,8 +222,8 @@ F0 Foundation DONE · F1 ML DONE · **F2 Validation ACTIVE** · F3 Pre-release P
 **Status:** complete-with-findings
 **Codebase class:** populated
 **Scanned:** titan_chordpro/, benchmarks/, tests/, scripts/, .github/workflows/, docs/, pyproject.toml → 120 product/test `.py` files under titan_chordpro+benchmarks+tests
-**Commit:** a682a64
-**At:** 2026-08-04T16:54:31Z
+**Commit:** 33109a0
+**At:** 2026-08-04T17:18:00Z
 
 ### A — Plan premises vs code
 
@@ -262,4 +262,4 @@ F0 Foundation DONE · F1 ML DONE · **F2 Validation ACTIVE** · F3 Pre-release P
 
 ## Reviews
 
-- ground-truth: complete-with-findings | mode=ground-truth | fp=eebf99ccc9d8 | premises=14 | impacts=9 @ a682a64 (2026-08-04T16:54:31Z)
+- ground-truth: complete-with-findings | mode=ground-truth | fp=f14e8ef2de1d | premises=14 | impacts=9 @ 33109a0 (2026-08-04T17:18:00Z)
