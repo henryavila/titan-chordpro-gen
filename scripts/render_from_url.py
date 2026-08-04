@@ -89,7 +89,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"      -> {audio_path}")
 
     print("[2/3] Running pipeline (cache=True; first run ~5 min, re-run < 1 s) ...")
-    doc = transcribe(audio_path, language=args.language, cache=True)
+    # Match docstring / validation_runner: per-stage JSON under
+    # ~/.cache/titan-chordpro/cache/<audio_id>/ (not cwd .titan-cache).
+    cache_root = Path.home() / ".cache" / "titan-chordpro" / "cache"
+    doc = transcribe(
+        audio_path,
+        language=args.language,
+        cache=True,
+        cache_root=cache_root,
+    )
     doc.metadata.title = title
 
     out_path = args.output or Path(f"{slug}.chordpro").resolve()

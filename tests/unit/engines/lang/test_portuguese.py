@@ -80,3 +80,98 @@ class TestPortugueseSyllabify:
         assert len(syls) == 1
         assert syls[0].text == "sol"
         assert syls[0].is_stressed is True  # single syllable always stressed
+
+    def test_numeric_mms_phonemes_fall_back_to_orthographic(self) -> None:
+        """RC1: MMS token IDs must not collapse multi-syllable PT words to 1 syl."""
+        from titan_chordpro.core.schemas import PhonemeEvent, TimeStamp, WordEvent
+        from titan_chordpro.engines.lang.portuguese import PortugueseSyllabifierEngine
+
+        engine = PortugueseSyllabifierEngine.__new__(PortugueseSyllabifierEngine)
+        words = [
+            WordEvent(
+                text="descanso",
+                timestamp=TimeStamp(start=0.0, end=0.9),
+                source_engine="whisper_cpp",
+            ),
+            WordEvent(
+                text="merecedor",
+                timestamp=TimeStamp(start=1.0, end=2.0),
+                source_engine="whisper_cpp",
+            ),
+            WordEvent(
+                text="sacrifício",
+                timestamp=TimeStamp(start=2.0, end=3.2),
+                source_engine="whisper_cpp",
+            ),
+        ]
+        # Numeric token IDs as emitted by MMS_FA when decode fails.
+        phonemes: list[PhonemeEvent] = []
+        for wi, w in enumerate(words):
+            n = 5
+            dur = w.timestamp.end - w.timestamp.start
+            for i in range(n):
+                phonemes.append(
+                    PhonemeEvent(
+                        symbol=str(i + 1),
+                        timestamp=TimeStamp(
+                            start=w.timestamp.start + dur * i / n,
+                            end=w.timestamp.start + dur * (i + 1) / n,
+                        ),
+                        parent_word_idx=wi,
+                    )
+                )
+
+        syls = engine.syllabify(words, phonemes=phonemes)
+        by_word: dict[int, list] = {}
+        for s in syls:
+            by_word.setdefault(s.parent_word_idx, []).append(s)
+
+        assert len(by_word[0]) >= 3, [s.text for s in by_word[0]]
+        assert len(by_word[1]) >= 4, [s.text for s in by_word[1]]
+        assert len(by_word[2]) >= 4, [s.text for s in by_word[2]]
+        # Stress still applied on the orthographic fallback path.
+        for wi, events in by_word.items():
+            assert sum(1 for e in events if e.is_stressed) == 1, wi
+
+    def test_real_ipa_phonemes_still_use_mop_path(self) -> None:
+        from titan_chordpro.core.schemas import PhonemeEvent, TimeStamp, WordEvent
+        from titan_chordpro.engines.lang.portuguese import PortugueseSyllabifierEngine
+
+        engine = PortugueseSyllabifierEngine.__new__(PortugueseSyllabifierEngine)
+        words = [
+            WordEvent(
+                text="amigo",
+                timestamp=TimeStamp(start=0.0, end=0.6),
+                source_engine="whisper_cpp",
+            )
+        ]
+        phonemes = [
+            PhonemeEvent(
+                symbol="a",
+                timestamp=TimeStamp(start=0.0, end=0.1),
+                parent_word_idx=0,
+            ),
+            PhonemeEvent(
+                symbol="m",
+                timestamp=TimeStamp(start=0.1, end=0.2),
+                parent_word_idx=0,
+            ),
+            PhonemeEvent(
+                symbol="ˈi",
+                timestamp=TimeStamp(start=0.2, end=0.4),
+                parent_word_idx=0,
+            ),
+            PhonemeEvent(
+                symbol="ɡ",
+                timestamp=TimeStamp(start=0.4, end=0.5),
+                parent_word_idx=0,
+            ),
+            PhonemeEvent(
+                symbol="u",
+                timestamp=TimeStamp(start=0.5, end=0.6),
+                parent_word_idx=0,
+            ),
+        ]
+        syls = engine.syllabify(words, phonemes=phonemes)
+        assert len(syls) == 3
+        assert [s.is_stressed for s in syls] == [False, True, False]

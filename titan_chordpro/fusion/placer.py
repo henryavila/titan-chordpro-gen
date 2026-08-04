@@ -5,23 +5,30 @@ This is the central IP of the library — it decides exactly which orthographic
 character position in a rendered LyricLine receives each chord marker.
 
 Strategies (first match wins, in order):
-    1. melisma_start    — chord falls inside a detected melisma span
-    2. stressed_syllable — chord on tonic syllable within ±150ms of fused onset
-    3. any_syllable     — chord on closest syllable within ±300ms
-    4. before_word      — chord positioned before closest word (within ±500ms)
+    1. melisma_start    — chord falls inside a detected melisma span, unless a
+                          nearer syllable exists within the any-syllable window
+                          (RC5: multi-syllable restore prefers time proximity)
+    2. stressed_syllable — chord near tonic syllable (span-aware, beat-scaled)
+    3. any_syllable     — chord near any syllable (span-aware, beat-scaled)
+    4. before_word      — chord near closest word span (beat-scaled window)
     5. orphan           — no syllable/word in any window; returned as leftover
                           for the sectioner to insert as a sibling InstrumentalLine
 
-Tolerance rationale (research/09-chord-on-syllable.md):
-    - ±150ms: typical sustained syllable duration; covers Whisper word-offset
-      median error (~30ms) plus phonetic boundary uncertainty.
-    - ±300ms: 1 beat at 200bpm; covers any reasonably-placed syllable.
-    - ±500ms: half a measure at 120bpm; reflects "before this word" intuition.
+Tolerance rationale (research/09-chord-on-syllable.md + RC5):
+    - Floors: ±150ms stressed / ±300ms any-syllable / ±500ms before-word.
+    - Beat scaling: windows widen to fractions of the local beat period so slow
+      worship tempos (~70 BPM) do not orphan mid-bar holds that fall inside a
+      word span or just past a word boundary.
+    - Distance is to the event *span* (0 if t is inside [start, end]), not only
+      to the start timestamp — mid-lyric holds were systematically orphaned when
+      only start-distance was used.
 
 Spec reference: docs/superpowers/specs/2026-05-09-titan-v0.1-design.md → Section 3.7
 """
 
 from __future__ import annotations
+
+from statistics import median
 
 from titan_chordpro.core.schemas import (
     BeatGrid,
@@ -34,10 +41,20 @@ from titan_chordpro.core.schemas import (
 from titan_chordpro.fusion.melisma import Melisma
 from titan_chordpro.fusion.onset_fusion import fuse_onsets_v01
 
-# Tolerance windows (seconds) — see module docstring for rationale.
+# Floor tolerance windows (seconds) — see module docstring for rationale.
 STRESSED_TOL_S = 0.150
 ANY_SYLLABLE_TOL_S = 0.300
 BEFORE_WORD_TOL_S = 0.500
+
+# Beat-period multipliers for RC5 adaptive windows (applied as max(floor, k * beat)).
+_STRESSED_BEAT_FRAC = 0.33
+_ANY_SYLLABLE_BEAT_FRAC = 0.60
+_BEFORE_WORD_BEAT_FRAC = 1.00
+
+# Clamp estimated beat period to a musically plausible range.
+_MIN_BEAT_PERIOD_S = 0.25  # 240 BPM
+_MAX_BEAT_PERIOD_S = 1.50  # 40 BPM
+_DEFAULT_BEAT_PERIOD_S = 0.50  # 120 BPM fallback
 
 
 def place_chords_in_line(
@@ -55,6 +72,7 @@ def place_chords_in_line(
     output stable across runs (Pydantic equality + snapshot tests).
     """
     word_char_positions = _build_word_char_positions(line_text, words)
+    stressed_tol, any_syl_tol, before_word_tol = _placement_tolerances(beat_grid)
 
     markers: list[ChordMarker] = []
     orphans: list[ChordEvent] = []
@@ -62,29 +80,58 @@ def place_chords_in_line(
     for chord in chords_in_line:
         t_anchor = fuse_onsets_v01(chord, beat_grid)
 
-        # Strategy 1: melisma overlap (semantic priority — chord IS the melisma anchor)
+        # Strategy 1: melisma overlap — but defer when a closer syllable exists
+        # within the any-syllable window (prefer time proximity over melisma pin).
         melisma = _find_melisma_at(melismas, t_anchor)
         if melisma is not None and 0 <= melisma.syllable_idx < len(syllables):
             m1_syl: SyllableEvent = syllables[melisma.syllable_idx]
-            char_pos = _char_pos_of_syllable(
-                line_text,
-                m1_syl,
-                syllables,
-                words,
-                word_char_positions,
-            )
-            markers.append(
-                ChordMarker(
-                    chord=chord,
-                    char_position=char_pos,
-                    placement_strategy="melisma_start",
+            nearer = _find_any_syllable_within(syllables, t_anchor, any_syl_tol)
+            if nearer is not None and nearer is not m1_syl:
+                m1_dist = _event_temporal_distance(
+                    m1_syl.timestamp.start, m1_syl.timestamp.end, t_anchor
                 )
-            )
-            continue
+                near_dist = _event_temporal_distance(
+                    nearer.timestamp.start, nearer.timestamp.end, t_anchor
+                )
+                if near_dist < m1_dist:
+                    # Fall through to strategies 2–4 with the nearer syllable.
+                    pass
+                else:
+                    char_pos = _char_pos_of_syllable(
+                        line_text,
+                        m1_syl,
+                        syllables,
+                        words,
+                        word_char_positions,
+                    )
+                    markers.append(
+                        ChordMarker(
+                            chord=chord,
+                            char_position=char_pos,
+                            placement_strategy="melisma_start",
+                        )
+                    )
+                    continue
+            else:
+                char_pos = _char_pos_of_syllable(
+                    line_text,
+                    m1_syl,
+                    syllables,
+                    words,
+                    word_char_positions,
+                )
+                markers.append(
+                    ChordMarker(
+                        chord=chord,
+                        char_position=char_pos,
+                        placement_strategy="melisma_start",
+                    )
+                )
+                continue
 
-        # Strategy 2: stressed syllable within ±150ms (best case — chord on tonic)
+        # Strategy 2: stressed syllable within beat-scaled window
         cand_syl: SyllableEvent | None = _find_stressed_syllable_within(
-            syllables, t_anchor, STRESSED_TOL_S
+            syllables, t_anchor, stressed_tol
         )
         if cand_syl is not None:
             char_pos = _char_pos_of_syllable(
@@ -103,8 +150,8 @@ def place_chords_in_line(
             )
             continue
 
-        # Strategy 3: any syllable within ±300ms (good case — chord on a syllable)
-        cand_syl = _find_any_syllable_within(syllables, t_anchor, ANY_SYLLABLE_TOL_S)
+        # Strategy 3: any syllable within beat-scaled window
+        cand_syl = _find_any_syllable_within(syllables, t_anchor, any_syl_tol)
         if cand_syl is not None:
             char_pos = _char_pos_of_syllable(
                 line_text,
@@ -122,11 +169,14 @@ def place_chords_in_line(
             )
             continue
 
-        # Strategy 4: before the closest word within ±500ms
+        # Strategy 4: nearest word by span distance within beat-scaled window
         cand_word_idx = _closest_word(words, t_anchor)
         if cand_word_idx is not None:
             cand_word = words[cand_word_idx]
-            if abs(cand_word.timestamp.start - t_anchor) < BEFORE_WORD_TOL_S:
+            dist = _event_temporal_distance(
+                cand_word.timestamp.start, cand_word.timestamp.end, t_anchor
+            )
+            if dist <= before_word_tol:
                 char_pos = _char_pos_of_word_start(cand_word_idx, word_char_positions)
                 markers.append(
                     ChordMarker(
@@ -164,6 +214,46 @@ def place_chords_in_line(
 # ───────────────────── Helpers ─────────────────────
 
 
+def _event_temporal_distance(start: float, end: float, t_anchor: float) -> float:
+    """Distance from t_anchor to [start, end]; 0 when inside the closed span."""
+    if start <= t_anchor <= end:
+        return 0.0
+    if t_anchor < start:
+        return start - t_anchor
+    return t_anchor - end
+
+
+def _beat_period_s(beat_grid: BeatGrid) -> float:
+    """Estimate beat period (seconds) from BPM or median inter-beat interval."""
+    if beat_grid.bpm and beat_grid.bpm > 0:
+        period = 60.0 / float(beat_grid.bpm)
+        return max(_MIN_BEAT_PERIOD_S, min(_MAX_BEAT_PERIOD_S, period))
+
+    beats = beat_grid.beats
+    if len(beats) >= 2:
+        diffs = [
+            beats[i + 1] - beats[i]
+            for i in range(len(beats) - 1)
+            if _MIN_BEAT_PERIOD_S <= (beats[i + 1] - beats[i]) <= _MAX_BEAT_PERIOD_S
+        ]
+        if diffs:
+            return float(median(diffs))
+    return _DEFAULT_BEAT_PERIOD_S
+
+
+def _placement_tolerances(beat_grid: BeatGrid) -> tuple[float, float, float]:
+    """Return (stressed, any_syllable, before_word) tolerances in seconds.
+
+    Floors preserve the original research windows; beat fractions widen them at
+    slow tempos so mid-bar lyric holds are not systematically orphaned.
+    """
+    beat = _beat_period_s(beat_grid)
+    stressed = max(STRESSED_TOL_S, _STRESSED_BEAT_FRAC * beat)
+    any_syl = max(ANY_SYLLABLE_TOL_S, _ANY_SYLLABLE_BEAT_FRAC * beat)
+    before_word = max(BEFORE_WORD_TOL_S, _BEFORE_WORD_BEAT_FRAC * beat)
+    return stressed, any_syl, before_word
+
+
 def _find_melisma_at(
     melismas: list[Melisma],
     t_anchor: float,
@@ -199,10 +289,11 @@ def _closest_syllable_within(
     t_anchor: float,
     tol: float,
 ) -> SyllableEvent | None:
+    """Closest syllable by span distance (0 if t is inside the syllable)."""
     best: SyllableEvent | None = None
     best_dist = float("inf")
     for s in syllables:
-        dist = abs(s.timestamp.start - t_anchor)
+        dist = _event_temporal_distance(s.timestamp.start, s.timestamp.end, t_anchor)
         if dist <= tol and dist < best_dist:
             best = s
             best_dist = dist
@@ -213,13 +304,13 @@ def _closest_word(
     words: list[WordEvent],
     t_anchor: float,
 ) -> int | None:
-    """Index of closest word (by start time) to t_anchor; None if list empty."""
+    """Index of closest word by span distance to t_anchor; None if list empty."""
     if not words:
         return None
     best_idx = 0
-    best_dist = abs(words[0].timestamp.start - t_anchor)
+    best_dist = _event_temporal_distance(words[0].timestamp.start, words[0].timestamp.end, t_anchor)
     for i, w in enumerate(words[1:], start=1):
-        dist = abs(w.timestamp.start - t_anchor)
+        dist = _event_temporal_distance(w.timestamp.start, w.timestamp.end, t_anchor)
         if dist < best_dist:
             best_idx = i
             best_dist = dist

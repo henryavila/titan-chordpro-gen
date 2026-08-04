@@ -507,3 +507,237 @@ class TestDestackMarkers:
         positions = [m.char_position for m in line.chord_markers]
         assert len(positions) == len(set(positions)), "stacked markers after destack"
         assert len(line.chord_markers) + len(orphans) == 2
+
+
+# ───────────────────── RC5: span distance + beat-aware windows ─────────────────────
+
+
+@pytest.mark.unit
+class TestEventTemporalDistance:
+    """Distance to event span (0 inside), not only to start time."""
+
+    def test_inside_span_is_zero(self) -> None:
+        from titan_chordpro.fusion.placer import _event_temporal_distance
+
+        assert _event_temporal_distance(1.0, 2.0, 1.5) == 0.0
+
+    def test_before_start(self) -> None:
+        from titan_chordpro.fusion.placer import _event_temporal_distance
+
+        assert _event_temporal_distance(1.0, 2.0, 0.7) == pytest.approx(0.3)
+
+    def test_after_end(self) -> None:
+        from titan_chordpro.fusion.placer import _event_temporal_distance
+
+        assert _event_temporal_distance(1.0, 2.0, 2.4) == pytest.approx(0.4)
+
+    def test_on_boundaries_zero(self) -> None:
+        from titan_chordpro.fusion.placer import _event_temporal_distance
+
+        assert _event_temporal_distance(1.0, 2.0, 1.0) == 0.0
+        assert _event_temporal_distance(1.0, 2.0, 2.0) == 0.0
+
+
+@pytest.mark.unit
+class TestBeatAwareTolerances:
+    def test_slow_tempo_widens_windows(self) -> None:
+        from titan_chordpro.fusion.placer import _placement_tolerances
+
+        # ~70 BPM → beat period ≈ 0.86s
+        beats = BeatGrid(
+            beats=[0.0, 0.86, 1.72, 2.58],
+            downbeat_indices=[0],
+            bpm=70.0,
+            meter=(4, 4),
+            source_engine="mock",
+        )
+        stressed, any_syl, before_word = _placement_tolerances(beats)
+        assert any_syl > 0.300
+        assert before_word >= 0.500
+        assert stressed >= 0.150
+
+    def test_fast_tempo_keeps_floor(self) -> None:
+        from titan_chordpro.fusion.placer import (
+            ANY_SYLLABLE_TOL_S,
+            BEFORE_WORD_TOL_S,
+            STRESSED_TOL_S,
+            _placement_tolerances,
+        )
+
+        # 200 BPM → beat 0.3s; floors dominate
+        beats = BeatGrid(
+            beats=[0.0, 0.3, 0.6],
+            downbeat_indices=[0],
+            bpm=200.0,
+            meter=(4, 4),
+            source_engine="mock",
+        )
+        stressed, any_syl, before_word = _placement_tolerances(beats)
+        assert stressed == pytest.approx(STRESSED_TOL_S)
+        assert any_syl == pytest.approx(ANY_SYLLABLE_TOL_S)
+        assert before_word == pytest.approx(BEFORE_WORD_TOL_S)
+
+
+@pytest.mark.unit
+class TestSpanBasedAttachment:
+    """Mid-word / post-word chords must attach when near the word span."""
+
+    def test_chord_inside_long_word_span_far_from_start(self) -> None:
+        """Chord mid-hold inside a multi-second word must not orphan.
+
+        Classic failure: word [0.0, 2.0], syllable starts at 0.0 only, chord at
+        1.6s → old start-only distance (1.6s) exceeded ±500ms before_word.
+        """
+        words = [_word("descanso", 0.0, 2.0)]
+        syllables = [
+            _syl("des", 0.0, 0.4, parent=0, stressed=True),
+            _syl("can", 0.4, 0.8, parent=0, stressed=False),
+            _syl("so", 0.8, 2.0, parent=0, stressed=False),
+        ]
+        # Chord lands on the long final syllable well after its *start*, but
+        # inside its span (and the word span).
+        chord = _chord("C", 1.5)
+        line, orphans = place_chords_in_line(
+            "descanso",
+            words,
+            syllables,
+            [chord],
+            _trivial_beats(1.5),
+            [],
+            "pt",
+        )
+        assert orphans == []
+        assert len(line.chord_markers) == 1
+        assert line.chord_markers[0].chord.symbol == "C"
+
+    def test_chord_just_after_word_end_attaches_to_nearest(self) -> None:
+        """Inter-word gap: chord 40ms after word end must attach, not orphan.
+
+        Mirrors worship charts where a change lands slightly after the lyric
+        alignment end of the previous word and before the next word start.
+        """
+        words = [
+            _word("amor", 0.0, 0.66),
+            _word("derramado", 1.2, 2.0),
+        ]
+        syllables = [
+            _syl("a", 0.0, 0.33, parent=0, stressed=False),
+            _syl("mor", 0.33, 0.66, parent=0, stressed=True),
+            _syl("der", 1.2, 1.4, parent=1, stressed=False),
+            _syl("ra", 1.4, 1.6, parent=1, stressed=False),
+            _syl("ma", 1.6, 1.8, parent=1, stressed=True),
+            _syl("do", 1.8, 2.0, parent=1, stressed=False),
+        ]
+        # 40ms after "amor" ends; old start-distance to "amor" = 0.70s > 500ms,
+        # start-distance to "derramado" = 0.50s fails strict < 0.5.
+        chord = _chord("G", 0.70)
+        line, orphans = place_chords_in_line(
+            "amor derramado",
+            words,
+            syllables,
+            [chord],
+            _trivial_beats(0.70),
+            [],
+            "pt",
+        )
+        assert orphans == []
+        assert len(line.chord_markers) == 1
+
+    def test_chord_near_next_word_at_slow_tempo_uses_beat_window(self) -> None:
+        """At ~70 BPM, a chord ~0.65s before the first word still attaches."""
+        words = [_word("buscando", 1.0, 1.8)]
+        syllables = [
+            _syl("bus", 1.0, 1.25, parent=0, stressed=True),
+            _syl("can", 1.25, 1.5, parent=0, stressed=False),
+            _syl("do", 1.5, 1.8, parent=0, stressed=False),
+        ]
+        chord = _chord("Am", 0.35)  # 650ms before word start
+        beats = BeatGrid(
+            beats=[0.0, 0.86, 1.72, 2.58],
+            downbeat_indices=[0],
+            bpm=70.0,
+            meter=(4, 4),
+            source_engine="mock",
+        )
+        line, orphans = place_chords_in_line(
+            "buscando",
+            words,
+            syllables,
+            [chord],
+            beats,
+            [],
+            "pt",
+        )
+        assert orphans == []
+        assert len(line.chord_markers) == 1
+        assert line.chord_markers[0].placement_strategy in {
+            "before_word",
+            "any_syllable",
+            "stressed_syllable",
+        }
+
+    def test_true_far_orphan_still_orphans(self) -> None:
+        """Chords seconds away from any lyric must remain orphans."""
+        words = [_word("hi", 0.0, 0.4)]
+        syllables = [_syl("hi", 0.0, 0.4, parent=0)]
+        chord = _chord("C", 5.0)
+        line, orphans = place_chords_in_line(
+            "hi",
+            words,
+            syllables,
+            [chord],
+            _trivial_beats(5.0),
+            [],
+            "en",
+        )
+        assert line.chord_markers == []
+        assert len(orphans) == 1
+
+
+@pytest.mark.unit
+class TestMelismaDefersToNearerSyllable:
+    """With multi-syllable restore, melisma must not steal nearer syllables."""
+
+    def test_nearer_syllable_beats_melisma_span(self) -> None:
+        # Long melisma on syllable 0 spanning the whole word; chord is much
+        # closer to syllable 2's onset than to syllable 0.
+        words = [_word("gloria", 0.0, 2.0)]
+        syllables = [
+            _syl("glo", 0.0, 0.8, parent=0, stressed=True),
+            _syl("ri", 0.8, 1.2, parent=0, stressed=False),
+            _syl("a", 1.2, 2.0, parent=0, stressed=False),
+        ]
+        melismas = [Melisma(syllable_idx=0, span=TimeStamp(start=0.0, end=2.0))]
+        chord = _chord("F", 1.25)  # nearest to "a"@1.2
+        line, orphans = place_chords_in_line(
+            "gloria",
+            words,
+            syllables,
+            [chord],
+            _trivial_beats(1.25),
+            melismas,
+            "pt",
+        )
+        assert orphans == []
+        assert len(line.chord_markers) == 1
+        # Must NOT pin to melisma_start (char 0); "a" is last of 3 syls →
+        # char offset (2*6)//3 = 4.
+        assert line.chord_markers[0].placement_strategy != "melisma_start"
+        assert line.chord_markers[0].char_position == 4
+
+    def test_melisma_still_used_when_no_closer_syllable(self) -> None:
+        words = [_word("oh", 0.0, 1.5)]
+        syllables = [_syl("oh", 0.0, 1.5, parent=0, stressed=True)]
+        melismas = [Melisma(syllable_idx=0, span=TimeStamp(start=0.0, end=1.5))]
+        chord = _chord("C", 0.7)
+        line, orphans = place_chords_in_line(
+            "oh",
+            words,
+            syllables,
+            [chord],
+            _trivial_beats(0.7),
+            melismas,
+            "en",
+        )
+        assert orphans == []
+        assert line.chord_markers[0].placement_strategy == "melisma_start"

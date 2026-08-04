@@ -145,6 +145,37 @@ def _orthographic_is_vowel(ch: str) -> bool:
     return ch in _ORTHOGRAPHIC_VOWELS
 
 
+def _symbol_is_digit_token(symbol: str) -> bool:
+    """True when *symbol* looks like a pure integer token id (e.g. MMS_FA)."""
+    s = symbol.strip()
+    return bool(s) and s.isdigit()
+
+
+def phoneme_inventory_is_usable(phonemes: list[PhonemeEvent]) -> bool:
+    """Return True only when *phonemes* look like real IPA/ARPABET symbols.
+
+    MMS_FA forced-align often emits integer vocabulary ids as strings
+    (``"1"``, ``"13"``). Those are not phonemes: MOP finds no vowels and
+    every word collapses to a single syllable. Detect that inventory and
+    let callers fall back to orthographic syllabification.
+
+    Rules (generic, language-agnostic):
+      - empty → unusable
+      - ≥80% pure-digit symbols → unusable (token-id dump)
+      - no vowel nucleus among symbols → unusable for MOP
+    """
+    if not phonemes:
+        return False
+    symbols = [p.symbol for p in phonemes]
+    n = len(symbols)
+    digitish = sum(1 for s in symbols if _symbol_is_digit_token(s))
+    if digitish == n or digitish / n >= 0.8:
+        return False
+    if not any(_phoneme_is_vowel(s) for s in symbols):
+        return False
+    return True
+
+
 def syllabify_word(
     word: WordEvent,
     phonemes: list[PhonemeEvent],
@@ -164,7 +195,9 @@ def syllabify_word(
 
     Edge cases:
         - Empty phoneme list → 1 syllable spanning full word timestamp.
-        - No vowel phonemes (e.g. "hmm") → 1 syllable.
+        - No vowel phonemes but orthographic vowels present → orthographic fallback
+          (covers MMS token-id "phonemes" and similar non-IPA inventories).
+        - No vowel phonemes and no orthographic vowels (e.g. "hmm") → 1 syllable.
 
     Note: SyllableEvent.text in phonemic mode is the concatenation of phoneme
     symbols (NOT orthographic). The placer (T20) maps syllable indices to
@@ -182,8 +215,28 @@ def syllabify_word(
 
     parent_idx = phonemes[0].parent_word_idx
 
+    # Non-phonemic inventories (digit token ids, etc.): never collapse multi-
+    # syllable orthography to a single syllable via the no-vowel branch.
+    if not phoneme_inventory_is_usable(phonemes):
+        if any(_orthographic_is_vowel(ch) for ch in word.text):
+            return syllabify_word_orthographic(word, language)
+        return [
+            SyllableEvent(
+                text=word.text,
+                phoneme_indices=list(range(len(phonemes))),
+                timestamp=TimeStamp(
+                    start=phonemes[0].timestamp.start,
+                    end=phonemes[-1].timestamp.end,
+                ),
+                is_stressed=False,
+                parent_word_idx=parent_idx,
+            )
+        ]
+
     vowel_indices = [i for i, p in enumerate(phonemes) if _phoneme_is_vowel(p.symbol)]
     if not vowel_indices:
+        if any(_orthographic_is_vowel(ch) for ch in word.text):
+            return syllabify_word_orthographic(word, language)
         return [
             SyllableEvent(
                 text=word.text,
@@ -376,14 +429,47 @@ def syllabify_word_from_phonemes(
     word_idx: int,
     language: str,
 ) -> list[SyllableEvent]:
-    """Re-export of syllabify_word with parent_word_idx fixup.
+    """Syllabify one word from phonemes with parent_word_idx fixup.
 
     Phase B engine wrappers (T51/T52) call this instead of syllabify_word
     directly so they can pass word_idx without mutating phoneme objects.
     The returned SyllableEvent.parent_word_idx values are overridden to
     word_idx so upstream callers get consistent indexing regardless of the
     phoneme list's parent_word_idx field.
+
+    When *phonemes* are not a usable IPA/ARPABET inventory (e.g. MMS_FA
+    integer token ids), falls back to orthographic syllabification with
+    linear timestamps and language-aware stress — never emits 1 syllable
+    for multi-syllable orthography solely because token ids have no vowels.
     """
+    if not phoneme_inventory_is_usable(phonemes):
+        events = syllabify_word_orthographic(word, language)
+        if not events:
+            events = [
+                SyllableEvent(
+                    text=word.text,
+                    timestamp=word.timestamp,
+                    is_stressed=True,
+                    parent_word_idx=word_idx,
+                )
+            ]
+        # Lazy import avoids circular import with stress.py at module load.
+        from titan_chordpro.fusion import stress as _fusion_stress
+
+        texts = [e.text for e in events]
+        stress_index = _fusion_stress.stressed_syllable_index(texts, language=language)
+        fixed: list[SyllableEvent] = []
+        for i, e in enumerate(events):
+            fixed.append(
+                e.model_copy(
+                    update={
+                        "parent_word_idx": word_idx,
+                        "is_stressed": i == stress_index,
+                    }
+                )
+            )
+        return fixed
+
     events = syllabify_word(word=word, phonemes=phonemes, language=language)
     for e in events:
         object.__setattr__(e, "parent_word_idx", word_idx)

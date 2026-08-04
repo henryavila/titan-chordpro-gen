@@ -51,6 +51,16 @@ _FLAT_TO_SHARP: dict[str, str] = {
 # dense worship mixes that destroys both placement and WCSR.
 MIN_CHORD_DURATION_S = 0.60
 
+# RC3 — long-hold resegmentation: multi-bar holds are re-checked with
+# beat-sized chroma windows against the diatonic triad set. Defaults are
+# relative to ``beat_period`` when the caller does not override absolute
+# seconds. No song-specific thresholds.
+DEFAULT_BEAT_PERIOD_S = 0.75  # ~80 BPM fallback when onsets are sparse
+MIN_HOLD_BEATS = 3.0  # ~1.5 half-bars / short multi-beat tonic pads
+MIN_ALT_BEATS = 1.0  # alternate root must dominate ≥1 beat to split
+CHROMA_SCORE_MARGIN = 0.01  # required edge over current-label score
+CHROMA_HOP_LENGTH = 512  # finer hop than bass_chroma (change-point recall)
+
 
 def _load_extractor() -> Any:
     try:
@@ -337,6 +347,303 @@ def collapse_adjacent_same_root(events: list[ChordEvent]) -> list[ChordEvent]:
     return out
 
 
+def _triad_pitch_classes(root: str, quality: str) -> tuple[int, int, int]:
+    """Return pitch-class indices for a major/minor triad (sharp spellings)."""
+    root = _FLAT_TO_SHARP.get(root, root)
+    if root not in _PC:
+        return (0, 4, 7)
+    ri = _PC.index(root)
+    third = 3 if quality == "min" else 4
+    return (ri, (ri + third) % 12, (ri + 7) % 12)
+
+
+def _symbol_for_root_quality(root: str, quality: str) -> str:
+    """Plain majmin spelling (no extensions) for inserted change-points."""
+    return root if quality == "maj" else f"{root}m"
+
+
+def _relative_triad(root: str, quality: str) -> tuple[str, str] | None:
+    """Relative major/minor pair (shares two pitch classes — chroma-ambiguous)."""
+    root = _FLAT_TO_SHARP.get(root, root)
+    if root not in _PC:
+        return None
+    i = _PC.index(root)
+    if quality == "maj":
+        return _PC[(i + 9) % 12], "min"  # vi of I
+    if quality == "min":
+        return _PC[(i + 3) % 12], "maj"  # I of vi
+    return None
+
+
+def _triad_score(chroma_vec: Any, root: str, quality: str) -> float:
+    """Contrastive triad score with root emphasis.
+
+    L1-normalizes the 12-d column, then returns
+    ``mean(on) − mean(off) + ROOT_WEIGHT * root_bin``. Root emphasis helps
+    surface V under tonic pads (shared G between C and G triads) without
+    relying on song-specific progressions.
+    """
+    import numpy as np
+
+    v = np.asarray(chroma_vec, dtype=float).reshape(-1)
+    if v.size != 12:
+        return 0.0
+    s = float(v.sum())
+    if s <= 0.0:
+        return 0.0
+    v = v / s
+    root = _FLAT_TO_SHARP.get(root, root)
+    on_pcs = set(_triad_pitch_classes(root, quality))
+    on_vals = [float(v[p]) for p in on_pcs]
+    off_vals = [float(v[i]) for i in range(12) if i not in on_pcs]
+    on_mean = sum(on_vals) / max(1, len(on_vals))
+    off_mean = sum(off_vals) / max(1, len(off_vals))
+    root_bin = float(v[_PC.index(root)]) if root in _PC else 0.0
+    return on_mean - off_mean + 0.35 * root_bin
+
+
+def estimate_beat_period(events: list[ChordEvent]) -> float:
+    """Heuristic beat period from chord-onset gaps (no BeatThis required).
+
+    Chord changes in worship material often land on bar or half-bar
+    boundaries. We take the median positive onset gap and map it to a beat:
+    long gaps (≈1 bar) → /4, medium (≈2 beats) → /2, short → as-is.
+    Falls back to ``DEFAULT_BEAT_PERIOD_S`` when evidence is thin.
+    """
+    if len(events) < 2:
+        return DEFAULT_BEAT_PERIOD_S
+    gaps: list[float] = []
+    for a, b in zip(events, events[1:], strict=False):
+        g = b.timestamp.start - a.timestamp.start
+        if 0.4 < g < 10.0:
+            gaps.append(g)
+    if not gaps:
+        return DEFAULT_BEAT_PERIOD_S
+    gaps_sorted = sorted(gaps)
+    med = gaps_sorted[len(gaps_sorted) // 2]
+    if med >= 2.5:
+        return med / 4.0
+    if med >= 1.2:
+        return med / 2.0
+    return med
+
+
+def _window_mean_chroma(
+    chroma: Any,
+    frame_times: Any,
+    start: float,
+    end: float,
+) -> Any | None:
+    """Average chroma columns whose frame times fall in [start, end)."""
+    import numpy as np
+
+    c = np.asarray(chroma, dtype=float)
+    t = np.asarray(frame_times, dtype=float)
+    if c.ndim != 2 or c.shape[0] != 12 or t.ndim != 1 or c.shape[1] != t.shape[0]:
+        return None
+    if end <= start:
+        return None
+    mask = (t >= start) & (t < end)
+    if not np.any(mask):
+        # Fall back to nearest frame if window fell between hops.
+        if t.size == 0:
+            return None
+        mid = 0.5 * (start + end)
+        idx = int(np.argmin(np.abs(t - mid)))
+        return c[:, idx].copy()
+    return c[:, mask].mean(axis=1)
+
+
+def _candidates_for_key(key_root: str, mode: str) -> list[tuple[str, str]]:
+    """Ordered diatonic (root, quality) candidates for template matching."""
+    dia = _diatonic_set(key_root, mode)
+    # Prefer tonic / dominant / submediant / subdominant order for stability
+    # when scores tie — pure sort by root index is fine and generic.
+    return sorted(dia, key=lambda rq: _PC.index(rq[0]) if rq[0] in _PC else 99)
+
+
+def resegment_long_holds(
+    events: list[ChordEvent],
+    *,
+    chroma: Any,
+    frame_times: Any,
+    beat_period: float,
+    key_root: str = "C",
+    mode: str = "major",
+    min_hold_s: float | None = None,
+    min_alt_s: float | None = None,
+    score_margin: float = CHROMA_SCORE_MARGIN,
+) -> list[ChordEvent]:
+    """Split multi-beat chord holds when chroma favors another diatonic triad.
+
+    Chordino often sustains I across bars where V is audible under pads
+    (I–V–vi–IV loops). For each event longer than ``min_hold_s`` (default
+    ``MIN_HOLD_BEATS * beat_period``), scan beat-aligned windows and label
+    each with the best-scoring diatonic triad. An alternate label is only
+    committed when it wins by ``score_margin`` over the current event's
+    majmin label for a contiguous span ≥ ``min_alt_s`` (default 1 beat).
+
+    Pure w.r.t. audio: callers supply a precomputed chromagram. Empty
+    input and short events pass through unchanged. Coverage of
+    [first.start, last.end] is preserved.
+    """
+    if not events:
+        return []
+    if beat_period <= 0:
+        beat_period = DEFAULT_BEAT_PERIOD_S
+    hold_floor = min_hold_s if min_hold_s is not None else MIN_HOLD_BEATS * beat_period
+    alt_floor = min_alt_s if min_alt_s is not None else MIN_ALT_BEATS * beat_period
+    candidates = _candidates_for_key(key_root, mode)
+    if not candidates:
+        return list(events)
+
+    out: list[ChordEvent] = []
+    for ev in events:
+        dur = ev.timestamp.end - ev.timestamp.start
+        if dur < hold_floor:
+            out.append(ev)
+            continue
+        pieces = _split_one_hold(
+            ev,
+            chroma=chroma,
+            frame_times=frame_times,
+            beat_period=beat_period,
+            candidates=candidates,
+            alt_floor=alt_floor,
+            score_margin=score_margin,
+        )
+        out.extend(pieces)
+    return out
+
+
+def _split_one_hold(
+    ev: ChordEvent,
+    *,
+    chroma: Any,
+    frame_times: Any,
+    beat_period: float,
+    candidates: list[tuple[str, str]],
+    alt_floor: float,
+    score_margin: float,
+) -> list[ChordEvent]:
+    """Insert the first sustained non-relative alternate, then commit the suffix.
+
+    Chordino under-segmentation usually keeps a correct onset and swallows the
+    next chord under a multi-beat pad. Relative major/minor pairs (I↔vi) share
+    two pitch classes and are excluded from the alternate set — rewriting a
+    correct vi as I (or vice versa) from chroma alone is unreliable. When a
+    non-relative diatonic triad beats the current label for ≥ ``alt_floor``
+    contiguous beat windows, we split once at that run's start and keep the
+    alternate through the end of the hold (suffix commit avoids C–G–C flutter
+    when V is only intermittently stronger than I under pads). Recurses on the
+    suffix for multi-step pads.
+    """
+    t0 = ev.timestamp.start
+    t1 = ev.timestamp.end
+    cur_root = _chord_root(ev.symbol)
+    cur_qual = _majmin_quality(ev.symbol)
+    rel = _relative_triad(cur_root, cur_qual)
+    cand = [
+        (r, q)
+        for r, q in candidates
+        if not (r == cur_root and q == cur_qual) and (rel is None or (r, q) != rel)
+    ]
+    if not cand:
+        return [ev]
+
+    # Beat-window labels: stick with original until a non-relative alternate
+    # wins by ``score_margin`` *and* its root bin meets/exceeds the current
+    # root bin (blocks weak iii/etc. substitutions under tonic pads).
+    windows: list[tuple[float, float, str, str]] = []
+    cur_pc = _PC.index(cur_root) if cur_root in _PC else None
+    t = t0
+    while t < t1 - 1e-9:
+        w_end = min(t + beat_period, t1)
+        vec = _window_mean_chroma(chroma, frame_times, t, w_end)
+        label_r, label_q = cur_root, cur_qual
+        if vec is not None:
+            import numpy as np
+
+            v = np.asarray(vec, dtype=float).reshape(-1)
+            vs = float(v.sum())
+            if vs > 0:
+                v = v / vs
+            cur_s = _triad_score(vec, cur_root, cur_qual)
+            cur_root_e = float(v[cur_pc]) if cur_pc is not None else 0.0
+            best_s = cur_s
+            for r, q in cand:
+                if r not in _PC:
+                    continue
+                s = _triad_score(vec, r, q)
+                alt_root_e = float(v[_PC.index(r)])
+                if s > best_s + score_margin and alt_root_e >= cur_root_e - 1e-9:
+                    best_s = s
+                    label_r, label_q = r, q
+        windows.append((t, w_end, label_r, label_q))
+        t = w_end
+
+    if not windows:
+        return [ev]
+
+    # First contiguous alternate run (same root+qual) of duration ≥ alt_floor.
+    # Single split only (no recursive re-label of the suffix): under-seg almost
+    # always hides one missing chord, and recursion re-introduces C–G–C flutter.
+    i = 0
+    n = len(windows)
+    split_at: float | None = None
+    alt_r = cur_root
+    alt_q = cur_qual
+    while i < n:
+        wr, wq = windows[i][2], windows[i][3]
+        if wr == cur_root and wq == cur_qual:
+            i += 1
+            continue
+        j = i
+        while j < n and windows[j][2] == wr and windows[j][3] == wq:
+            j += 1
+        run_start = windows[i][0]
+        run_end = windows[j - 1][1]
+        if run_end - run_start >= alt_floor - 1e-9:
+            # Need a non-empty original prefix so we do not rewrite the onset.
+            if run_start > t0 + 1e-9:
+                split_at = float(run_start)
+                alt_r, alt_q = wr, wq
+                break
+        i = j
+
+    if split_at is None:
+        return [ev]
+
+    left = ev.model_copy(update={"timestamp": TimeStamp(start=t0, end=split_at)})
+    # Suffix commit: keep the alternate through the end of the hold so a
+    # mid-hold V that only weakly outscores I on later beats still surfaces.
+    right = ev.model_copy(
+        update={
+            "symbol": _symbol_for_root_quality(alt_r, alt_q),
+            "bass_note": None,
+            "timestamp": TimeStamp(start=split_at, end=t1),
+        }
+    )
+    return [left, right]
+
+
+def load_harmonic_chroma(harmonic_mix: Path) -> tuple[Any, Any]:
+    """Load a CQT chromagram and frame times from a harmonic-mix WAV.
+
+    Returns ``(chroma[12, n], frame_times[n])``. Used by long-hold
+    resegmentation; hop is finer than bass_chroma for change-point recall.
+    """
+    import librosa
+    import numpy as np
+
+    y, sr = librosa.load(str(harmonic_mix), sr=22050, mono=True)
+    if y.size == 0:
+        return np.zeros((12, 0)), np.zeros((0,))
+    chroma = librosa.feature.chroma_cqt(y=y, sr=sr, hop_length=CHROMA_HOP_LENGTH, n_chroma=12)
+    times = librosa.frames_to_time(np.arange(chroma.shape[1]), sr=sr, hop_length=CHROMA_HOP_LENGTH)
+    return chroma, times
+
+
 def postprocess_chords(events: list[ChordEvent]) -> list[ChordEvent]:
     """Quality-loop post-processing for Chordino output (Phase C T70).
 
@@ -455,5 +762,25 @@ class ChordinoEngine:
             )
 
         raw = [e for e in events if e.timestamp.end > e.timestamp.start]
+        # RC3: re-check multi-beat holds against beat-window chroma so looping
+        # I–V–vi–IV progressions emit mid-hold V (etc.) instead of long I pads.
+        # Failures are non-fatal — fall back to raw Chordino intervals.
+        if raw:
+            try:
+                pre = collapse_adjacent_same_root(merge_short_chords(raw))
+                key_root, mode = estimate_key(pre)
+                beat_period = estimate_beat_period(pre)
+                chroma, frame_times = load_harmonic_chroma(harmonic_mix)
+                if getattr(chroma, "shape", (12, 0))[1] > 0:
+                    raw = resegment_long_holds(
+                        raw,
+                        chroma=chroma,
+                        frame_times=frame_times,
+                        beat_period=beat_period,
+                        key_root=key_root,
+                        mode=mode,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                _log.warning("chroma long-hold resegment skipped: %s", exc)
         # Phase C T70 quality loop: flutter merge + key snap + collapse.
         return postprocess_chords(raw)

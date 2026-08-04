@@ -4,23 +4,22 @@
 Algorithm:
     1. Derive adaptive gap thresholds from inter-word gap median (floored at
        MIN_INSTRUMENTAL_GAP_SEC / MIN_LYRIC_LINE_GAP_SEC).
-    2. Group sequential words into "lyric blocks" separated by gaps > threshold.
-    3. Classify chronologically:
-       - 0 to first lyric block (if gap > threshold) → Intro
-       - Between two lyric blocks (if gap > threshold) → Instrumental break
-       - Last lyric block end to duration (if gap > threshold) → Outro
-       - Lyric blocks themselves → alternate Verse/Chorus starting with Verse 1
-    4. Within each lyric block, split into LyricLines on smaller gaps.
-    5. Close coverage: expand section timestamps into an exclusive partition of
-       ``[0, duration]`` via midpoints so sub-threshold leading/trailing (and
-       any residual) regions never orphan chords.
-    6. Partition every chord into exactly one section by ownership window;
-       instrumental/intro/outro lines carry their chords on InstrumentalLine.
+    2. Soft-group words at SOFT_SECTION_GAP_SEC, fingerprint each soft block,
+       mark repeated fingerprints as chorus candidates (Jaccard).
+    3. Merge soft blocks unless the gap is a hard instrumental gap OR a soft
+       gap at a verse↔chorus (or chorus↔verse) boundary.
+    4. Label lyric blocks by content when any chorus fingerprint fires;
+       otherwise fall back to positional Verse/Chorus alternation (i % 2).
+    5. Intro / instrumental / outro from hard gaps around lyric blocks.
+    6. Within each lyric block, split into LyricLines on smaller gaps.
+    7. Close coverage: exclusive partition of ``[0, duration]`` via midpoints.
+    8. Partition every chord into exactly one section by ownership window.
 
 Limitations (documented in spec Section 3.6):
-    - Verse vs Chorus is positional alternation, not content-based detection.
-    - Bridge / Pre-chorus not detected — folded into the alternation cycle.
+    - Bridge / Pre-chorus not detected — folded into verse or chorus.
     - Single-line audio with no lyrics → one Instrumental section.
+    - Chorus detection needs lyric self-similarity; unique one-shot choruses
+      still use positional alternation after hard-gap splits only.
 
 V0.2 plan: integrate mir-aidj/all-in-one for joint structure analysis.
 
@@ -29,7 +28,9 @@ Spec reference: docs/superpowers/specs/2026-05-09-titan-v0.1-design.md → Secti
 
 from __future__ import annotations
 
+import re
 import statistics
+import unicodedata
 
 from titan_chordpro.core.schemas import (
     BeatGrid,
@@ -62,6 +63,14 @@ INSTRUMENTAL_GAP_MULT = 8.0
 LYRIC_LINE_GAP_MULT = 2.5
 MIN_INSTRUMENTAL_GAP_SEC = 4.0
 MIN_LYRIC_LINE_GAP_SEC = 1.0
+
+# Soft section break: gaps in [SOFT, HARD) may split when the next soft
+# block is a lyric-repeat (chorus) candidate. Worship verse→chorus pauses
+# are often ~2–3s — below the hard instrumental floor.
+SOFT_SECTION_GAP_SEC = 2.0
+# Jaccard threshold for treating two soft-block token sets as the same lyric.
+LYRIC_FINGERPRINT_JACCARD = 0.55
+_TOKEN_RE = re.compile(r"[^\w]+", re.UNICODE)
 
 
 def _compute_adaptive_thresholds(
@@ -122,8 +131,13 @@ def infer_sections(
             )
         ]
 
-    # Group words into lyric blocks (internal gaps < threshold).
-    lyric_blocks = _group_words_into_blocks(words, gap_threshold)
+    # Soft-group → fingerprint → merge with hard/soft+chorus rules.
+    soft_gap = min(SOFT_SECTION_GAP_SEC, gap_threshold)
+    lyric_blocks, block_is_chorus = _group_words_into_sections(
+        words,
+        hard_gap=gap_threshold,
+        soft_gap=soft_gap,
+    )
 
     # Build skeleton sections with *content* timestamps first (word spans /
     # instrumental gap spans). Chord assignment and exclusive partition of
@@ -133,6 +147,9 @@ def infer_sections(
     verse_count = 0
     chorus_count = 0
     cursor = 0.0
+    # Content labels only when repetition discriminates chorus from verse.
+    # If every block matches every other (or none do), fall back to i%2.
+    use_content_labels = any(block_is_chorus) and not all(block_is_chorus)
 
     # Intro: leading silence/instrumental before first lyric block.
     first_block_start = lyric_blocks[0][0].timestamp.start
@@ -166,15 +183,25 @@ def infer_sections(
                 )
             )
 
-        # Alternation: even-indexed blocks = Verse, odd-indexed = Chorus.
-        if i % 2 == 0:
-            verse_count += 1
-            label = f"Verse {verse_count}"
-            section_type = "verse"
+        if use_content_labels:
+            if block_is_chorus[i]:
+                chorus_count += 1
+                label = "Chorus" if chorus_count == 1 else f"Chorus {chorus_count}"
+                section_type = "chorus"
+            else:
+                verse_count += 1
+                label = f"Verse {verse_count}"
+                section_type = "verse"
         else:
-            chorus_count += 1
-            label = "Chorus" if chorus_count == 1 else f"Chorus {chorus_count}"
-            section_type = "chorus"
+            # Fallback: even-indexed blocks = Verse, odd-indexed = Chorus.
+            if i % 2 == 0:
+                verse_count += 1
+                label = f"Verse {verse_count}"
+                section_type = "verse"
+            else:
+                chorus_count += 1
+                label = "Chorus" if chorus_count == 1 else f"Chorus {chorus_count}"
+                section_type = "chorus"
 
         sections.append(
             _make_lyric_section(
@@ -333,6 +360,127 @@ def _group_words_into_blocks(
         else:
             blocks[-1].append(w)
     return blocks
+
+
+def _normalize_token(text: str) -> str:
+    """Lowercase, strip punctuation/diacritics for lyric fingerprinting."""
+    # NFKD + drop combining marks so "coração" ≈ "coracao" for matching ASR noise.
+    decomposed = unicodedata.normalize("NFKD", text)
+    ascii_ish = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    cleaned = _TOKEN_RE.sub("", ascii_ish.lower())
+    return cleaned
+
+
+def _block_fingerprint(words: list[WordEvent]) -> frozenset[str]:
+    """Bag of normalized tokens for Jaccard comparison."""
+    tokens: set[str] = set()
+    for w in words:
+        tok = _normalize_token(w.text)
+        if tok:
+            tokens.add(tok)
+    return frozenset(tokens)
+
+
+def _jaccard(a: frozenset[str], b: frozenset[str]) -> float:
+    if not a and not b:
+        return 1.0
+    if not a or not b:
+        return 0.0
+    inter = len(a & b)
+    union = len(a | b)
+    return inter / union if union else 0.0
+
+
+def _mark_repeated_blocks(
+    fingerprints: list[frozenset[str]],
+    threshold: float = LYRIC_FINGERPRINT_JACCARD,
+) -> list[bool]:
+    """Mark soft-blocks whose fingerprint matches another block (chorus cues)."""
+    n = len(fingerprints)
+    is_repeat = [False] * n
+    for i in range(n):
+        if not fingerprints[i]:
+            continue
+        for j in range(i + 1, n):
+            if _jaccard(fingerprints[i], fingerprints[j]) >= threshold:
+                is_repeat[i] = True
+                is_repeat[j] = True
+    return is_repeat
+
+
+def _group_words_into_sections(
+    words: list[WordEvent],
+    hard_gap: float,
+    soft_gap: float,
+) -> tuple[list[list[WordEvent]], list[bool]]:
+    """Group words into lyric sections with hard gaps + soft chorus-aware splits.
+
+    1. Soft-group at ``soft_gap`` (phrase-scale candidates).
+    2. Fingerprint each soft block; mark self-similar pairs as chorus candidates.
+    3. Merge adjacent soft blocks unless:
+       - inter-block gap > ``hard_gap`` (always split; instrumental territory), or
+       - inter-block gap > ``soft_gap`` AND the two sides differ in chorus-ness
+         (verse↔chorus boundary) or both are chorus with dissimilar text
+         (rare), or next is a chorus candidate and previous is not (or vice versa).
+
+    Returns ``(blocks, block_is_chorus)`` aligned lists.
+    """
+    if not words:
+        return [], []
+
+    soft_blocks = _group_words_into_blocks(words, soft_gap)
+    fingerprints = [_block_fingerprint(b) for b in soft_blocks]
+    soft_is_chorus = _mark_repeated_blocks(fingerprints)
+
+    final_blocks: list[list[WordEvent]] = []
+    final_chorus: list[bool] = []
+    # Track which soft-block indices landed in each final block for labeling.
+    final_soft_indices: list[list[int]] = []
+
+    for i, block in enumerate(soft_blocks):
+        if not final_blocks:
+            final_blocks.append(list(block))
+            final_soft_indices.append([i])
+            continue
+
+        prev_block = final_blocks[-1]
+        gap = block[0].timestamp.start - prev_block[-1].timestamp.end
+        prev_soft_i = final_soft_indices[-1][-1]
+        prev_chorus = soft_is_chorus[prev_soft_i]
+        cur_chorus = soft_is_chorus[i]
+        similar = _jaccard(fingerprints[prev_soft_i], fingerprints[i]) >= LYRIC_FINGERPRINT_JACCARD
+
+        if gap > hard_gap:
+            final_blocks.append(list(block))
+            final_soft_indices.append([i])
+            continue
+
+        # Soft gap + structural cue: split verse from chorus (or reverse).
+        if gap > soft_gap and (prev_chorus != cur_chorus or (cur_chorus and not similar)):
+            final_blocks.append(list(block))
+            final_soft_indices.append([i])
+            continue
+
+        # Otherwise merge into previous final block.
+        final_blocks[-1].extend(block)
+        final_soft_indices[-1].append(i)
+
+    for idxs in final_soft_indices:
+        # A final block is chorus if any of its soft pieces was a repeat cue
+        # and the dominant fingerprint is a repeated one; prefer True if
+        # majority of soft pieces are chorus-tagged.
+        flags = [soft_is_chorus[j] for j in idxs]
+        final_chorus.append(any(flags) and sum(flags) >= max(1, (len(flags) + 1) // 2))
+
+    # If a merged block swallowed both unique and repeated material without a
+    # soft split (gap ≤ soft_gap), keep the any() majority rule above.
+    # Recompute chorus label from the full-block fingerprint vs other finals.
+    final_fps = [_block_fingerprint(b) for b in final_blocks]
+    refined = _mark_repeated_blocks(final_fps)
+    # Prefer refined labels when they fire; keep soft-derived True as well.
+    block_is_chorus = [a or b for a, b in zip(final_chorus, refined, strict=True)]
+
+    return final_blocks, block_is_chorus
 
 
 def _group_words_into_lines(
