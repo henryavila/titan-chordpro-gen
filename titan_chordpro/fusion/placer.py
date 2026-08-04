@@ -140,8 +140,16 @@ def place_chords_in_line(
         # Strategy 5: orphan — defer to sectioner
         orphans.append(chord)
 
+    # Phase C T70: destack markers that landed on the same char_position.
+    # Worship charts put one chord per syllable/onset; stacked [F][G]meus is
+    # the dominant human-visible failure mode when several chord changes fall
+    # between two words. Keep chronological order; advance later chords to the
+    # next free orthographic slot; if the line is exhausted, demote to orphan.
+    markers, stack_orphans = _destack_markers(markers, line_text)
+    orphans.extend(stack_orphans)
+
     # Stable ordering for serialization / snapshot tests
-    markers.sort(key=lambda m: m.char_position)
+    markers.sort(key=lambda m: (m.char_position, m.chord.timestamp.start))
 
     line = LyricLine(
         text=line_text,
@@ -295,3 +303,42 @@ def _aggregate_confidence(
     if not items:
         return 1.0
     return sum(items) / len(items)
+
+
+def _destack_markers(
+    markers: list[ChordMarker],
+    line_text: str,
+) -> tuple[list[ChordMarker], list[ChordEvent]]:
+    """Ensure at most one chord marker per char_position.
+
+    Markers are processed in chord-onset order. When a marker's preferred
+    position is already occupied, it walks forward one character at a time
+    (capped at ``len(line_text)``) looking for a free slot. If none remains,
+    the chord becomes an orphan InstrumentalLine sibling (sectioner path).
+    """
+    if not markers:
+        return [], []
+
+    ordered = sorted(markers, key=lambda m: (m.chord.timestamp.start, m.char_position))
+    occupied: set[int] = set()
+    kept: list[ChordMarker] = []
+    orphans: list[ChordEvent] = []
+    max_pos = max(len(line_text), 0)
+
+    for m in ordered:
+        pos = m.char_position
+        if pos not in occupied:
+            occupied.add(pos)
+            kept.append(m)
+            continue
+        # Walk forward for a free orthographic slot.
+        placed = False
+        for candidate in range(pos + 1, max_pos + 1):
+            if candidate not in occupied:
+                occupied.add(candidate)
+                kept.append(m.model_copy(update={"char_position": candidate}))
+                placed = True
+                break
+        if not placed:
+            orphans.append(m.chord)
+    return kept, orphans
