@@ -29,7 +29,10 @@ from typing import Any, Literal
 
 from titan_chordpro.core.exceptions import ChordRecognitionError, EngineUnavailableError
 from titan_chordpro.core.schemas import ChordEvent, EngineInfo, TimeStamp
-from titan_chordpro.engines.chord.bass_chroma import extract_bass_note
+from titan_chordpro.engines.chord.bass_chroma import (
+    extract_bass_note,
+    filter_bass_to_chord_tones,
+)
 
 _MAJ_QUAL = ":maj"
 _MIN_QUAL = ":min"
@@ -58,8 +61,23 @@ MIN_CHORD_DURATION_S = 0.60
 DEFAULT_BEAT_PERIOD_S = 0.75  # ~80 BPM fallback when onsets are sparse
 MIN_HOLD_BEATS = 3.0  # ~1.5 half-bars / short multi-beat tonic pads
 MIN_ALT_BEATS = 1.0  # alternate root must dominate ≥1 beat to split
-CHROMA_SCORE_MARGIN = 0.01  # required edge over current-label score
+CHROMA_SCORE_MARGIN = 0.01  # baseline edge over current-label score
+# Primary harmonic functions (I/IV/V/vi) get the baseline or easier margin;
+# secondary (ii/iii/dim) need a larger edge to suppress pad-overtone FPs.
+CHROMA_SCORE_MARGIN_DOMINANT = 0.004  # V under pads is systematically weak
+CHROMA_SCORE_MARGIN_SECONDARY = 0.08  # iii/ii almost never inserted without huge edge
+# Additive score prior for the key dominant so weak V under tonic pads can
+# surface for ≥1 beat without lowering the bar for iii/ii.
+CHROMA_DOMINANT_SCORE_PRIOR = 0.02
+# When True (default), reseg inserts only primary functions + dominant + bVII.
+# Secondary diatonic triads (ii/iii/dim) are excluded from change-point
+# candidates — they remain available only via the extreme secondary path
+# if RESEG_ALLOW_SECONDARY is enabled.
+RESEG_PRIMARY_ONLY = True
+RESEG_ALLOW_SECONDARY = False
 CHROMA_HOP_LENGTH = 512  # finer hop than bass_chroma (change-point recall)
+# Bass confidence floor for slash emission (matches bass_chroma default).
+BASS_NOTE_MIN_CONFIDENCE = 0.5
 
 
 def _load_extractor() -> Any:
@@ -375,6 +393,126 @@ def _relative_triad(root: str, quality: str) -> tuple[str, str] | None:
     return None
 
 
+def _mediant_triad(root: str, quality: str) -> tuple[str, str] | None:
+    """iii of a major triad (or I of a minor iii) — shares two pitch classes.
+
+    C maj = C E G; Em = E G B → share E,G. Under pad-heavy "other" stems the
+    mediant often outscores weak V; treat like relative for exclusion unless
+    strong secondary evidence clears the elevated margin.
+    """
+    root = _FLAT_TO_SHARP.get(root, root)
+    if root not in _PC:
+        return None
+    i = _PC.index(root)
+    if quality == "maj":
+        return _PC[(i + 4) % 12], "min"  # iii of I
+    if quality == "min":
+        return _PC[(i + 8) % 12], "maj"  # I when current is iii
+    return None
+
+
+def _scale_degree(root: str, key_root: str) -> int | None:
+    """Semitone offset of ``root`` above ``key_root`` in 0..11, or None."""
+    root = _FLAT_TO_SHARP.get(root, root)
+    key_root = _FLAT_TO_SHARP.get(key_root, key_root)
+    if root not in _PC or key_root not in _PC:
+        return None
+    return (_PC.index(root) - _PC.index(key_root)) % 12
+
+
+def _function_class(
+    root: str,
+    quality: str,
+    key_root: str,
+    mode: str,
+) -> Literal["dominant", "primary", "secondary"]:
+    """Classify a diatonic triad for reseg insert margins.
+
+    major: I/IV/V/vi primary (V specially dominant); bVII treated as primary
+    worship colour; ii/iii/dim secondary.
+    minor: i/iv/V(or v)/VI primary; others secondary.
+    """
+    deg = _scale_degree(root, key_root)
+    if deg is None:
+        return "secondary"
+    if mode == "minor":
+        # i, III/VI colours, iv, v/V
+        if deg == 7 and quality in ("maj", "min"):
+            return "dominant"
+        if deg in (0, 3, 5, 8):
+            return "primary"
+        return "secondary"
+    # major key
+    if deg == 7 and quality == "maj":
+        return "dominant"
+    if (deg, quality) in {(0, "maj"), (5, "maj"), (9, "min"), (10, "maj")}:
+        # I, IV, vi, bVII (worship flat-7 colour)
+        return "primary"
+    return "secondary"
+
+
+def _margin_for_candidate(
+    root: str,
+    quality: str,
+    key_root: str,
+    mode: str,
+    base_margin: float,
+) -> float:
+    """Required score edge for an alternate, by harmonic function."""
+    cls = _function_class(root, quality, key_root, mode)
+    if cls == "dominant":
+        return min(base_margin, CHROMA_SCORE_MARGIN_DOMINANT)
+    if cls == "secondary":
+        return max(base_margin, CHROMA_SCORE_MARGIN_SECONDARY)
+    return base_margin
+
+
+def _score_with_priors(
+    raw_score: float,
+    root: str,
+    quality: str,
+    key_root: str,
+    mode: str,
+) -> float:
+    """Apply function-aware score priors (dominant boost under pads)."""
+    if _function_class(root, quality, key_root, mode) == "dominant":
+        return raw_score + CHROMA_DOMINANT_SCORE_PRIOR
+    return raw_score
+
+
+def _reseg_candidate_pool(
+    key_root: str,
+    mode: str,
+    *,
+    primary_only: bool = RESEG_PRIMARY_ONLY,
+    allow_secondary: bool = RESEG_ALLOW_SECONDARY,
+) -> list[tuple[str, str]]:
+    """Diatonic candidates allowed as *inserted* change-points.
+
+    By default only primary functions + dominant (and bVII in major) so
+    pad overtones cannot promote iii/ii into the chart. Secondary triads
+    remain in the full diatonic set used by key-snap, not reseg inserts.
+    """
+    pool = _candidates_for_key(key_root, mode)
+    if not primary_only:
+        return pool
+    out: list[tuple[str, str]] = []
+    for r, q in pool:
+        cls = _function_class(r, q, key_root, mode)
+        if cls in ("dominant", "primary"):
+            out.append((r, q))
+        elif allow_secondary and cls == "secondary":
+            out.append((r, q))
+    return out
+
+
+def _shared_pitch_class_count(r1: str, q1: str, r2: str, q2: str) -> int:
+    """How many triad pitch classes two chords share (0–3)."""
+    a = set(_triad_pitch_classes(r1, q1))
+    b = set(_triad_pitch_classes(r2, q2))
+    return len(a & b)
+
+
 def _triad_score(chroma_vec: Any, root: str, quality: str) -> float:
     """Contrastive triad score with root emphasis.
 
@@ -480,12 +618,14 @@ def resegment_long_holds(
     (I–V–vi–IV loops). For each event longer than ``min_hold_s`` (default
     ``MIN_HOLD_BEATS * beat_period``), scan beat-aligned windows and label
     each with the best-scoring diatonic triad. An alternate label is only
-    committed when it wins by ``score_margin`` over the current event's
-    majmin label for a contiguous span ≥ ``min_alt_s`` (default 1 beat).
+    committed when it wins by a *function-aware* margin over the current
+    event's majmin label for a contiguous span ≥ ``min_alt_s`` (default 1
+    beat): dominant (V) is easier, secondary (ii/iii) harder.
 
     Pure w.r.t. audio: callers supply a precomputed chromagram. Empty
     input and short events pass through unchanged. Coverage of
-    [first.start, last.end] is preserved.
+    [first.start, last.end] is preserved. Both split pieces clear
+    ``bass_note`` — callers must recompute bass on final intervals.
     """
     if not events:
         return []
@@ -493,7 +633,7 @@ def resegment_long_holds(
         beat_period = DEFAULT_BEAT_PERIOD_S
     hold_floor = min_hold_s if min_hold_s is not None else MIN_HOLD_BEATS * beat_period
     alt_floor = min_alt_s if min_alt_s is not None else MIN_ALT_BEATS * beat_period
-    candidates = _candidates_for_key(key_root, mode)
+    candidates = _reseg_candidate_pool(key_root, mode)
     if not candidates:
         return list(events)
 
@@ -511,6 +651,8 @@ def resegment_long_holds(
             candidates=candidates,
             alt_floor=alt_floor,
             score_margin=score_margin,
+            key_root=key_root,
+            mode=mode,
         )
         out.extend(pieces)
     return out
@@ -525,24 +667,33 @@ def _split_one_hold(
     candidates: list[tuple[str, str]],
     alt_floor: float,
     score_margin: float,
+    key_root: str = "C",
+    mode: str = "major",
 ) -> list[ChordEvent]:
-    """Insert the first sustained non-relative alternate, then commit the suffix.
+    """Insert the first sustained non-confusable alternate, then commit the suffix.
 
     Chordino under-segmentation usually keeps a correct onset and swallows the
     next chord under a multi-beat pad. Relative major/minor pairs (I↔vi) share
-    two pitch classes and are excluded from the alternate set — rewriting a
-    correct vi as I (or vice versa) from chroma alone is unreliable. When a
-    non-relative diatonic triad beats the current label for ≥ ``alt_floor``
-    contiguous beat windows, we split once at that run's start and keep the
-    alternate through the end of the hold (suffix commit avoids C–G–C flutter
-    when V is only intermittently stronger than I under pads). Recurses on the
-    suffix for multi-step pads.
+    two pitch classes and are excluded from the alternate set. The mediant
+    (I↔iii) is also excluded from easy inserts — E-rich pads make Em score
+    explode under C while true V often fails a flat margin. Secondary
+    functions (ii/iii/dim) require ``CHROMA_SCORE_MARGIN_SECONDARY``; the
+    dominant of the estimated key uses ``CHROMA_SCORE_MARGIN_DOMINANT``.
+
+    When a non-confusable diatonic triad beats the current label for ≥
+    ``alt_floor`` contiguous beat windows, we split once at that run's start
+    and keep the alternate through the end of the hold (suffix commit avoids
+    C–G–C flutter). Both pieces clear ``bass_note`` so sticky pre-reseg slash
+    bass cannot label the wrong half.
     """
     t0 = ev.timestamp.start
     t1 = ev.timestamp.end
     cur_root = _chord_root(ev.symbol)
     cur_qual = _majmin_quality(ev.symbol)
     rel = _relative_triad(cur_root, cur_qual)
+    med = _mediant_triad(cur_root, cur_qual)
+    # Hard-exclude relative (I↔vi). Mediant (I↔iii) stays in the candidate
+    # set but only with the elevated secondary margin + extra root-bin gate.
     cand = [
         (r, q)
         for r, q in candidates
@@ -551,9 +702,15 @@ def _split_one_hold(
     if not cand:
         return [ev]
 
-    # Beat-window labels: stick with original until a non-relative alternate
-    # wins by ``score_margin`` *and* its root bin meets/exceeds the current
-    # root bin (blocks weak iii/etc. substitutions under tonic pads).
+    # Prefer primary functions when scanning (V/I/IV/vi before ii/iii).
+    def _cand_rank(rq: tuple[str, str]) -> tuple[int, int]:
+        r, q = rq
+        cls = _function_class(r, q, key_root, mode)
+        pri = 0 if cls == "dominant" else (1 if cls == "primary" else 2)
+        return (pri, _PC.index(r) if r in _PC else 99)
+
+    cand = sorted(cand, key=_cand_rank)
+
     windows: list[tuple[float, float, str, str]] = []
     cur_pc = _PC.index(cur_root) if cur_root in _PC else None
     t = t0
@@ -571,13 +728,45 @@ def _split_one_hold(
             cur_s = _triad_score(vec, cur_root, cur_qual)
             cur_root_e = float(v[cur_pc]) if cur_pc is not None else 0.0
             best_s = cur_s
+            best_cls_rank = 99
             for r, q in cand:
                 if r not in _PC:
                     continue
-                s = _triad_score(vec, r, q)
+                raw_s = _triad_score(vec, r, q)
+                s = _score_with_priors(raw_s, r, q, key_root, mode)
                 alt_root_e = float(v[_PC.index(r)])
-                if s > best_s + score_margin and alt_root_e >= cur_root_e - 1e-9:
+                margin = _margin_for_candidate(r, q, key_root, mode, score_margin)
+                cls = _function_class(r, q, key_root, mode)
+                cls_rank = 0 if cls == "dominant" else (1 if cls == "primary" else 2)
+
+                # Root-bin gate: primary/dominant may be slightly below current
+                # root (shared tones under pads); secondary must clearly lead.
+                if cls == "secondary":
+                    root_ok = alt_root_e >= cur_root_e + 0.02
+                    # Mediant under major I: require even stronger root lead.
+                    if med is not None and (r, q) == med:
+                        root_ok = alt_root_e >= cur_root_e + 0.05
+                else:
+                    # V under I: G bin often ≈ C bin; allow small deficit.
+                    root_ok = alt_root_e >= cur_root_e - (0.03 if cls == "dominant" else 0.0)
+
+                # Compare prior-adjusted alt score against raw current score.
+                if not root_ok or s <= cur_s + margin:
+                    continue
+
+                # Prefer dominant/primary over secondary when both clear gates.
+                # Also prefer higher score within the same class rank.
+                if cls_rank < best_cls_rank or (cls_rank == best_cls_rank and s > best_s + 1e-12):
                     best_s = s
+                    best_cls_rank = cls_rank
+                    label_r, label_q = r, q
+                elif (
+                    cls_rank == best_cls_rank
+                    and abs(s - best_s) <= 1e-9
+                    and _shared_pitch_class_count(r, q, cur_root, cur_qual)
+                    < _shared_pitch_class_count(label_r, label_q, cur_root, cur_qual)
+                ):
+                    # Tie-break: fewer shared PCs with current (V over iii under I).
                     label_r, label_q = r, q
         windows.append((t, w_end, label_r, label_q))
         t = w_end
@@ -614,7 +803,14 @@ def _split_one_hold(
     if split_at is None:
         return [ev]
 
-    left = ev.model_copy(update={"timestamp": TimeStamp(start=t0, end=split_at)})
+    # Clear bass on BOTH pieces — pre-reseg bass_note is for the full span
+    # and must not stick to the prefix as a false slash (e.g. C/G).
+    left = ev.model_copy(
+        update={
+            "timestamp": TimeStamp(start=t0, end=split_at),
+            "bass_note": None,
+        }
+    )
     # Suffix commit: keep the alternate through the end of the hold so a
     # mid-hold V that only weakly outscores I on later beats still surfaces.
     right = ev.model_copy(
@@ -724,6 +920,9 @@ class ChordinoEngine:
         except Exception:  # noqa: BLE001
             duration = all_events[-1][1] + 1.0
 
+        # Build raw intervals WITHOUT bass first. Reseg splits rewrite spans;
+        # attaching bass pre-reseg leaves sticky slash on the wrong half
+        # (e.g. long C with later G energy → C/G on the C prefix).
         events: list[ChordEvent] = []
         for i, (symbol, start) in enumerate(all_events):
             if symbol is None:
@@ -732,30 +931,11 @@ class ChordinoEngine:
             if end < start:
                 end = start
 
-            # F-004: derive bass_note from the bass stem if one was provided.
-            # Phase C T70-iter2 follow-up: when chordino itself emits a slash
-            # chord (e.g. 'C#/E#'), the bass is already encoded in symbol —
-            # do NOT also set bass_note. Otherwise ChordEvent.validate_bass_consistency
-            # rejects the event when bass_chroma picks the enharmonic spelling
-            # (E# vs F) chordino didn't use.
-            bass_note: str | None = None
-            if bass_stem is not None and "/" not in symbol:
-                try:
-                    letter, _ = extract_bass_note(bass_stem, start=start, end=end)
-                except FileNotFoundError:
-                    _log.warning("bass_stem path %s vanished mid-detection; skipping", bass_stem)
-                    letter = None
-                except Exception as exc:  # noqa: BLE001
-                    _log.warning("bass_chroma failed on interval %.3f-%.3f: %s", start, end, exc)
-                    letter = None
-                if letter is not None and letter != _chord_root(symbol):
-                    bass_note = letter
-
             events.append(
                 ChordEvent(
                     symbol=symbol,
                     timestamp=TimeStamp(start=start, end=end),
-                    bass_note=bass_note,
+                    bass_note=None,
                     confidence=1.0,
                     source_engine="chordino",
                 )
@@ -783,4 +963,41 @@ class ChordinoEngine:
             except Exception as exc:  # noqa: BLE001
                 _log.warning("chroma long-hold resegment skipped: %s", exc)
         # Phase C T70 quality loop: flutter merge + key snap + collapse.
-        return postprocess_chords(raw)
+        final = postprocess_chords(raw)
+        # F-004 / P1: attach bass on *final* intervals only.
+        if bass_stem is not None and final:
+            final = _attach_bass_notes(final, bass_stem)
+        return final
+
+
+def _attach_bass_notes(events: list[ChordEvent], bass_stem: Path) -> list[ChordEvent]:
+    """Recompute ``bass_note`` per event on its final [start, end) interval.
+
+    Skips events whose symbol already encodes a slash (native Chordino slash
+    spelling). Applies triad-tone gate so non-chord-tone pedals do not emit
+    random slashes. Root-position bass is suppressed (no F/F).
+    """
+    out: list[ChordEvent] = []
+    for e in events:
+        if "/" in e.symbol:
+            out.append(e.model_copy(update={"bass_note": None}))
+            continue
+        start = e.timestamp.start
+        end = e.timestamp.end
+        letter: str | None = None
+        conf = 0.0
+        try:
+            letter, conf = extract_bass_note(bass_stem, start=start, end=end)
+        except FileNotFoundError:
+            _log.warning("bass_stem path %s vanished mid-detection; skipping", bass_stem)
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("bass_chroma failed on interval %.3f-%.3f: %s", start, end, exc)
+        if letter is None or conf < BASS_NOTE_MIN_CONFIDENCE:
+            out.append(e.model_copy(update={"bass_note": None}))
+            continue
+        letter = filter_bass_to_chord_tones(letter, e.symbol)
+        if letter is None or letter == _chord_root(e.symbol):
+            out.append(e.model_copy(update={"bass_note": None}))
+            continue
+        out.append(e.model_copy(update={"bass_note": letter}))
+    return out

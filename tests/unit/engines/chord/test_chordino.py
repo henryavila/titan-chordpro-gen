@@ -664,3 +664,246 @@ class TestResegmentLongHolds:
         assert symbols[:4] == ["C", "G", "Am", "F"] or (
             "G" in symbols and symbols[0] == "C" and "Am" in symbols and "F" in symbols
         ), f"expected C-G-Am-F-ish, got {symbols}"
+
+    def test_weak_v_energy_mid_hold_inserts_g(self) -> None:
+        """P0/P2: long I with competitive V for ≥1 full beat must insert V.
+
+        Synthetic: C pad for 0–6s; mid window has slightly stronger G triad
+        energy (weak V under pads). Primary-function margin for V is looser
+        than the default, so this must split even when G only barely wins.
+        """
+        import numpy as np
+
+        from titan_chordpro.engines.chord.chordino import (
+            _triad_pitch_classes,
+            resegment_long_holds,
+        )
+
+        events = [self._evt("C", 0.0, 6.0)]
+        hop = 0.1
+        duration = 6.0
+        n = int(round(duration / hop)) + 1
+        times = np.arange(n, dtype=float) * hop
+        chroma = np.full((12, n), 0.05, dtype=float)
+        c_pcs = _triad_pitch_classes("C", "maj")
+        g_pcs = _triad_pitch_classes("G", "maj")
+        for i, t in enumerate(times):
+            if 2.0 <= t < 3.2:
+                # Weak V: G triad slightly above C (shared G bin).
+                for pc in c_pcs:
+                    chroma[pc, i] = 0.85
+                for pc in g_pcs:
+                    chroma[pc, i] = 1.05
+                chroma[g_pcs[0], i] = 1.15  # G root bin edge
+            else:
+                for pc in c_pcs:
+                    chroma[pc, i] = 1.0
+        chroma = chroma / (chroma.sum(axis=0, keepdims=True) + 1e-9)
+
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+        )
+        symbols = [e.symbol for e in out]
+        assert "G" in symbols, f"expected weak-V insert of G, got {symbols}"
+        assert symbols[0].startswith("C")
+
+    def test_weak_em_like_energy_under_c_does_not_insert_em(self) -> None:
+        """P0: elevated E energy under long C must NOT insert false iii (Em).
+
+        E-rich pads share two pitch classes with Em (E,G) and C (E). iii is a
+        secondary function — require stronger evidence than primary V.
+        """
+        import numpy as np
+
+        from titan_chordpro.engines.chord.chordino import (
+            _triad_pitch_classes,
+            resegment_long_holds,
+        )
+
+        events = [self._evt("C", 0.0, 6.0)]
+        hop = 0.1
+        duration = 6.0
+        n = int(round(duration / hop)) + 1
+        times = np.arange(n, dtype=float) * hop
+        chroma = np.full((12, n), 0.05, dtype=float)
+        c_pcs = _triad_pitch_classes("C", "maj")  # C E G
+        for i, t in enumerate(times):
+            for pc in c_pcs:
+                chroma[pc, i] = 1.0
+            if 2.0 <= t < 4.0:
+                # Boost E (and a touch of B) — Em-like overtones, not a real V.
+                chroma[4, i] = 1.35  # E
+                chroma[11, i] = 0.55  # B (Em third of fifth partial-ish)
+        chroma = chroma / (chroma.sum(axis=0, keepdims=True) + 1e-9)
+
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+        )
+        symbols = [e.symbol for e in out]
+        assert "Em" not in symbols, f"false iii insert: {symbols}"
+        assert all(s.startswith("C") or s == "C" for s in symbols) or symbols == ["C"], (
+            f"expected no Em split under C pad, got {symbols}"
+        )
+
+    def test_iii_vs_v_prefers_v_when_both_competitive(self) -> None:
+        """When V and iii both score well under I, prefer primary V."""
+        import numpy as np
+
+        from titan_chordpro.engines.chord.chordino import (
+            _triad_pitch_classes,
+            resegment_long_holds,
+        )
+
+        events = [self._evt("C", 0.0, 6.0)]
+        hop = 0.1
+        duration = 6.0
+        n = int(round(duration / hop)) + 1
+        times = np.arange(n, dtype=float) * hop
+        chroma = np.full((12, n), 0.05, dtype=float)
+        c_pcs = _triad_pitch_classes("C", "maj")
+        g_pcs = _triad_pitch_classes("G", "maj")
+        em_pcs = _triad_pitch_classes("E", "min")
+        for i, t in enumerate(times):
+            if 2.0 <= t < 4.0:
+                for pc in c_pcs:
+                    chroma[pc, i] = 0.6
+                for pc in g_pcs:
+                    chroma[pc, i] = 1.0
+                for pc in em_pcs:
+                    chroma[pc, i] = max(chroma[pc, i], 0.95)
+                chroma[7, i] = 1.2  # G root wins
+            else:
+                for pc in c_pcs:
+                    chroma[pc, i] = 1.0
+        chroma = chroma / (chroma.sum(axis=0, keepdims=True) + 1e-9)
+
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+        )
+        symbols = [e.symbol for e in out]
+        assert "G" in symbols, f"expected V not iii, got {symbols}"
+        assert "Em" not in symbols, f"iii must not win over V: {symbols}"
+
+    def test_reseg_split_clears_bass_on_both_pieces(self) -> None:
+        """P1: after split, neither piece inherits sticky pre-split bass_note."""
+        from titan_chordpro.core.schemas import ChordEvent, TimeStamp
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        ev = ChordEvent(
+            symbol="C",
+            timestamp=TimeStamp(start=0.0, end=8.0),
+            bass_note="G",  # sticky fifth from long interval that included later G
+            source_engine="mock",
+        )
+        chroma, times = self._chroma_from_segments(
+            [("C", "maj", 0.0, 4.0), ("G", "maj", 4.0, 8.0)],
+            duration=8.0,
+        )
+        out = resegment_long_holds(
+            [ev],
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+        )
+        assert len(out) >= 2, f"expected split, got {[e.symbol for e in out]}"
+        for piece in out:
+            assert piece.bass_note is None, (
+                f"split piece {piece.symbol}@{piece.timestamp.start} kept bass={piece.bass_note}"
+            )
+
+
+@pytest.mark.unit
+class TestBassRecomputeAfterReseg:
+    """P1: detect() recomputes bass on final intervals after reseg/postprocess."""
+
+    def test_detect_recomputes_bass_after_reseg_split(self, tmp_path: Path) -> None:
+        """Long C with pre-attached sticky bass must not leave C/G on prefix.
+
+        We mock extract_bass_note to return G for the full [0,8) interval
+        (pre-reseg sticky behaviour) and C for the short prefix [0, split)
+        so post-reseg recompute yields honest root-position C on the left.
+        """
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        c1 = MagicMock(chord="C:maj", timestamp=0.0)
+        fake_extractor = MagicMock()
+        fake_extractor.extract = MagicMock(return_value=[c1])
+
+        engine = ChordinoEngine.__new__(ChordinoEngine)
+        engine._extractor = fake_extractor
+
+        audio = tmp_path / "song.wav"
+        audio.write_bytes(b"x")
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"x")
+
+        # Synthetic chroma: C then G mid-hold so reseg splits.
+        import numpy as np
+
+        from titan_chordpro.engines.chord.chordino import _triad_pitch_classes
+
+        hop = 0.1
+        duration = 8.0
+        n = int(round(duration / hop)) + 1
+        times = np.arange(n, dtype=float) * hop
+        chroma = np.full((12, n), 0.05, dtype=float)
+        for i, t in enumerate(times):
+            root, qual = ("G", "maj") if t >= 4.0 else ("C", "maj")
+            for pc in _triad_pitch_classes(root, qual):
+                chroma[pc, i] = 1.0
+        chroma = chroma / (chroma.sum(axis=0, keepdims=True) + 1e-9)
+
+        def fake_bass(path, start, end):
+            # Full long interval (or anything spanning past 4s) → G (sticky).
+            # Prefix-only after reseg → C (honest root).
+            if end <= 4.5:
+                return ("C", 0.9)
+            return ("G", 0.9)
+
+        with (
+            patch(
+                "titan_chordpro.engines.chord.chordino._probe_duration",
+                return_value=8.0,
+            ),
+            patch(
+                "titan_chordpro.engines.chord.chordino.load_harmonic_chroma",
+                return_value=(chroma, times),
+            ),
+            patch(
+                "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                side_effect=fake_bass,
+            ),
+            patch(
+                "titan_chordpro.engines.chord.chordino.estimate_beat_period",
+                return_value=0.8,
+            ),
+        ):
+            events = engine.detect(audio, bass_stem=bass)
+
+        # First event should be C without slash (bass matches root → suppressed).
+        assert events, "expected events"
+        first = events[0]
+        assert first.symbol.startswith("C")
+        assert first.bass_note is None, (
+            f"prefix must not keep sticky G bass; got bass_note={first.bass_note}"
+        )
