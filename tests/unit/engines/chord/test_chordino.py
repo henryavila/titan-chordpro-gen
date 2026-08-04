@@ -485,3 +485,182 @@ class TestChordPostprocess:
         out = postprocess_chords(events)
         symbols = [e.symbol for e in out]
         assert symbols == ["C", "G", "Am", "F", "C", "G", "Am", "F"]
+
+
+@pytest.mark.unit
+class TestResegmentLongHolds:
+    """RC3: beat-window chroma re-check splits multi-bar tonic holds.
+
+    Pure function tests inject a synthetic chromagram — no audio, no song
+    hardcodes. Invariant: when an alternate diatonic triad dominates ≥1 beat
+    inside a long hold, emit a change near the beat boundary.
+    """
+
+    def _evt(self, symbol: str, start: float, end: float) -> object:
+        from titan_chordpro.core.schemas import ChordEvent, TimeStamp
+
+        return ChordEvent(
+            symbol=symbol,
+            timestamp=TimeStamp(start=start, end=end),
+            source_engine="mock",
+        )
+
+    def _chroma_from_segments(
+        self,
+        segments: list[tuple[str, str, float, float]],
+        duration: float,
+        hop: float = 0.1,
+    ):
+        """Build (chroma[12,n], times[n]) from (root, quality, t0, t1) segments."""
+        import numpy as np
+
+        from titan_chordpro.engines.chord.chordino import _triad_pitch_classes
+
+        n = int(round(duration / hop)) + 1
+        times = np.arange(n, dtype=float) * hop
+        chroma = np.full((12, n), 0.05, dtype=float)
+        for root, quality, t0, t1 in segments:
+            pcs = _triad_pitch_classes(root, quality)
+            for i, t in enumerate(times):
+                if t0 <= t < t1:
+                    for pc in pcs:
+                        chroma[pc, i] = 1.0
+        # Column-normalize lightly so scores are comparable.
+        chroma = chroma / (chroma.sum(axis=0, keepdims=True) + 1e-9)
+        return chroma, times
+
+    def test_long_c_hold_with_mid_g_chroma_splits(self) -> None:
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        # 8s C hold; chroma is C for 0-4s then G for 4-8s (classic skipped V).
+        events = [self._evt("C", 0.0, 8.0)]
+        chroma, times = self._chroma_from_segments(
+            [("C", "maj", 0.0, 4.0), ("G", "maj", 4.0, 8.0)],
+            duration=8.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+        )
+        symbols = [e.symbol for e in out]
+        assert "G" in symbols, f"expected mid-hold G insert, got {symbols}"
+        assert symbols[0].startswith("C")
+        # Coverage preserved.
+        assert out[0].timestamp.start == pytest.approx(0.0)
+        assert out[-1].timestamp.end == pytest.approx(8.0)
+        # Change near 4s (±1 beat).
+        g = next(e for e in out if e.symbol == "G" or e.symbol.startswith("G"))
+        assert 3.0 <= g.timestamp.start <= 5.0
+
+    def test_consistent_chroma_does_not_split(self) -> None:
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("C", 0.0, 8.0)]
+        chroma, times = self._chroma_from_segments(
+            [("C", "maj", 0.0, 8.0)],
+            duration=8.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+        )
+        assert len(out) == 1
+        assert out[0].symbol == "C"
+        assert out[0].timestamp.start == 0.0
+        assert out[0].timestamp.end == 8.0
+
+    def test_short_alternate_below_one_beat_does_not_split(self) -> None:
+        """Flutter alternate shorter than one beat must not create a change."""
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("C", 0.0, 6.0)]
+        # 0.3s blip of G — below beat_period=0.8.
+        chroma, times = self._chroma_from_segments(
+            [
+                ("C", "maj", 0.0, 3.0),
+                ("G", "maj", 3.0, 3.3),
+                ("C", "maj", 3.3, 6.0),
+            ],
+            duration=6.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+        )
+        assert len(out) == 1
+        assert out[0].symbol == "C"
+
+    def test_short_events_below_min_hold_unchanged(self) -> None:
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [
+            self._evt("C", 0.0, 1.6),
+            self._evt("G", 1.6, 3.2),
+            self._evt("Am", 3.2, 4.8),
+            self._evt("F", 4.8, 6.4),
+        ]
+        # Even if chroma would prefer something else, short holds are not reseg'd.
+        chroma, times = self._chroma_from_segments(
+            [("C", "maj", 0.0, 6.4)],
+            duration=6.4,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+        )
+        assert [e.symbol for e in out] == ["C", "G", "Am", "F"]
+
+    def test_resegment_then_postprocess_preserves_cgamf(self) -> None:
+        """Full path: long C with G chroma mid-span → C-G-Am-F after postprocess."""
+        from titan_chordpro.engines.chord.chordino import (
+            postprocess_chords,
+            resegment_long_holds,
+        )
+
+        # Chordino-style under-seg: C 0-4, Am 4-6, F 6-8 (skipped G).
+        # Chroma has G energy 2-4 so reseg should insert G before Am.
+        events = [
+            self._evt("C", 0.0, 4.0),
+            self._evt("Am", 4.0, 6.0),
+            self._evt("F", 6.0, 8.0),
+        ]
+        chroma, times = self._chroma_from_segments(
+            [
+                ("C", "maj", 0.0, 2.0),
+                ("G", "maj", 2.0, 4.0),
+                ("A", "min", 4.0, 6.0),
+                ("F", "maj", 6.0, 8.0),
+            ],
+            duration=8.0,
+        )
+        refined = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+        )
+        out = postprocess_chords(refined)
+        symbols = [e.symbol for e in out]
+        assert symbols[:4] == ["C", "G", "Am", "F"] or (
+            "G" in symbols and symbols[0] == "C" and "Am" in symbols and "F" in symbols
+        ), f"expected C-G-Am-F-ish, got {symbols}"
