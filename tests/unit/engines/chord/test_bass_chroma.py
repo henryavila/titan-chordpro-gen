@@ -114,3 +114,34 @@ class TestExtractBassNote:
 
         with pytest.raises(FileNotFoundError):
             extract_bass_note(tmp_path / "nope.wav", start=0.0, end=1.0)
+
+    def test_short_interval_after_split_uses_local_energy(self, tmp_path: Path) -> None:
+        """Bass on a reseg prefix must reflect that slice, not a later note.
+
+        Synthesize E for 0–2s then G for 2–4s. Querying [0, 2) must return E
+        (not G from the suffix that a sticky pre-split pass would pick up).
+        """
+        from titan_chordpro.engines.chord.bass_chroma import extract_bass_note
+
+        # E2 ≈ 82.4 Hz, G2 ≈ 98.0 Hz
+        e = _synthesize_tone(freq=82.4, duration=2.0)
+        g = _synthesize_tone(freq=98.0, duration=2.0)
+        audio = np.concatenate([e, g])
+        p = tmp_path / "e_then_g.wav"
+        sf.write(str(p), audio, SR)
+
+        letter_prefix, conf_p = extract_bass_note(p, start=0.1, end=1.9)
+        letter_suffix, conf_s = extract_bass_note(p, start=2.1, end=3.9)
+        assert letter_prefix == "E", f"prefix expected E, got {letter_prefix} conf={conf_p}"
+        assert letter_suffix == "G", f"suffix expected G, got {letter_suffix} conf={conf_s}"
+
+    def test_chord_tone_gate_rejects_non_triad_bass(self) -> None:
+        """Optional chord-tone filter: D is not a C major triad tone."""
+        from titan_chordpro.engines.chord.bass_chroma import filter_bass_to_chord_tones
+
+        assert filter_bass_to_chord_tones("D", chord_symbol="C") is None
+        assert filter_bass_to_chord_tones("E", chord_symbol="C") == "E"
+        assert filter_bass_to_chord_tones("G", chord_symbol="C") == "G"
+        assert filter_bass_to_chord_tones("C", chord_symbol="C") == "C"
+        assert filter_bass_to_chord_tones("E", chord_symbol="Am") == "E"
+        assert filter_bass_to_chord_tones("B", chord_symbol="G") == "B"
