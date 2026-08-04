@@ -241,3 +241,10 @@ Initiative for phase **F2 — Phase C Validation and quality** (adopt mid-flight
 
 - Roadmap: `docs/roadmap.md`
 - Design: `docs/superpowers/specs/2026-05-09-titan-v0.1-design.md`
+
+## Session handoff
+- **Narrative:** pure-maestro no titan-v01 F2 (Phase C). Operador carimbou `executionMode: automate` e ratificou o pacote de início F2. T-001/T-002 já done; próximo é spawn do phase writer para T-003 (quality loop WCSR), depois T-004…T-006. Último relatório WCSR em `benchmarks/reports/2026-05-19/top-divergences.md` com Mean WCSR-majmin **0.200** (alvo ≥ 0.70).
+- **Decision log:** (1) stamp `executionMode: automate` em plan.md — dec-automate-stamp; (2) ratify phase-start F2 — dec-ratify-f2; log em `.atomic-skills/projects/titan-chordpro-lib/titan-v01/decisions/F2.jsonl`.
+- **Single nextAction:** Rodar `assert-automate-gate --gate spawn` e `automate-phase-run prepare` para F2; spawn phase writer code-only no sibling worktree.
+- **Verbatim state:** branch `plan/titan-v01`; initiative `.atomic-skills/projects/titan-chordpro-lib/titan-v01/phases/f2-phase-c-validation-and-quality.md`; cursor step B em `.atomic-skills/status/automate/titan-v01.json`; verifier T-003: `pytest tests/unit/fusion tests/unit/core/test_place_all_chords.py -q && python -c "from pathlib import Path; import re; reps=sorted(Path('benchmarks/reports').glob('*/top-divergences.md')); assert reps, 'no report'; t=reps[-1].read_text(); m=re.search(r'Mean WCSR-majmin:\\s*\\*\\*([0-9.]+)\\*\\*', t); assert m and float(m.group(1)) >= 0.70, (m and m.group(1))"`.
+- **Uncommitted changes:** state edits pending microcommit (plan.md executionMode + handoff + decisions).

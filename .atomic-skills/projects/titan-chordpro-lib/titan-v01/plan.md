@@ -5,9 +5,10 @@ title: Titan ChordPro Lib v0.1 — from research to release
 version: "1.0"
 status: active
 started: 2026-05-08T00:00:00Z
-lastUpdated: 2026-08-04T16:12:00Z
+lastUpdated: 2026-08-04T17:15:00Z
 branch: plan/titan-v01
 currentPhase: F2
+executionMode: automate
 parallelismAllowed: false
 supersedes:
   path: .atomic-skills/legacy-flat-pre-adopt-2026-08-04/plans/titan-v01.md
