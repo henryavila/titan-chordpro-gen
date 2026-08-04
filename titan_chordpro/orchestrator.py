@@ -362,8 +362,16 @@ def _harmonic_mix_path(
     stems at matching sample rates and write next to the cache (or a temp
     dir when caching is off). Failures fall back to ``stems.other`` alone so
     a missing bass stem never blocks the pipeline.
+
+    numpy and soundfile are optional on this path (they live in ``[dev]`` /
+    ``[audio]`` extras, not core deps). Mock/CLI smoke paths that only need
+    pydantic+rich must not hard-require them — ImportError falls back to
+    ``stems.other`` the same way a missing bass stem does.
     """
-    import numpy as np
+    try:
+        import numpy as np
+    except ImportError:
+        return stems.other
 
     try:
         import soundfile as sf
