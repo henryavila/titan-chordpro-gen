@@ -133,6 +133,11 @@ class TestFindAnySyllableWithin:
         s = [_syl("a", 0.0, 0.2)]
         assert _find_any_syllable_within(s, 1.0, 0.3) is None
 
+    def test_includes_exact_tolerance_boundary(self) -> None:
+        # dist == tol must match (inclusive <=), not only strict <
+        s = [_syl("a", 0.0, 0.2)]
+        assert _find_any_syllable_within(s, 0.3, 0.3) is s[0]
+
     def test_empty_list(self) -> None:
         assert _find_any_syllable_within([], 1.0, 0.3) is None
 

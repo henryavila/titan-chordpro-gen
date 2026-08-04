@@ -1,10 +1,11 @@
 # tests/unit/fusion/test_stress.py
-"""Tests for stress detectors."""
+"""Tests for stress detectors and orchestrator _apply_stress."""
 
 import pytest
 
 from titan_chordpro.core.schemas import SyllableEvent, TimeStamp, WordEvent
 from titan_chordpro.fusion.stress import EnglishStressDetector, PortugueseStressDetector
+from titan_chordpro.orchestrator import _apply_stress
 
 
 def _word(text: str) -> WordEvent:
@@ -88,3 +89,123 @@ class TestEnglishStressDetector:
             _word("beautiful"), _syllables("beau", "ti", "ful")
         )
         assert idx == 0
+
+
+class _FixedStressDetector:
+    """Stub detector that always reports a fixed syllable index."""
+
+    def __init__(self, index: int) -> None:
+        self.index = index
+
+    def detect_stressed_syllable(self, word: WordEvent, syllables: list[SyllableEvent]) -> int:
+        return self.index
+
+
+@pytest.mark.unit
+class TestApplyStress:
+    """orchestrator._apply_stress must leave exactly one stressed syllable per word."""
+
+    def test_clears_preexisting_stress_sets_exactly_one(self) -> None:
+        """If the engine already marked the wrong syllable, clear it and set one."""
+        words = [
+            WordEvent(
+                text="casa",
+                timestamp=TimeStamp(start=0.0, end=1.0),
+                source_engine="mock",
+            )
+        ]
+        # Engine wrongly stressed BOTH syllables (or the wrong one).
+        syllables = [
+            SyllableEvent(
+                text="ca",
+                timestamp=TimeStamp(start=0.0, end=0.5),
+                is_stressed=True,  # wrong / leftover
+                parent_word_idx=0,
+            ),
+            SyllableEvent(
+                text="sa",
+                timestamp=TimeStamp(start=0.5, end=1.0),
+                is_stressed=True,  # double-stress bug
+                parent_word_idx=0,
+            ),
+        ]
+        # Detector says index 0 is correct ("casa" paroxítona).
+        detector = _FixedStressDetector(index=0)
+        result = _apply_stress(words, syllables, detector)
+
+        assert result is not None
+        stressed_flags = [s.is_stressed for s in result]
+        assert stressed_flags == [True, False]
+        assert sum(1 for s in result if s.is_stressed) == 1
+
+    def test_does_not_mutate_input_syllables(self) -> None:
+        words = [
+            WordEvent(
+                text="amor",
+                timestamp=TimeStamp(start=0.0, end=1.0),
+                source_engine="mock",
+            )
+        ]
+        syllables = [
+            SyllableEvent(
+                text="a",
+                timestamp=TimeStamp(start=0.0, end=0.4),
+                is_stressed=False,
+                parent_word_idx=0,
+            ),
+            SyllableEvent(
+                text="mor",
+                timestamp=TimeStamp(start=0.4, end=1.0),
+                is_stressed=False,
+                parent_word_idx=0,
+            ),
+        ]
+        detector = _FixedStressDetector(index=1)
+        result = _apply_stress(words, syllables, detector)
+        # Input list objects must remain unchanged (immutability).
+        assert syllables[0].is_stressed is False
+        assert syllables[1].is_stressed is False
+        assert result[0].is_stressed is False
+        assert result[1].is_stressed is True
+
+    def test_multi_word_exactly_one_each(self) -> None:
+        words = [
+            WordEvent(
+                text="hello",
+                timestamp=TimeStamp(start=0.0, end=0.5),
+                source_engine="mock",
+            ),
+            WordEvent(
+                text="world",
+                timestamp=TimeStamp(start=0.5, end=1.0),
+                source_engine="mock",
+            ),
+        ]
+        syllables = [
+            SyllableEvent(
+                text="hel",
+                timestamp=TimeStamp(start=0.0, end=0.25),
+                is_stressed=True,
+                parent_word_idx=0,
+            ),
+            SyllableEvent(
+                text="lo",
+                timestamp=TimeStamp(start=0.25, end=0.5),
+                is_stressed=True,
+                parent_word_idx=0,
+            ),
+            SyllableEvent(
+                text="world",
+                timestamp=TimeStamp(start=0.5, end=1.0),
+                is_stressed=False,
+                parent_word_idx=1,
+            ),
+        ]
+        # Always stress first syllable of multi-syl words; mono stays 0.
+        detector = _FixedStressDetector(index=0)
+        result = _apply_stress(words, syllables, detector)
+        by_word: dict[int, list[bool]] = {}
+        for s in result:
+            by_word.setdefault(s.parent_word_idx, []).append(s.is_stressed)
+        assert by_word[0] == [True, False]
+        assert by_word[1] == [True]

@@ -353,3 +353,135 @@ class TestInferSectionsAdaptiveThreshold:
             assert len(lyric_sections) >= 2, (
                 f"10s gap should split at BPM={bpm}; got {[(s.type, s.label) for s in sections]}"
             )
+
+
+def _section_covers_time(section, t: float) -> bool:
+    """Whether section.timestamp owns time t (half-open [start, end), end inclusive for last)."""
+    return section.timestamp.start <= t <= section.timestamp.end
+
+
+def _all_instrumental_chords(sections) -> list[ChordEvent]:
+    out: list[ChordEvent] = []
+    for s in sections:
+        for line in s.lines:
+            if isinstance(line, InstrumentalLine):
+                out.extend(line.chords)
+    return out
+
+
+@pytest.mark.unit
+class TestInferSectionsNoDroppedChords:
+    """Every chord must fall in some section's ownership window.
+
+    Sub-threshold gaps (leading/trailing/inter-word < MIN_INSTRUMENTAL_GAP_SEC)
+    previously left time ranges with no section, so chords there vanished from
+    both InstrumentalLines and lyric section timestamps.
+    """
+
+    def test_chord_in_subthreshold_gap_between_phrases_is_covered(self) -> None:
+        """2s gap below 4.0s floor → single lyric block; chord in the gap
+        must be covered by some section timestamp (placeable) or appear on
+        an InstrumentalLine.
+        """
+        words = [
+            _word("a", 0.0, 0.4),
+            _word("b", 0.5, 0.9),
+            _word("c", 1.0, 1.4),
+            # 2.0s gap — under 4.0s floor → same block
+            _word("d", 3.4, 3.8),
+            _word("e", 3.9, 4.3),
+        ]
+        gap_chord = _chord("G", 2.0, 3.0)  # in the 2s inter-phrase gap
+        chords = [
+            _chord("C", 0.0, 1.0),
+            gap_chord,
+            _chord("F", 3.4, 4.3),
+        ]
+        duration = 5.0
+        sections = infer_sections(
+            words,
+            chords,
+            _beat_grid(bpm=120.0, duration=duration),
+            duration=duration,
+        )
+        # Every chord start must land in at least one section timestamp range
+        for c in chords:
+            covered = any(_section_covers_time(s, c.timestamp.start) for s in sections)
+            assert covered, (
+                f"chord {c.symbol}@{c.timestamp.start} not covered by any section "
+                f"timestamps {[(s.label, s.timestamp.start, s.timestamp.end) for s in sections]}"
+            )
+        # Gap chord specifically
+        assert any(_section_covers_time(s, 2.0) for s in sections)
+
+    def test_chord_in_subthreshold_leading_gap_is_covered(self) -> None:
+        """Leading silence shorter than gap threshold must not orphan chords."""
+        words = [_word("hi", 2.0, 2.5), _word("there", 2.6, 3.0)]
+        # 2s leading gap < 4s floor → no Intro section under old logic
+        chords = [
+            _chord("C", 0.5, 2.0),  # in leading sub-threshold gap
+            _chord("F", 2.0, 3.0),
+        ]
+        duration = 3.5  # trailing 0.5s also sub-threshold
+        sections = infer_sections(
+            words,
+            chords,
+            _beat_grid(bpm=120.0, duration=duration),
+            duration=duration,
+        )
+        for c in chords:
+            covered = any(_section_covers_time(s, c.timestamp.start) for s in sections)
+            assert covered, (
+                f"chord {c.symbol}@{c.timestamp.start} orphaned; "
+                f"sections={[(s.type, s.timestamp.start, s.timestamp.end) for s in sections]}"
+            )
+        # No intro expected (sub-threshold), but C must still be covered
+        assert all(s.type != "intro" for s in sections)
+
+    def test_chord_in_subthreshold_trailing_gap_is_covered(self) -> None:
+        words = [_word("bye", 0.0, 0.5)]
+        chords = [_chord("C", 0.0, 0.5), _chord("G", 1.5, 2.5)]
+        duration = 3.0  # trailing gap from 0.5 → 3.0 is 2.5s < 4s
+        sections = infer_sections(
+            words,
+            chords,
+            _beat_grid(bpm=120.0, duration=duration),
+            duration=duration,
+        )
+        assert all(s.type != "outro" for s in sections)
+        for c in chords:
+            covered = any(_section_covers_time(s, c.timestamp.start) for s in sections)
+            assert covered, f"chord {c.symbol}@{c.timestamp.start} orphaned"
+
+    def test_exclusive_partition_covers_full_duration(self) -> None:
+        """Section timestamps should form a near-partition of [0, duration]."""
+        words = [
+            _word("a", 5.0, 5.4),
+            _word("b", 5.5, 5.9),
+            # 10s gap → instrumental
+            _word("c", 16.0, 16.4),
+            _word("d", 16.5, 16.9),
+        ]
+        chords = [
+            _chord("C", 1.0, 4.0),
+            _chord("X", 8.0, 12.0),
+            _chord("F", 16.0, 17.0),
+            _chord("G", 20.0, 22.0),
+        ]
+        duration = 25.0
+        sections = infer_sections(
+            words,
+            chords,
+            _beat_grid(bpm=120.0, duration=duration),
+            duration=duration,
+        )
+        assert sections[0].timestamp.start == pytest.approx(0.0)
+        assert sections[-1].timestamp.end == pytest.approx(duration)
+        # Every chord covered
+        for c in chords:
+            assert any(_section_covers_time(s, c.timestamp.start) for s in sections)
+        # Instrumental gap chord still on an InstrumentalLine
+        instr_chords = _all_instrumental_chords(sections)
+        assert any(c.symbol == "X" for c in instr_chords)
+        assert any(c.symbol == "C" for c in instr_chords)  # intro
+        assert any(c.symbol == "G" for c in instr_chords)  # outro

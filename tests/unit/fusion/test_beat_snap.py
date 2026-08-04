@@ -71,3 +71,33 @@ class TestBeatSnap:
         snapped, level = snap_chord_to_grid(chord, grid)
         # 0.5s vs 1.0s = 500ms diff → unsnapped
         assert level == "unsnapped"
+
+    def test_snap_past_end_clamps_end_no_validation_error(self) -> None:
+        """Short chord whose nearest beat is to the right of end must not raise.
+
+        Chord at start=0.98, end=1.0 (20ms duration). Beat at 1.0 is within
+        ±70ms, so start snaps to 1.0. Without clamping, TimeStamp(start=1.0,
+        end=1.0) is ok, but if nearest beat is *past* end (e.g. start=0.96,
+        end=0.98 → snap to 1.0), end must be raised so end >= start.
+        """
+        # start 40ms before beat 1.0, end 20ms before beat → snap start to 1.0 > end
+        chord = _chord(0.96, t_end=0.98)
+        grid = _grid([0.5, 1.0, 1.5, 2.0])
+        snapped, level = snap_chord_to_grid(chord, grid)
+        assert level == "beat"
+        assert snapped.timestamp.start == pytest.approx(1.0)
+        assert snapped.timestamp.end >= snapped.timestamp.start
+        # Preserve original duration when possible
+        original_dur = 0.98 - 0.96
+        assert snapped.timestamp.end == pytest.approx(1.0 + original_dur)
+
+    def test_snap_8th_past_end_clamps_end(self) -> None:
+        """Same clamp for 8th-note snap when nearest 8th is past chord end."""
+        # 8th between 1.0 and 1.5 is 1.25. Chord near it but ends before it.
+        chord = _chord(1.20, t_end=1.22)
+        grid = _grid([0.5, 1.0, 1.5, 2.0])
+        snapped, level = snap_chord_to_grid(chord, grid)
+        assert level == "8th"
+        assert snapped.timestamp.start == pytest.approx(1.25)
+        assert snapped.timestamp.end >= snapped.timestamp.start
+        assert snapped.timestamp.end == pytest.approx(1.25 + (1.22 - 1.20))

@@ -204,7 +204,7 @@ def transcribe(
     # gruut/g2p_en are lightweight; no release needed.
 
     stress_detector = _stress_detector_for(detected_lang)
-    _apply_stress(words, syllables, stress_detector)
+    syllables = _apply_stress(words, syllables, stress_detector)
 
     chords = _run_or_cache_list(
         cache=cache,
@@ -361,16 +361,44 @@ def _apply_stress(
     words: list[WordEvent],
     syllables: list[SyllableEvent],
     detector: stress.StressDetector,
-) -> None:
-    word_syllables: dict[int, list[SyllableEvent]] = {}
-    for syl in syllables:
-        word_syllables.setdefault(syl.parent_word_idx, []).append(syl)
-    for idx, word in enumerate(words):
-        word_syls = word_syllables.get(idx, [])
-        if not word_syls:
+) -> list[SyllableEvent]:
+    """Mark exactly one stressed syllable per word; return a new syllable list.
+
+    Clears any pre-existing ``is_stressed`` flags from the syllabifier/engine
+    so a word never ends up with zero or multiple stressed syllables.
+    Does not mutate the input ``syllables`` list or its elements.
+    """
+    # Group by parent word while preserving stable order within each word.
+    word_syllable_indices: dict[int, list[int]] = {}
+    for i, syl in enumerate(syllables):
+        word_syllable_indices.setdefault(syl.parent_word_idx, []).append(i)
+
+    # Per-index replacement; unset indices cleared below.
+    updated: dict[int, SyllableEvent] = {}
+
+    for word_idx, word in enumerate(words):
+        indices = word_syllable_indices.get(word_idx, [])
+        if not indices:
             continue
-        stressed = detector.detect_stressed_syllable(word, word_syls)
-        word_syls[stressed].is_stressed = True
+        word_syls = [syllables[i] for i in indices]
+        stressed_local = detector.detect_stressed_syllable(word, word_syls)
+        # Guard: clamp to valid range if detector misbehaves.
+        if stressed_local < 0 or stressed_local >= len(indices):
+            stressed_local = 0
+        for local_i, global_i in enumerate(indices):
+            updated[global_i] = syllables[global_i].model_copy(
+                update={"is_stressed": local_i == stressed_local}
+            )
+
+    # Rebuild full list immutably. Syllables not attached to any enumerated
+    # word get is_stressed cleared so no stale engine flags leak through.
+    result: list[SyllableEvent] = []
+    for i, syl in enumerate(syllables):
+        if i in updated:
+            result.append(updated[i])
+        else:
+            result.append(syl.model_copy(update={"is_stressed": False}))
+    return result
 
 
 def _place_all_chords(
@@ -390,36 +418,130 @@ def _place_all_chords(
     result: list[Section] = []
     for section in sections:
         new_lines: list[LyricLine | InstrumentalLine] = []
-        for line in section.lines:
+        for line_i, line in enumerate(section.lines):
             if not isinstance(line, LyricLine):
                 new_lines.append(line)
                 continue
             line_words = line.word_alignments
-            global_indices = [word_index.get(id(w), -1) for w in line_words]
-            line_syls = [
-                s for gi in global_indices if gi >= 0 for s in syl_by_global_word.get(gi, [])
-            ]
-            if line_words:
-                line_span = TimeStamp(
-                    start=line_words[0].timestamp.start,
-                    end=line_words[-1].timestamp.end,
-                )
-            else:
-                line_span = section.timestamp
+
+            # Reindex global parent_word_idx → line-local so placer can index
+            # words[parent_idx] without OOB / wrong-word char positions.
+            line_syls: list[SyllableEvent] = []
+            for local_i, w in enumerate(line_words):
+                gi = word_index.get(id(w), -1)
+                if gi < 0:
+                    continue
+                for s in syl_by_global_word.get(gi, []):
+                    line_syls.append(s.model_copy(update={"parent_word_idx": local_i}))
+
+            line_melismas = _remap_melismas_for_line(melismas, syllables, line_syls)
+            line_span = _expanded_line_span(section, line_i, line_words)
             line_chords = [c for c in chords if _chord_in_span(c, line_span)]
-            placed, _orphans = placer.place_chords_in_line(
+            placed, orphans = placer.place_chords_in_line(
                 line_text=line.text,
                 words=line_words,
                 syllables=line_syls,
                 chords_in_line=line_chords,
                 beat_grid=beats,
-                melismas=melismas,
+                melismas=line_melismas,
                 language=language,
             )
             new_lines.append(placed)
+            if orphans:
+                new_lines.append(
+                    InstrumentalLine(
+                        chords=orphans,
+                        measures=_orphan_measures(orphans, beats),
+                        label=None,
+                    )
+                )
         result.append(section.model_copy(update={"lines": new_lines}))
     return result
 
 
+def _remap_melismas_for_line(
+    melismas: list[Melisma],
+    global_syllables: list[SyllableEvent],
+    line_syls: list[SyllableEvent],
+) -> list[Melisma]:
+    """Map global Melisma.syllable_idx onto the line-local syllables list.
+
+    Melismas are detected against the full song syllable list. The placer
+    indexes `syllables[melisma.syllable_idx]` using the *line-local* list, so
+    we rewrite indices by matching (timestamp.start, text).
+    """
+    local_by_key: dict[tuple[float, str], int] = {}
+    for i, s in enumerate(line_syls):
+        local_by_key[(s.timestamp.start, s.text)] = i
+
+    remapped: list[Melisma] = []
+    for m in melismas:
+        if not (0 <= m.syllable_idx < len(global_syllables)):
+            continue
+        g = global_syllables[m.syllable_idx]
+        local_idx = local_by_key.get((g.timestamp.start, g.text))
+        if local_idx is None:
+            continue
+        remapped.append(Melisma(syllable_idx=local_idx, span=m.span))
+    return remapped
+
+
+def _expanded_line_span(
+    section: Section,
+    line_i: int,
+    line_words: list[WordEvent],
+) -> TimeStamp:
+    """Temporal window for chord assignment, expanded to midpoints between lines.
+
+    Expanding halfway to the previous/next lyric line within the same section
+    keeps short inter-phrase gap chords from vanishing between word spans.
+    Adjacent lines meet at the midpoint (exclusive end via `_chord_in_span`).
+    """
+    if not line_words:
+        return section.timestamp
+
+    start = line_words[0].timestamp.start
+    end = line_words[-1].timestamp.end
+
+    prev_end: float | None = None
+    for i in range(line_i - 1, -1, -1):
+        prev = section.lines[i]
+        if isinstance(prev, LyricLine) and prev.word_alignments:
+            prev_end = prev.word_alignments[-1].timestamp.end
+            break
+
+    next_start: float | None = None
+    for i in range(line_i + 1, len(section.lines)):
+        nxt = section.lines[i]
+        if isinstance(nxt, LyricLine) and nxt.word_alignments:
+            next_start = nxt.word_alignments[0].timestamp.start
+            break
+
+    if prev_end is not None and prev_end < start:
+        start = (prev_end + start) / 2.0
+    if next_start is not None and next_start > end:
+        end = (end + next_start) / 2.0
+
+    return TimeStamp(start=start, end=end)
+
+
+def _orphan_measures(orphans: list[ChordEvent], beat_grid: BeatGrid) -> int:
+    """Approximate measures covering orphan chords; always >= 1 (schema gt=0)."""
+    if not orphans:
+        return 1
+    start = min(c.timestamp.start for c in orphans)
+    end = max(c.timestamp.end for c in orphans)
+    beats_in_span = sum(1 for b in beat_grid.beats if start <= b <= end)
+    beats_per_measure = beat_grid.meter[0]
+    return max(1, beats_in_span // beats_per_measure)
+
+
 def _chord_in_span(chord: ChordEvent, timestamp: TimeStamp) -> bool:
-    return chord.timestamp.start < timestamp.end and chord.timestamp.end > timestamp.start
+    """Assign a chord to a line span by onset (chord-change time).
+
+    Onset partitioning (``start <= t < end``) pairs cleanly with midpoint-
+    expanded line windows so adjacent lines share a boundary without both
+    claiming the same chord via duration-overlap.
+    """
+    t = chord.timestamp.start
+    return timestamp.start <= t < timestamp.end

@@ -192,10 +192,10 @@ def _closest_syllable_within(
     tol: float,
 ) -> SyllableEvent | None:
     best: SyllableEvent | None = None
-    best_dist = tol
+    best_dist = float("inf")
     for s in syllables:
         dist = abs(s.timestamp.start - t_anchor)
-        if dist < best_dist:
+        if dist <= tol and dist < best_dist:
             best = s
             best_dist = dist
     return best

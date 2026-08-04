@@ -2,16 +2,20 @@
 """V0.1 heuristic section inference from word gaps in lyrics.
 
 Algorithm:
-    1. Derive gap threshold from beat_grid: 4 beats × beat_period seconds.
-       (Threshold scales with tempo — 4s @ 60bpm, 1.33s @ 180bpm.)
+    1. Derive adaptive gap thresholds from inter-word gap median (floored at
+       MIN_INSTRUMENTAL_GAP_SEC / MIN_LYRIC_LINE_GAP_SEC).
     2. Group sequential words into "lyric blocks" separated by gaps > threshold.
     3. Classify chronologically:
        - 0 to first lyric block (if gap > threshold) → Intro
        - Between two lyric blocks (if gap > threshold) → Instrumental break
        - Last lyric block end to duration (if gap > threshold) → Outro
        - Lyric blocks themselves → alternate Verse/Chorus starting with Verse 1
-    4. Within each lyric block, split into LyricLines on smaller gaps (2 beats).
-    5. Partition chord events by timestamp into the section they fall into.
+    4. Within each lyric block, split into LyricLines on smaller gaps.
+    5. Close coverage: expand section timestamps into an exclusive partition of
+       ``[0, duration]`` via midpoints so sub-threshold leading/trailing (and
+       any residual) regions never orphan chords.
+    6. Partition every chord into exactly one section by ownership window;
+       instrumental/intro/outro lines carry their chords on InstrumentalLine.
 
 Limitations (documented in spec Section 3.6):
     - Verse vs Chorus is positional alternation, not content-based detection.
@@ -95,6 +99,11 @@ def infer_sections(
     """Infer Section objects from words + chords + beat_grid.
 
     Returns sections in chronological order covering [0, duration].
+
+    Section timestamps form an exclusive partition of ``[0, duration]`` via
+    midpoints between adjacent sections, so every chord falls in exactly one
+    section window (sub-threshold leading/trailing gaps are absorbed into the
+    nearest lyric section rather than dropping chords).
     """
     if duration <= 0:
         return []
@@ -116,6 +125,10 @@ def infer_sections(
     # Group words into lyric blocks (internal gaps < threshold).
     lyric_blocks = _group_words_into_blocks(words, gap_threshold)
 
+    # Build skeleton sections with *content* timestamps first (word spans /
+    # instrumental gap spans). Chord assignment and exclusive partition of
+    # [0, duration] happen in a second pass so no chord can fall through a
+    # sub-threshold gap.
     sections: list[Section] = []
     verse_count = 0
     chorus_count = 0
@@ -124,10 +137,9 @@ def infer_sections(
     # Intro: leading silence/instrumental before first lyric block.
     first_block_start = lyric_blocks[0][0].timestamp.start
     if first_block_start - cursor > gap_threshold:
-        intro_chords = [c for c in chords if c.timestamp.start < first_block_start]
         sections.append(
             _make_instrumental_section(
-                chords=intro_chords,
+                chords=[],
                 timestamp=TimeStamp(start=0.0, end=first_block_start),
                 beat_grid=beat_grid,
                 label="Intro",
@@ -142,12 +154,11 @@ def infer_sections(
 
         # Instrumental break between previous block and this one.
         if cursor < block_start and block_start - cursor > gap_threshold:
-            gap_chords = [c for c in chords if cursor <= c.timestamp.start < block_start]
             instr_idx = sum(1 for s in sections if s.type == "instrumental")
             instr_label = f"Instrumental {instr_idx + 1}" if instr_idx else "Instrumental"
             sections.append(
                 _make_instrumental_section(
-                    chords=gap_chords,
+                    chords=[],
                     timestamp=TimeStamp(start=cursor, end=block_start),
                     beat_grid=beat_grid,
                     label=instr_label,
@@ -165,11 +176,10 @@ def infer_sections(
             label = "Chorus" if chorus_count == 1 else f"Chorus {chorus_count}"
             section_type = "chorus"
 
-        block_chords = [c for c in chords if block_start <= c.timestamp.start <= block_end]
         sections.append(
             _make_lyric_section(
                 words=block,
-                chords=block_chords,
+                chords=[],
                 beat_grid=beat_grid,
                 label=label,
                 section_type=section_type,
@@ -181,10 +191,9 @@ def infer_sections(
 
     # Outro: trailing instrumental after last lyric block.
     if duration - cursor > gap_threshold:
-        outro_chords = [c for c in chords if c.timestamp.start >= cursor]
         sections.append(
             _make_instrumental_section(
-                chords=outro_chords,
+                chords=[],
                 timestamp=TimeStamp(start=cursor, end=duration),
                 beat_grid=beat_grid,
                 label="Outro",
@@ -192,10 +201,111 @@ def infer_sections(
             )
         )
 
+    # Expand timestamps to an exclusive partition of [0, duration], then
+    # assign every chord to exactly one section.
+    sections = _close_coverage(sections, duration)
+    sections = _assign_chords_to_sections(sections, chords, beat_grid)
     return sections
 
 
 # ───────────────────── Helpers ─────────────────────
+
+
+def _close_coverage(sections: list[Section], duration: float) -> list[Section]:
+    """Expand section timestamps into an exclusive partition of ``[0, duration]``.
+
+    Boundaries between consecutive sections are midpoints of the gap between
+    the previous content end and the next content start. The first section
+    always starts at 0; the last always ends at ``duration``. Sub-threshold
+    leading/trailing regions (where no intro/outro was created) are absorbed
+    into the adjacent lyric section.
+    """
+    if not sections:
+        return sections
+
+    n = len(sections)
+    closed: list[Section] = []
+    for i, sec in enumerate(sections):
+        if i == 0:
+            start = 0.0
+        else:
+            prev = sections[i - 1]
+            start = (prev.timestamp.end + sec.timestamp.start) / 2.0
+
+        if i == n - 1:
+            end = duration
+        else:
+            nxt = sections[i + 1]
+            end = (sec.timestamp.end + nxt.timestamp.start) / 2.0
+
+        if end < start:
+            end = start
+        closed.append(sec.model_copy(update={"timestamp": TimeStamp(start=start, end=end)}))
+    return closed
+
+
+def _assign_chords_to_sections(
+    sections: list[Section],
+    chords: list[ChordEvent],
+    beat_grid: BeatGrid,
+) -> list[Section]:
+    """Partition chords into sections by ownership windows.
+
+    Half-open intervals ``[start, end)`` for all but the last section (which
+    is closed on the right so a chord exactly at ``duration`` is kept).
+    Instrumental/intro/outro lines receive the chords on their
+    ``InstrumentalLine``; lyric sections only need the covering timestamp
+    (placer reads chords from the global list).
+    """
+    if not sections:
+        return sections
+
+    n = len(sections)
+    buckets: list[list[ChordEvent]] = [[] for _ in range(n)]
+
+    for chord in chords:
+        t = chord.timestamp.start
+        placed = False
+        for i, sec in enumerate(sections):
+            start = sec.timestamp.start
+            end = sec.timestamp.end
+            if i < n - 1:
+                owns = start <= t < end
+            else:
+                owns = start <= t <= end
+            if owns:
+                buckets[i].append(chord)
+                placed = True
+                break
+        if not placed and sections:
+            # Safety net: attach to nearest section by midpoint distance.
+            best_i = min(
+                range(n),
+                key=lambda i: abs(
+                    t - (sections[i].timestamp.start + sections[i].timestamp.end) / 2.0
+                ),
+            )
+            buckets[best_i].append(chord)
+
+    result: list[Section] = []
+    for i, sec in enumerate(sections):
+        sec_chords = buckets[i]
+        is_instrumental = sec.type in ("instrumental", "intro", "outro")
+        if is_instrumental:
+            result.append(
+                _make_instrumental_section(
+                    chords=sec_chords,
+                    timestamp=sec.timestamp,
+                    beat_grid=beat_grid,
+                    label=sec.label,
+                    section_type=sec.type,
+                )
+            )
+        else:
+            # Preserve lyric lines; timestamp already closed. Chords unused
+            # on LyricLines (placer uses the global list).
+            result.append(sec)
+    return result
 
 
 def _beat_period(beat_grid: BeatGrid) -> float:

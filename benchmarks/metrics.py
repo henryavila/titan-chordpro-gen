@@ -96,10 +96,15 @@ def chord_events_to_intervals(
     """Convert Titan ChordEvent list → (intervals, mir_eval-format labels).
 
     bass_note is appended as a slash-chord component to the mir_eval label.
+
+    Events are sorted by onset so collecting chords from interleaved
+    LyricLine/InstrumentalLine order (post orphan materialization) still
+    yields monotonic intervals for mir_eval.
     """
     intervals: list[tuple[float, float]] = []
     labels: list[str] = []
-    for evt in events:
+    ordered = sorted(events, key=lambda e: (e.timestamp.start, e.timestamp.end))
+    for evt in ordered:
         base = to_mir_eval_chord(evt.symbol)
         if getattr(evt, "bass_note", None):
             base = f"{base}/{evt.bass_note}"
