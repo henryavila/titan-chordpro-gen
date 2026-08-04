@@ -1,0 +1,12 @@
+{
+  "planSlug": "titan-v01",
+  "phaseId": "F2",
+  "baseRef": "9091cbc3d0c17852b79ad5879375970c5cf7cf13",
+  "worktreePath": "/Volumes/External/code/titan-v01-F2-writer",
+  "writerBranch": "impl/titan-v01-F2-writer",
+  "sealedBriefPath": "/Volumes/External/code/titan-chordpro-lib/.atomic-skills/status/automate/titan-v01-F2-sealed-brief.md",
+  "claimReportPath": "/Volumes/External/code/titan-chordpro-lib/.atomic-skills/status/automate/titan-v01-claims.json",
+  "claimReportPathForBrief": ".atomic-skills/status/automate/titan-v01-claims.json",
+  "leasePath": "/Volumes/External/code/titan-chordpro-lib/.atomic-skills/status/writer-leases/titan-v01.json",
+  "preparedAt": "2026-08-04T17:43:58.640Z"
+}

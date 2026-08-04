@@ -18,7 +18,7 @@
         "projectId": "titan-chordpro-lib",
         "slug": "titan-v01",
         "title": "Titan ChordPro Lib v0.1 — from research to release",
-        "nextAction": "Execute T-003: T70 quality loop (detection and placement)",
+        "nextAction": "Continue T-003 quality loop until mean WCSR-majmin >= 0.70, then done T-003",
         "phaseId": "F2",
         "dotTone": "info"
       }
@@ -28,6 +28,6 @@
     "bannerTitle": "1 frente ativa",
     "bannerSub": "2 planos · 0 tasks travadas",
     "moreFrontsText": "",
-    "updatedRel": "48m"
+    "updatedRel": "37m"
   }
 ]

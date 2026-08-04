@@ -33,14 +33,14 @@
     "status": "active",
     "branch": "plan/titan-v01",
     "started": "2026-05-08T00:00:00Z",
-    "lastUpdated": "2026-08-04T16:12:00Z",
+    "lastUpdated": "2026-08-04T17:15:00Z",
     "currentPhase": "F2",
     "currentPhaseText": "Phase C Validation and quality",
     "phasesText": "2/4 fases",
     "phasesSummary": "2/4 fases",
     "roteiroSub": "2/4 fases concluídas",
     "switcherCaption": "active · Phase C Validation and quality",
-    "nextText": "Execute T-003: T70 quality loop (detection and placement)",
+    "nextText": "Continue T-003 quality loop until mean WCSR-majmin >= 0.70, then done T-003",
     "blockedByPlans": [],
     "blockedByPlansText": "",
     "unblocksPlans": [],
@@ -48,9 +48,9 @@
     "originText": "",
     "executionLane": "running",
     "executionIndex": 1,
-    "focusTasksText": "2/6",
-    "focusTasksPct": 33,
+    "focusTasksText": "5/6",
+    "focusTasksPct": 83,
     "focusMeta": "gates 0/3 · 1 frame",
-    "updatedRel": "48m"
+    "updatedRel": "37m"
   }
 ]

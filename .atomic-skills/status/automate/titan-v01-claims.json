@@ -1,0 +1,79 @@
+{
+  "planSlug": "titan-v01",
+  "phaseId": "F2",
+  "worktreePath": "/Volumes/External/code/titan-v01-F2-writer",
+  "writerBranch": "impl/titan-v01-F2-writer",
+  "finishedAt": "2026-08-04T17:46:39Z",
+  "tasks": [
+    {
+      "taskId": "T-003",
+      "status": "blocked",
+      "commitShas": [
+        "2d8710a41ec2d4c126fb4f31bd5d4a3bccf7dd17",
+        "cb9eebe29835d15a3ecf983f5af00346363265a4"
+      ],
+      "base": null,
+      "head": null,
+      "paths": [
+        "titan_chordpro/engines/chord/chordino.py",
+        "titan_chordpro/fusion/placer.py",
+        "titan_chordpro/orchestrator.py",
+        "tests/unit/engines/chord/test_chordino.py",
+        "tests/unit/fusion/test_placer.py"
+      ],
+      "verifierCommand": "pytest tests/unit/fusion tests/unit/core/test_place_all_chords.py -q && python -c \"from pathlib import Path; import re; reps=sorted(Path('benchmarks/reports').glob('*/top-divergences.md')); assert reps, 'no report'; t=reps[-1].read_text(); m=re.search(r'Mean WCSR-majmin:\\\\s*\\\\*\\\\*([0-9.]+)\\\\*\\\\*', t); assert m and float(m.group(1)) >= 0.70, (m and m.group(1))\"",
+      "exitCode": 1,
+      "transcript": "unit: 106 passed in 0.29s. sample_run mean WCSR-majmin=0.259 (report benchmarks/reports/2026-08-04/top-divergences.md). Per-song: Ao olhar 0.251, Teu santo nome 0.257, Jesus 0.270. Gate 0.70 not reached — honest claimed-fail. Also shipped fix commit cb9eebe: _harmonic_mix_path ImportError fallback to stems.other when numpy/soundfile absent (core deps are pydantic+rich only); unblocks mock/CLI smoke without adding numpy to required deps.",
+      "notes": " Reclassified blocked: WCSR-majmin 0.259 << 0.70 with Chordino majmin; unit tests green; product commits retained for fence."
+    },
+    {
+      "taskId": "T-004",
+      "status": "claimed-pass",
+      "commitShas": [
+        "366c4b5857c61f6df8086340673cd9bd22fca455"
+      ],
+      "base": null,
+      "head": null,
+      "paths": [
+        "titan_chordpro/cli.py",
+        "tests/integration/test_cli.py"
+      ],
+      "verifierCommand": "rg -n -- '--validate|Progress|rich' titan_chordpro/cli.py && pytest tests/integration/test_cli.py -q",
+      "exitCode": 0,
+      "transcript": "rg matches --validate/Progress/rich in cli.py. pytest tests/integration/test_cli.py: 6 passed in 0.25s (list-engines, mock device, library no rich import, --help documents --validate, --validate invokes runner, missing CSV returns 2). Regression ModuleNotFoundError:numpy fixed upstream in orchestrator (T-003 cb9eebe); T-004 files unchanged this round."
+    },
+    {
+      "taskId": "T-005",
+      "status": "claimed-pass",
+      "commitShas": [
+        "65e7d5f63712954ef244ba7ce1b709c02a07d41e"
+      ],
+      "base": null,
+      "head": null,
+      "paths": [
+        "README.md"
+      ],
+      "verifierCommand": "rg -n 'setup-validation|Validation|badge|shields|WCSR|corpus' README.md && test -f docs/setup-validation.md",
+      "exitCode": 0,
+      "transcript": "README has shields badges (CI/Nightly/License/version), Validation harness section with WCSR tiers, links docs/setup-validation.md, quick-start sample_run and titan-chordpro --validate. docs/setup-validation.md present. Unchanged this round."
+    },
+    {
+      "taskId": "T-006",
+      "status": "claimed-pass",
+      "commitShas": [
+        "b9ac8d311cd356ee428f33a9f0efa02d83f8f309"
+      ],
+      "base": null,
+      "head": null,
+      "paths": [
+        "CHANGELOG.md",
+        "pyproject.toml",
+        "titan_chordpro/version.py",
+        "docs/roadmap.md"
+      ],
+      "verifierCommand": "rg -n '0\\.1\\.0c0' pyproject.toml titan_chordpro/version.py CHANGELOG.md && rg -n '0\\.1\\.0-c0|0\\.1\\.0c0|Phase C' docs/roadmap.md",
+      "exitCode": 0,
+      "transcript": "version 0.1.0c0 in pyproject.toml + version.py; CHANGELOG [0.1.0c0] section present; roadmap Phase C CLOSED / c0 ready for operator tag v0.1.0-c0. No git tag created. Unchanged this round."
+    }
+  ]
+}

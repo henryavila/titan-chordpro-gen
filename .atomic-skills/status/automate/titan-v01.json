@@ -1,6 +1,11 @@
 {
-  "step": "B",
+  "step": "E",
   "phaseId": "F2",
-  "redispatchCount": 0,
-  "updatedAt": "2026-08-04T17:14:56.177Z"
+  "redispatchCount": 1,
+  "updatedAt": "2026-08-04T17:49:32.172Z",
+  "lastAssert": {
+    "gate": "done",
+    "ok": true,
+    "at": "2026-08-04T17:49:32.172Z"
+  }
 }
