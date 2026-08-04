@@ -215,3 +215,50 @@ See frontmatter `principles[]`.
 ## 3. Phase tree
 
 F0 Foundation DONE · F1 ML DONE · **F2 Validation ACTIVE** · F3 Pre-release PENDING.
+
+## Ground-truth review
+
+**Status:** complete-with-findings
+**Codebase class:** populated
+**Scanned:** titan_chordpro/, benchmarks/, tests/, scripts/, .github/workflows/, docs/, pyproject.toml → 120 product/test `.py` files under titan_chordpro+benchmarks+tests
+**Commit:** a682a64
+**At:** 2026-08-04T16:54:31Z
+
+### A — Plan premises vs code
+
+| # | Premise | Result | Evidence |
+|---|---------|--------|----------|
+| 1 | Protocol contracts live in `titan_chordpro/core/protocols.py` (orchestrator never imports torch/whisper directly) | ok | `titan_chordpro/core/protocols.py` exists; `titan_chordpro/orchestrator.py` imports protocols/cache/schemas, not torch |
+| 2 | Seven ML engines under `titan_chordpro/engines/` (beat, separation, transcription, align, chord, lang PT/EN) | ok | dirs: beat/, separation/, transcription/, alignment/, chord/, lang/ with beatthis, htdemucs, whisper_cpp, torchaudio_align, chordino, portuguese, english |
+| 3 | Phase C validation harness already in tree (`[validation]`, corpus, yt-dlp, runner/metrics/parser, divergence ranker, nightly) | ok | `pyproject.toml` optional-deps `validation`; `benchmarks/{corpus,audio_downloader,validation_runner,metrics,chordpro_parser,divergence_ranker}.py`; `.github/workflows/nightly.yml` |
+| 4 | F-004 bass inversions via `bass_chroma` implemented | ok | `titan_chordpro/engines/chord/bass_chroma.py`; `tests/unit/engines/chord/test_bass_chroma.py` |
+| 5 | Stage cache dump/load + orchestrator wiring | ok | `titan_chordpro/core/cache.py` `dump_stage`/`load_stage`; wired in `titan_chordpro/orchestrator.py` |
+| 6 | T70 structural placement fixes landed (`parent_word_idx` reindex, melisma, InstrumentalLine, sectioner, stress, beat_snap) | ok | reindex in `orchestrator.py` (~L427); modules `fusion/{melisma,sectioner,stress,beat_snap,placer}.py`; sample report mean still low |
+| 7 | Sample mean WCSR-majmin still ~0.21 (pre quality-loop) | ok | `benchmarks/reports/2026-08-04/top-divergences.md` Mean WCSR-majmin **0.211** (3 songs) |
+| 8 | 3-song sample selection for T70 | ok | `scripts/sample_run.py` pins youtube_ids `9yZt5ekdceI`, `LvoYT0loqLQ`, `LL5Pak4zcuA` |
+| 9 | Tags `v0.1.0-a0` and `v0.1.0-b1` exist | ok | `git rev-parse` → `9c7d407…`, `97f8ffb…` |
+| 10 | CLI entrypoint `titan-chordpro` | ok | `pyproject.toml` `[project.scripts]`; `titan_chordpro/cli.py` |
+| 11 | Factory real-engines integration test exists | ok | `tests/integration/test_factory_real.py` |
+| 12 | Docs: roadmap + setup-validation + design/adopt sources | ok | `docs/roadmap.md`, `docs/setup-validation.md`, referenced superpowers paths present |
+| 13 | Tag `v0.1.0-c0` exists | ok (not an existence premise) | **creates** via F2-G3 / operator after T-006 — currently absent by design |
+| 14 | F3 user docs (`docs/method.md` etc.) exist | ok (not F2 premise) | missing today; F3 creates them |
+
+### B — Code present, plan silent (impact candidates)
+
+| # | Finding | Location | Impact | Disposition |
+|---|---------|----------|--------|-------------|
+| 1 | Stage cache (`dump_stage`/`load_stage`) affects every re-run of sample/quality loop | `titan_chordpro/core/cache.py`, `orchestrator.py` | direct | **task T-003** — reuse cache; invalidate/bypass when measuring post-fix WCSR; do not redesign cache API unless broken |
+| 2 | `scripts/sample_run.py` + `scripts/render_from_url.py` are real validation entrypoints not listed as phase outputs | `scripts/` | direct | **task T-003** outputs include `scripts/sample_run.py`; render_from_url accepted residual for ad-hoc demos |
+| 3 | `core/hardware.py` narrow backend probe is a curta-facing contract | `titan_chordpro/core/hardware.py` | indirect | **oos / accepted** — do not widen contract in F2; quality loop must not break `detect_backend` semantics |
+| 4 | Five writer profiles share placement Document model | `titan_chordpro/writer/profiles/*` | indirect | **scopeBoundary T-003** — no wholesale profile rewrites; placement fixes stay in fusion/orchestrator |
+| 5 | Nightly + CI workflows run corpus/validation paths | `.github/workflows/{nightly,ci}.yml` | indirect | **accepted residual** — keep harness APIs stable; T-003 does not own workflow rewrites unless flags break |
+| 6 | `rich` is already a core dependency but CLI has no Progress/`--validate` yet | `pyproject.toml`, `titan_chordpro/cli.py` | direct | **task T-004** — CLI polish owns Progress + `--validate` |
+| 7 | Package version still `0.1.0b2`; no CHANGELOG.md | `pyproject.toml`, `titan_chordpro/version.py` | direct | **task T-006** — bump to `0.1.0c0` + CHANGELOG; tag is operator |
+| 8 | Dual `[mac]`/`[cuda]` extras + deferred CUDA path | `pyproject.toml` | none (oos) | **outOfScope** businessIntent — v0.2 CUDA/BTC/mlx |
+| 9 | Reports under `benchmarks/reports/` (incl. top-divergences) are measurement SSOT for gates | `benchmarks/reports/2026-08-04/` | direct | **gates F2-G1/G2 + T-003 verifier** — mean WCSR + human GO on top-divergences |
+
+**Counts:** premises=14 (missing=0, false=0); impacts=9 (direct=5, indirect=3, none/oos=1)
+
+## Reviews
+
+- ground-truth: complete-with-findings | mode=ground-truth | fp=eebf99ccc9d8 | premises=14 | impacts=9 @ a682a64 (2026-08-04T16:54:31Z)

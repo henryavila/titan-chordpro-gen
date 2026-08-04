@@ -84,7 +84,7 @@
     "summary": "Quality loop WCSR/stacking",
     "status": "active",
     "closedAt": null,
-    "lastUpdated": "2026-08-04T16:08:35Z",
+    "lastUpdated": "2026-08-04T16:54:00Z",
     "blocked": false,
     "blockedBy": [],
     "blockedByText": ""
@@ -99,7 +99,7 @@
     "summary": "CLI rich + --validate",
     "status": "pending",
     "closedAt": null,
-    "lastUpdated": "2026-08-04T16:08:35Z",
+    "lastUpdated": "2026-08-04T16:54:00Z",
     "blocked": false,
     "blockedBy": [],
     "blockedByText": ""
@@ -114,7 +114,7 @@
     "summary": "README validation section",
     "status": "pending",
     "closedAt": null,
-    "lastUpdated": "2026-08-04T16:08:35Z",
+    "lastUpdated": "2026-08-04T16:54:00Z",
     "blocked": false,
     "blockedBy": [],
     "blockedByText": ""
@@ -129,7 +129,7 @@
     "summary": "CHANGELOG + tag c0",
     "status": "pending",
     "closedAt": null,
-    "lastUpdated": "2026-08-04T16:08:35Z",
+    "lastUpdated": "2026-08-04T16:54:00Z",
     "blocked": false,
     "blockedBy": [],
     "blockedByText": ""
