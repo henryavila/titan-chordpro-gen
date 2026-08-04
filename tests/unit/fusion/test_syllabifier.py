@@ -209,3 +209,125 @@ class TestSyllabifyWordOrthographic:
         # "open" → vowels at 0, 2. Hybrid: 1 consoant 'p' between → onset → "o-pen"
         result = syllabify_word_orthographic(_word("open", 0.0, 0.4), "en")
         assert [s.text for s in result] == ["o", "pen"]
+
+
+@pytest.mark.unit
+class TestPhonemeInventoryUsability:
+    """MMS_FA may emit numeric token IDs as 'phonemes'. Those must not drive MOP."""
+
+    def test_all_digit_symbols_are_not_usable(self) -> None:
+        from titan_chordpro.fusion.syllabifier import phoneme_inventory_is_usable
+
+        phonemes = [
+            _phoneme("1", 0.0, 0.05),
+            _phoneme("4", 0.05, 0.10),
+            _phoneme("13", 0.10, 0.15),
+            _phoneme("3", 0.15, 0.20),
+            _phoneme("2", 0.20, 0.30),
+        ]
+        assert phoneme_inventory_is_usable(phonemes) is False
+
+    def test_arpabet_inventory_is_usable(self) -> None:
+        from titan_chordpro.fusion.syllabifier import phoneme_inventory_is_usable
+
+        phonemes = [
+            _phoneme("B", 0.0, 0.05),
+            _phoneme("AH0", 0.05, 0.15),
+            _phoneme("S", 0.15, 0.20),
+            _phoneme("K", 0.20, 0.25),
+            _phoneme("AE1", 0.25, 0.35),
+            _phoneme("N", 0.35, 0.40),
+            _phoneme("D", 0.40, 0.45),
+            _phoneme("OW0", 0.45, 0.55),
+        ]
+        assert phoneme_inventory_is_usable(phonemes) is True
+
+    def test_ipa_inventory_is_usable(self) -> None:
+        from titan_chordpro.fusion.syllabifier import phoneme_inventory_is_usable
+
+        phonemes = [
+            _phoneme("a", 0.0, 0.1),
+            _phoneme("m", 0.1, 0.2),
+            _phoneme("ˈi", 0.2, 0.4),
+            _phoneme("ɡ", 0.4, 0.5),
+            _phoneme("u", 0.5, 0.6),
+        ]
+        assert phoneme_inventory_is_usable(phonemes) is True
+
+    def test_empty_inventory_not_usable(self) -> None:
+        from titan_chordpro.fusion.syllabifier import phoneme_inventory_is_usable
+
+        assert phoneme_inventory_is_usable([]) is False
+
+
+@pytest.mark.unit
+class TestNumericPhonemeFallback:
+    """RC1: numeric token-ID 'phonemes' must fall back to orthographic split."""
+
+    def test_mms_ids_do_not_collapse_buscando(self) -> None:
+        from titan_chordpro.fusion.syllabifier import syllabify_word_from_phonemes
+
+        word = _word("buscando", 0.0, 0.9)
+        # Typical MMS_FA token-id symbols (strings of digits).
+        phonemes = [
+            _phoneme("1", 0.0, 0.1),
+            _phoneme("4", 0.1, 0.2),
+            _phoneme("13", 0.2, 0.35),
+            _phoneme("3", 0.35, 0.5),
+            _phoneme("2", 0.5, 0.7),
+            _phoneme("7", 0.7, 0.9),
+        ]
+        result = syllabify_word_from_phonemes(word, phonemes, word_idx=3, language="pt")
+        assert len(result) >= 3, (
+            f"expected multi-syllable split for 'buscando', got {len(result)}: "
+            f"{[s.text for s in result]}"
+        )
+        assert all(s.parent_word_idx == 3 for s in result)
+        assert sum(1 for s in result if s.is_stressed) == 1
+
+    def test_mms_ids_multi_syllable_pt_words(self) -> None:
+        from titan_chordpro.fusion.syllabifier import syllabify_word_from_phonemes
+
+        cases = {
+            "descanso": 3,
+            "merecedor": 4,
+            "sacrifício": 4,
+        }
+        for text, min_syls in cases.items():
+            word = _word(text, 1.0, 2.0)
+            phonemes = [_phoneme(str(i + 1), 1.0 + 0.1 * i, 1.0 + 0.1 * (i + 1)) for i in range(5)]
+            result = syllabify_word_from_phonemes(word, phonemes, word_idx=0, language="pt")
+            texts = [s.text for s in result]
+            assert len(result) >= min_syls, (
+                f"{text}: expected ≥{min_syls} syllables, got {len(result)} {texts}"
+            )
+
+    def test_arpabet_still_uses_mop(self) -> None:
+        from titan_chordpro.fusion.syllabifier import syllabify_word_from_phonemes
+
+        word = _word("hello", 0.0, 0.5)
+        phonemes = [
+            _phoneme("HH", 0.00, 0.05),
+            _phoneme("AH1", 0.05, 0.20),
+            _phoneme("L", 0.20, 0.25),
+            _phoneme("OW0", 0.25, 0.50),
+        ]
+        result = syllabify_word_from_phonemes(word, phonemes, word_idx=0, language="en")
+        assert len(result) == 2
+        assert result[0].is_stressed is True
+        # MOP path uses phoneme-concat text, not orthography alone.
+        assert result[0].timestamp.end == pytest.approx(0.20)
+
+    def test_syllabify_word_no_vowel_ids_fallback_when_word_has_vowels(self) -> None:
+        """Defense-in-depth: raw syllabify_word also falls back on digit IDs."""
+        word = _word("amigo", 0.0, 0.6)
+        phonemes = [
+            _phoneme("1", 0.0, 0.1),
+            _phoneme("2", 0.1, 0.2),
+            _phoneme("3", 0.2, 0.4),
+            _phoneme("4", 0.4, 0.5),
+            _phoneme("5", 0.5, 0.6),
+        ]
+        result = syllabify_word(word, phonemes, "pt")
+        assert len(result) >= 3
+        assert [s.text for s in result] == ["a", "mi", "go"]
