@@ -168,30 +168,36 @@ class TestPlaceAllChordsOrphans:
     def test_orphans_become_instrumental_line(self) -> None:
         """Orphans returned by placer must be appended as InstrumentalLine.
 
-        Chord must still fall inside the line time span (else orchestrator
-        never sends it to the placer) but outside all placement windows
-        (±300ms syllable / ±500ms word-start) so strategy 5 fires.
+        Chord must still fall inside an expanded line span (else orchestrator
+        never sends it to the placer) but outside all placement windows so
+        strategy 5 fires. Mid-word holds are intentionally *not* orphans
+        after RC5 span-distance placement — use a wide inter-phrase gap.
         """
-        # Long word span [0.0, 2.0] so a late chord at 1.6 is in-span but
-        # far from syllable/word start at 0.0 → orphan.
-        w0 = _word("hi", 0.0, 2.0)
-        words = [w0]
-        syllables = [_syl("hi", 0.0, 0.4, parent=0)]
-        line = LyricLine(text="hi", word_alignments=[w0])
+        w0 = _word("hi", 0.0, 0.5)
+        w1 = _word("there", 4.0, 4.5)
+        words = [w0, w1]
+        syllables = [
+            _syl("hi", 0.0, 0.5, parent=0),
+            _syl("there", 4.0, 4.5, parent=1),
+        ]
+        line1 = LyricLine(text="hi", word_alignments=[w0])
+        line2 = LyricLine(text="there", word_alignments=[w1])
         section = Section(
             type="verse",
             label="Verse 1",
-            lines=[line],
+            lines=[line1, line2],
             timestamp=TimeStamp(start=0.0, end=10.0),
         )
-        orphan_chord = _chord("F", 1.6)
+        # Midpoint between lines is 2.25; chord at 1.8 belongs to line1 span
+        # but is 1.3s after "hi" ends → outside before_word even beat-scaled.
+        orphan_chord = _chord("F", 1.8)
         on_word = _chord("C", 0.0)
         result = _place_all_chords(
             [section],
             words,
             syllables,
             [on_word, orphan_chord],
-            _beats(0.0, 1.6),
+            _beats(0.0, 0.5, 1.8, 4.0),
             melismas=[],
             language="en",
         )
@@ -201,10 +207,9 @@ class TestPlaceAllChordsOrphans:
         assert len(instr) == 1
         assert {c.symbol for c in instr[0].chords} == {"F"}
         assert instr[0].measures >= 1
-        # Orphan instrumental sits after its parent lyric line
-        lyric_idx = next(i for i, ln in enumerate(lines) if isinstance(ln, LyricLine))
-        instr_idx = next(i for i, ln in enumerate(lines) if isinstance(ln, InstrumentalLine))
-        assert instr_idx == lyric_idx + 1
+        # Orphan instrumental sits after its parent lyric line ("hi")
+        assert isinstance(lines[0], LyricLine)
+        assert isinstance(lines[1], InstrumentalLine)
 
 
 @pytest.mark.unit
