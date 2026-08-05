@@ -9,7 +9,8 @@ Metrics (majmin-normalized by default):
   - match_rate = match / n_gt
   - lcs_rate = LCS / n_gt
   - max_hold_s from timed events when available
-  - soft match (optional): Am7≈Am, Dm7≈Dm collapse before majmin
+  - soft match (default): Am7≈Am, Dm7≈Dm collapse to root+maj|min
+  - --no-soft: hard quality (Am7≠Am; keep raw quality tail after root)
 
 Usage:
   .venv-py312/bin/python scripts/compare_chordpro_to_gt.py \\
@@ -41,7 +42,17 @@ _FLAT_TO_SHARP = {"Db": "C#", "Eb": "D#", "Gb": "F#", "Ab": "G#", "Bb": "A#"}
 
 
 def normalize_majmin(symbol: str, *, soft: bool = True) -> str:
-    """Collapse a Titan/human chord symbol to root+maj|min (or N)."""
+    """Normalize a Titan/human chord symbol for sequence comparison.
+
+    Always strips slash bass and normalizes flat roots to sharps.
+
+    soft=True (default): collapse to root + maj|min only (Am7≈Am → A:min;
+    Cmaj7/C7/C → C:maj). Useful for coarse majmin eval.
+
+    soft=False: keep root + raw quality tail without extension collapse
+    (Am7 → A:m7, Am → A:m so Am7 ≠ Am; bare C → C:maj). Honest hard match
+    for quality-sensitive scoring; does not invent majmin when digits matter.
+    """
     s = symbol.strip()
     if not s or s.upper() in {"N", "NC", "X"}:
         return "N"
@@ -59,9 +70,14 @@ def normalize_majmin(symbol: str, *, soft: bool = True) -> str:
         # m, min, m7, m9, min7 … but not maj / maj7
         if not rest_l.startswith("maj"):
             is_min = True
-    # soft: treat 7/maj7/sus as major root quality already handled
-    qual = "min" if is_min else "maj"
-    return f"{root}:{qual}"
+    if soft:
+        # Collapse 7/maj7/sus/etc. to maj|min root quality.
+        qual = "min" if is_min else "maj"
+        return f"{root}:{qual}"
+    # Hard: root + raw quality tail (no soft collapse of 7→maj).
+    if not rest:
+        return f"{root}:maj"
+    return f"{root}:{rest}"
 
 
 def extract_from_chordpro_file(path: Path) -> list[str]:

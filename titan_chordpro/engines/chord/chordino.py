@@ -793,16 +793,33 @@ def _relabel_long_hold(
         else:
             runs.append((wt0, wt1, wr, wq))
 
-    # Absorb short runs (< alt_floor) into the longer neighbour.
+    # Absorb short runs (< alt_floor) into a neighbour.
+    # Leading short: fold into the NEXT run (avoid sub-floor onset blips).
+    # Middle/trailing short: fold into the previous run.
     if len(runs) > 1:
         merged: list[tuple[float, float, str, str]] = []
+        pending_lead: tuple[float, float, str, str] | None = None
         for run in runs:
+            if pending_lead is not None:
+                # Extend next run backward; keep next's label.
+                run = (pending_lead[0], run[1], run[2], run[3])
+                pending_lead = None
             dur = run[1] - run[0]
-            if merged and dur < alt_floor - 1e-9:
-                prev = merged[-1]
-                merged[-1] = (prev[0], run[1], prev[2], prev[3])
+            if dur < alt_floor - 1e-9:
+                if merged:
+                    prev = merged[-1]
+                    merged[-1] = (prev[0], run[1], prev[2], prev[3])
+                else:
+                    pending_lead = run
             else:
                 merged.append(run)
+        if pending_lead is not None:
+            # Entire sequence was short runs; keep the residual span.
+            if merged:
+                prev = merged[-1]
+                merged[-1] = (prev[0], pending_lead[1], prev[2], prev[3])
+            else:
+                merged.append(pending_lead)
         # Trailing short run: fold into previous if any.
         if len(merged) >= 2:
             last = merged[-1]

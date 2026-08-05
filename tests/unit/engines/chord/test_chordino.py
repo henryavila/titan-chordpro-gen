@@ -961,6 +961,39 @@ class TestResegmentLongHolds:
         assert out[-1].timestamp.end == pytest.approx(14.0)
         assert len(out) >= 2
 
+    def test_force_relabel_folds_leading_sub_floor_alternate(self) -> None:
+        """P3: leading short run (< alt_floor) folds into next, not kept as blip.
+
+        beat_period=0.5, min_alt_s=1.0 → first 0.5s alternate is sub-floor.
+        Long hold with 0.5s leading G then long C must yield a single C event
+        (no spurious leading alternate onset).
+        """
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("C", 0.0, 14.0)]
+        chroma, times = self._chroma_from_segments(
+            [
+                ("G", "maj", 0.0, 0.5),
+                ("C", "maj", 0.5, 14.0),
+            ],
+            duration=14.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.5,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+            min_alt_s=1.0,
+        )
+        symbols = [e.symbol for e in out]
+        assert len(out) == 1, f"expected single event after folding leading blip, got {symbols}"
+        assert symbols[0].startswith("C"), f"expected C, got {symbols}"
+        assert out[0].timestamp.start == pytest.approx(0.0)
+        assert out[0].timestamp.end == pytest.approx(14.0)
+
 
 @pytest.mark.unit
 class TestBassRecomputeAfterReseg:
