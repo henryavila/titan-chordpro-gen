@@ -1,0 +1,1355 @@
+{
+  "hypothesis": "H4",
+  "label": "Chordino reseg param ablation via monkeypatch (≤6 combos)",
+  "baseline": {
+    "combo": "baseline",
+    "label": "product defaults MIN_HOLD=3 MARGIN=0.01 FORCE=12",
+    "params": {
+      "MIN_HOLD_BEATS": 3.0,
+      "CHROMA_SCORE_MARGIN": 0.01,
+      "LONG_HOLD_FORCE_RELABEL_S": 12.0
+    },
+    "mean_match_rate": 0.7665439371624938,
+    "mean_lcs_rate": 0.7869006709212895,
+    "mean_max_hold_s": 18.204444444499988,
+    "per_song": {
+      "9yZt5ekdceI": 0.9428571428571428,
+      "LvoYT0loqLQ": 0.8928571428571429,
+      "LL5Pak4zcuA": 0.4639175257731959
+    },
+    "per_song_max_hold": {
+      "9yZt5ekdceI": 11.609977324499937,
+      "LvoYT0loqLQ": 31.672018141000024,
+      "LL5Pak4zcuA": 11.331337868000006
+    },
+    "songs": [
+      {
+        "youtube_id": "9yZt5ekdceI",
+        "title": "Ao olhar pra cruz",
+        "n_gt": 105,
+        "n_est": 107,
+        "match": 99,
+        "sub": 4,
+        "delete": 2,
+        "insert": 4,
+        "match_rate": 0.9428571428571428,
+        "lcs": 100,
+        "lcs_rate": 0.9523809523809523,
+        "edit_distance": 10,
+        "normalized_edit": 0.09345794392523364,
+        "max_hold_s": 11.609977324499937,
+        "hold_penalty": 1.0,
+        "soft": true,
+        "n_bass_notes": 3,
+        "n_native_slash": 4,
+        "n_events": 107,
+        "top_holds": [
+          {
+            "dur": 11.61,
+            "symbol": "F"
+          },
+          {
+            "dur": 5.11,
+            "symbol": "C"
+          },
+          {
+            "dur": 5.02,
+            "symbol": "Am7"
+          },
+          {
+            "dur": 4.92,
+            "symbol": "G"
+          },
+          {
+            "dur": 4.83,
+            "symbol": "Am7"
+          }
+        ],
+        "detect_s": 16.79,
+        "combo": "baseline",
+        "params": {
+          "MIN_HOLD_BEATS": 3.0,
+          "CHROMA_SCORE_MARGIN": 0.01,
+          "LONG_HOLD_FORCE_RELABEL_S": 12.0
+        }
+      },
+      {
+        "youtube_id": "LvoYT0loqLQ",
+        "title": "Teu santo nome",
+        "n_gt": 84,
+        "n_est": 87,
+        "match": 75,
+        "sub": 6,
+        "delete": 3,
+        "insert": 6,
+        "match_rate": 0.8928571428571429,
+        "lcs": 75,
+        "lcs_rate": 0.8928571428571429,
+        "edit_distance": 15,
+        "normalized_edit": 0.1724137931034483,
+        "max_hold_s": 31.672018141000024,
+        "hold_penalty": 0.3788833394379051,
+        "soft": true,
+        "n_bass_notes": 0,
+        "n_native_slash": 1,
+        "n_events": 87,
+        "top_holds": [
+          {
+            "dur": 31.67,
+            "symbol": "G"
+          },
+          {
+            "dur": 17.55,
+            "symbol": "G"
+          },
+          {
+            "dur": 7.06,
+            "symbol": "D"
+          },
+          {
+            "dur": 6.97,
+            "symbol": "G/D"
+          },
+          {
+            "dur": 4.74,
+            "symbol": "G"
+          }
+        ],
+        "detect_s": 12.74,
+        "combo": "baseline",
+        "params": {
+          "MIN_HOLD_BEATS": 3.0,
+          "CHROMA_SCORE_MARGIN": 0.01,
+          "LONG_HOLD_FORCE_RELABEL_S": 12.0
+        }
+      },
+      {
+        "youtube_id": "LL5Pak4zcuA",
+        "title": "Jesus Tu És a Minha Vida",
+        "n_gt": 97,
+        "n_est": 88,
+        "match": 45,
+        "sub": 36,
+        "delete": 16,
+        "insert": 7,
+        "match_rate": 0.4639175257731959,
+        "lcs": 50,
+        "lcs_rate": 0.5154639175257731,
+        "edit_distance": 59,
+        "normalized_edit": 0.6082474226804123,
+        "max_hold_s": 11.331337868000006,
+        "hold_penalty": 1.0,
+        "soft": true,
+        "n_bass_notes": 1,
+        "n_native_slash": 24,
+        "n_events": 88,
+        "top_holds": [
+          {
+            "dur": 11.33,
+            "symbol": "G"
+          },
+          {
+            "dur": 8.45,
+            "symbol": "G"
+          },
+          {
+            "dur": 7.24,
+            "symbol": "G"
+          },
+          {
+            "dur": 3.9,
+            "symbol": "C/D"
+          },
+          {
+            "dur": 3.81,
+            "symbol": "Cmaj7"
+          }
+        ],
+        "detect_s": 8.8,
+        "combo": "baseline",
+        "params": {
+          "MIN_HOLD_BEATS": 3.0,
+          "CHROMA_SCORE_MARGIN": 0.01,
+          "LONG_HOLD_FORCE_RELABEL_S": 12.0
+        }
+      }
+    ]
+  },
+  "ranking": [
+    {
+      "combo": "force8",
+      "label": "LONG_HOLD_FORCE_RELABEL_S=8 (earlier force)",
+      "params": {
+        "MIN_HOLD_BEATS": 3.0,
+        "CHROMA_SCORE_MARGIN": 0.01,
+        "LONG_HOLD_FORCE_RELABEL_S": 8.0
+      },
+      "mean_match_rate": 0.7705121911307478,
+      "mean_lcs_rate": 0.7908689248895434,
+      "mean_max_hold_s": 18.204444444499988,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.9047619047619048,
+        "LL5Pak4zcuA": 0.4639175257731959
+      },
+      "per_song_max_hold": {
+        "9yZt5ekdceI": 11.609977324499937,
+        "LvoYT0loqLQ": 31.672018141000024,
+        "LL5Pak4zcuA": 11.331337868000006
+      },
+      "songs": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "title": "Ao olhar pra cruz",
+          "n_gt": 105,
+          "n_est": 107,
+          "match": 99,
+          "sub": 4,
+          "delete": 2,
+          "insert": 4,
+          "match_rate": 0.9428571428571428,
+          "lcs": 100,
+          "lcs_rate": 0.9523809523809523,
+          "edit_distance": 10,
+          "normalized_edit": 0.09345794392523364,
+          "max_hold_s": 11.609977324499937,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 3,
+          "n_native_slash": 4,
+          "n_events": 107,
+          "top_holds": [
+            {
+              "dur": 11.61,
+              "symbol": "F"
+            },
+            {
+              "dur": 5.11,
+              "symbol": "C"
+            },
+            {
+              "dur": 5.02,
+              "symbol": "Am7"
+            },
+            {
+              "dur": 4.92,
+              "symbol": "G"
+            },
+            {
+              "dur": 4.83,
+              "symbol": "Am7"
+            }
+          ],
+          "detect_s": 9.71,
+          "combo": "force8",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 8.0
+          }
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "title": "Teu santo nome",
+          "n_gt": 84,
+          "n_est": 90,
+          "match": 76,
+          "sub": 6,
+          "delete": 2,
+          "insert": 8,
+          "match_rate": 0.9047619047619048,
+          "lcs": 76,
+          "lcs_rate": 0.9047619047619048,
+          "edit_distance": 16,
+          "normalized_edit": 0.17777777777777778,
+          "max_hold_s": 31.672018141000024,
+          "hold_penalty": 0.3788833394379051,
+          "soft": true,
+          "n_bass_notes": 0,
+          "n_native_slash": 1,
+          "n_events": 90,
+          "top_holds": [
+            {
+              "dur": 31.67,
+              "symbol": "G"
+            },
+            {
+              "dur": 17.55,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.06,
+              "symbol": "D"
+            },
+            {
+              "dur": 6.97,
+              "symbol": "G/D"
+            },
+            {
+              "dur": 4.74,
+              "symbol": "G"
+            }
+          ],
+          "detect_s": 10.03,
+          "combo": "force8",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 8.0
+          }
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "title": "Jesus Tu És a Minha Vida",
+          "n_gt": 97,
+          "n_est": 88,
+          "match": 45,
+          "sub": 36,
+          "delete": 16,
+          "insert": 7,
+          "match_rate": 0.4639175257731959,
+          "lcs": 50,
+          "lcs_rate": 0.5154639175257731,
+          "edit_distance": 59,
+          "normalized_edit": 0.6082474226804123,
+          "max_hold_s": 11.331337868000006,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 1,
+          "n_native_slash": 24,
+          "n_events": 88,
+          "top_holds": [
+            {
+              "dur": 11.33,
+              "symbol": "G"
+            },
+            {
+              "dur": 8.45,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.24,
+              "symbol": "G"
+            },
+            {
+              "dur": 3.9,
+              "symbol": "C/D"
+            },
+            {
+              "dur": 3.81,
+              "symbol": "Cmaj7"
+            }
+          ],
+          "detect_s": 6.44,
+          "combo": "force8",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 8.0
+          }
+        }
+      ]
+    },
+    {
+      "combo": "aggressive",
+      "label": "hold2+margin005+force8",
+      "params": {
+        "MIN_HOLD_BEATS": 2.0,
+        "CHROMA_SCORE_MARGIN": 0.005,
+        "LONG_HOLD_FORCE_RELABEL_S": 8.0
+      },
+      "mean_match_rate": 0.7670757650139093,
+      "mean_lcs_rate": 0.7908689248895434,
+      "mean_max_hold_s": 18.204444444499988,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.9047619047619048,
+        "LL5Pak4zcuA": 0.4536082474226804
+      },
+      "per_song_max_hold": {
+        "9yZt5ekdceI": 11.609977324499937,
+        "LvoYT0loqLQ": 31.672018141000024,
+        "LL5Pak4zcuA": 11.331337868000006
+      },
+      "songs": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "title": "Ao olhar pra cruz",
+          "n_gt": 105,
+          "n_est": 106,
+          "match": 99,
+          "sub": 4,
+          "delete": 2,
+          "insert": 3,
+          "match_rate": 0.9428571428571428,
+          "lcs": 100,
+          "lcs_rate": 0.9523809523809523,
+          "edit_distance": 9,
+          "normalized_edit": 0.08490566037735849,
+          "max_hold_s": 11.609977324499937,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 3,
+          "n_native_slash": 4,
+          "n_events": 106,
+          "top_holds": [
+            {
+              "dur": 11.61,
+              "symbol": "F"
+            },
+            {
+              "dur": 5.11,
+              "symbol": "C"
+            },
+            {
+              "dur": 5.02,
+              "symbol": "Am7"
+            },
+            {
+              "dur": 4.92,
+              "symbol": "G"
+            },
+            {
+              "dur": 4.83,
+              "symbol": "Am7"
+            }
+          ],
+          "detect_s": 9.75,
+          "combo": "aggressive",
+          "params": {
+            "MIN_HOLD_BEATS": 2.0,
+            "CHROMA_SCORE_MARGIN": 0.005,
+            "LONG_HOLD_FORCE_RELABEL_S": 8.0
+          }
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "title": "Teu santo nome",
+          "n_gt": 84,
+          "n_est": 91,
+          "match": 76,
+          "sub": 6,
+          "delete": 2,
+          "insert": 9,
+          "match_rate": 0.9047619047619048,
+          "lcs": 76,
+          "lcs_rate": 0.9047619047619048,
+          "edit_distance": 17,
+          "normalized_edit": 0.18681318681318682,
+          "max_hold_s": 31.672018141000024,
+          "hold_penalty": 0.3788833394379051,
+          "soft": true,
+          "n_bass_notes": 0,
+          "n_native_slash": 1,
+          "n_events": 91,
+          "top_holds": [
+            {
+              "dur": 31.67,
+              "symbol": "G"
+            },
+            {
+              "dur": 17.55,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.06,
+              "symbol": "D"
+            },
+            {
+              "dur": 6.97,
+              "symbol": "G/D"
+            },
+            {
+              "dur": 4.74,
+              "symbol": "G"
+            }
+          ],
+          "detect_s": 9.4,
+          "combo": "aggressive",
+          "params": {
+            "MIN_HOLD_BEATS": 2.0,
+            "CHROMA_SCORE_MARGIN": 0.005,
+            "LONG_HOLD_FORCE_RELABEL_S": 8.0
+          }
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "title": "Jesus Tu És a Minha Vida",
+          "n_gt": 97,
+          "n_est": 89,
+          "match": 44,
+          "sub": 38,
+          "delete": 15,
+          "insert": 7,
+          "match_rate": 0.4536082474226804,
+          "lcs": 50,
+          "lcs_rate": 0.5154639175257731,
+          "edit_distance": 60,
+          "normalized_edit": 0.6185567010309279,
+          "max_hold_s": 11.331337868000006,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 1,
+          "n_native_slash": 23,
+          "n_events": 89,
+          "top_holds": [
+            {
+              "dur": 11.33,
+              "symbol": "G"
+            },
+            {
+              "dur": 8.45,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.24,
+              "symbol": "G"
+            },
+            {
+              "dur": 3.9,
+              "symbol": "C/D"
+            },
+            {
+              "dur": 3.81,
+              "symbol": "Cmaj7"
+            }
+          ],
+          "detect_s": 6.56,
+          "combo": "aggressive",
+          "params": {
+            "MIN_HOLD_BEATS": 2.0,
+            "CHROMA_SCORE_MARGIN": 0.005,
+            "LONG_HOLD_FORCE_RELABEL_S": 8.0
+          }
+        }
+      ]
+    },
+    {
+      "combo": "baseline",
+      "label": "product defaults MIN_HOLD=3 MARGIN=0.01 FORCE=12",
+      "params": {
+        "MIN_HOLD_BEATS": 3.0,
+        "CHROMA_SCORE_MARGIN": 0.01,
+        "LONG_HOLD_FORCE_RELABEL_S": 12.0
+      },
+      "mean_match_rate": 0.7665439371624938,
+      "mean_lcs_rate": 0.7869006709212895,
+      "mean_max_hold_s": 18.204444444499988,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.8928571428571429,
+        "LL5Pak4zcuA": 0.4639175257731959
+      },
+      "per_song_max_hold": {
+        "9yZt5ekdceI": 11.609977324499937,
+        "LvoYT0loqLQ": 31.672018141000024,
+        "LL5Pak4zcuA": 11.331337868000006
+      },
+      "songs": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "title": "Ao olhar pra cruz",
+          "n_gt": 105,
+          "n_est": 107,
+          "match": 99,
+          "sub": 4,
+          "delete": 2,
+          "insert": 4,
+          "match_rate": 0.9428571428571428,
+          "lcs": 100,
+          "lcs_rate": 0.9523809523809523,
+          "edit_distance": 10,
+          "normalized_edit": 0.09345794392523364,
+          "max_hold_s": 11.609977324499937,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 3,
+          "n_native_slash": 4,
+          "n_events": 107,
+          "top_holds": [
+            {
+              "dur": 11.61,
+              "symbol": "F"
+            },
+            {
+              "dur": 5.11,
+              "symbol": "C"
+            },
+            {
+              "dur": 5.02,
+              "symbol": "Am7"
+            },
+            {
+              "dur": 4.92,
+              "symbol": "G"
+            },
+            {
+              "dur": 4.83,
+              "symbol": "Am7"
+            }
+          ],
+          "detect_s": 16.79,
+          "combo": "baseline",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "title": "Teu santo nome",
+          "n_gt": 84,
+          "n_est": 87,
+          "match": 75,
+          "sub": 6,
+          "delete": 3,
+          "insert": 6,
+          "match_rate": 0.8928571428571429,
+          "lcs": 75,
+          "lcs_rate": 0.8928571428571429,
+          "edit_distance": 15,
+          "normalized_edit": 0.1724137931034483,
+          "max_hold_s": 31.672018141000024,
+          "hold_penalty": 0.3788833394379051,
+          "soft": true,
+          "n_bass_notes": 0,
+          "n_native_slash": 1,
+          "n_events": 87,
+          "top_holds": [
+            {
+              "dur": 31.67,
+              "symbol": "G"
+            },
+            {
+              "dur": 17.55,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.06,
+              "symbol": "D"
+            },
+            {
+              "dur": 6.97,
+              "symbol": "G/D"
+            },
+            {
+              "dur": 4.74,
+              "symbol": "G"
+            }
+          ],
+          "detect_s": 12.74,
+          "combo": "baseline",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "title": "Jesus Tu És a Minha Vida",
+          "n_gt": 97,
+          "n_est": 88,
+          "match": 45,
+          "sub": 36,
+          "delete": 16,
+          "insert": 7,
+          "match_rate": 0.4639175257731959,
+          "lcs": 50,
+          "lcs_rate": 0.5154639175257731,
+          "edit_distance": 59,
+          "normalized_edit": 0.6082474226804123,
+          "max_hold_s": 11.331337868000006,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 1,
+          "n_native_slash": 24,
+          "n_events": 88,
+          "top_holds": [
+            {
+              "dur": 11.33,
+              "symbol": "G"
+            },
+            {
+              "dur": 8.45,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.24,
+              "symbol": "G"
+            },
+            {
+              "dur": 3.9,
+              "symbol": "C/D"
+            },
+            {
+              "dur": 3.81,
+              "symbol": "Cmaj7"
+            }
+          ],
+          "detect_s": 8.8,
+          "combo": "baseline",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        }
+      ]
+    },
+    {
+      "combo": "margin005",
+      "label": "CHROMA_SCORE_MARGIN=0.005 (easier alt)",
+      "params": {
+        "MIN_HOLD_BEATS": 3.0,
+        "CHROMA_SCORE_MARGIN": 0.005,
+        "LONG_HOLD_FORCE_RELABEL_S": 12.0
+      },
+      "mean_match_rate": 0.7665439371624938,
+      "mean_lcs_rate": 0.7869006709212895,
+      "mean_max_hold_s": 18.204444444499988,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.8928571428571429,
+        "LL5Pak4zcuA": 0.4639175257731959
+      },
+      "per_song_max_hold": {
+        "9yZt5ekdceI": 11.609977324499937,
+        "LvoYT0loqLQ": 31.672018141000024,
+        "LL5Pak4zcuA": 11.331337868000006
+      },
+      "songs": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "title": "Ao olhar pra cruz",
+          "n_gt": 105,
+          "n_est": 106,
+          "match": 99,
+          "sub": 4,
+          "delete": 2,
+          "insert": 3,
+          "match_rate": 0.9428571428571428,
+          "lcs": 100,
+          "lcs_rate": 0.9523809523809523,
+          "edit_distance": 9,
+          "normalized_edit": 0.08490566037735849,
+          "max_hold_s": 11.609977324499937,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 3,
+          "n_native_slash": 4,
+          "n_events": 106,
+          "top_holds": [
+            {
+              "dur": 11.61,
+              "symbol": "F"
+            },
+            {
+              "dur": 5.11,
+              "symbol": "C"
+            },
+            {
+              "dur": 5.02,
+              "symbol": "Am7"
+            },
+            {
+              "dur": 4.92,
+              "symbol": "G"
+            },
+            {
+              "dur": 4.83,
+              "symbol": "Am7"
+            }
+          ],
+          "detect_s": 11.35,
+          "combo": "margin005",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.005,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "title": "Teu santo nome",
+          "n_gt": 84,
+          "n_est": 87,
+          "match": 75,
+          "sub": 6,
+          "delete": 3,
+          "insert": 6,
+          "match_rate": 0.8928571428571429,
+          "lcs": 75,
+          "lcs_rate": 0.8928571428571429,
+          "edit_distance": 15,
+          "normalized_edit": 0.1724137931034483,
+          "max_hold_s": 31.672018141000024,
+          "hold_penalty": 0.3788833394379051,
+          "soft": true,
+          "n_bass_notes": 0,
+          "n_native_slash": 1,
+          "n_events": 87,
+          "top_holds": [
+            {
+              "dur": 31.67,
+              "symbol": "G"
+            },
+            {
+              "dur": 17.55,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.06,
+              "symbol": "D"
+            },
+            {
+              "dur": 6.97,
+              "symbol": "G/D"
+            },
+            {
+              "dur": 4.74,
+              "symbol": "G"
+            }
+          ],
+          "detect_s": 10.26,
+          "combo": "margin005",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.005,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "title": "Jesus Tu És a Minha Vida",
+          "n_gt": 97,
+          "n_est": 88,
+          "match": 45,
+          "sub": 36,
+          "delete": 16,
+          "insert": 7,
+          "match_rate": 0.4639175257731959,
+          "lcs": 50,
+          "lcs_rate": 0.5154639175257731,
+          "edit_distance": 59,
+          "normalized_edit": 0.6082474226804123,
+          "max_hold_s": 11.331337868000006,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 1,
+          "n_native_slash": 24,
+          "n_events": 88,
+          "top_holds": [
+            {
+              "dur": 11.33,
+              "symbol": "G"
+            },
+            {
+              "dur": 8.45,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.24,
+              "symbol": "G"
+            },
+            {
+              "dur": 3.9,
+              "symbol": "C/D"
+            },
+            {
+              "dur": 3.81,
+              "symbol": "Cmaj7"
+            }
+          ],
+          "detect_s": 6.2,
+          "combo": "margin005",
+          "params": {
+            "MIN_HOLD_BEATS": 3.0,
+            "CHROMA_SCORE_MARGIN": 0.005,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        }
+      ]
+    },
+    {
+      "combo": "hold2",
+      "label": "MIN_HOLD_BEATS=2 (more reseg)",
+      "params": {
+        "MIN_HOLD_BEATS": 2.0,
+        "CHROMA_SCORE_MARGIN": 0.01,
+        "LONG_HOLD_FORCE_RELABEL_S": 12.0
+      },
+      "mean_match_rate": 0.7631075110456553,
+      "mean_lcs_rate": 0.7869006709212895,
+      "mean_max_hold_s": 18.204444444499988,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.8928571428571429,
+        "LL5Pak4zcuA": 0.4536082474226804
+      },
+      "per_song_max_hold": {
+        "9yZt5ekdceI": 11.609977324499937,
+        "LvoYT0loqLQ": 31.672018141000024,
+        "LL5Pak4zcuA": 11.331337868000006
+      },
+      "songs": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "title": "Ao olhar pra cruz",
+          "n_gt": 105,
+          "n_est": 107,
+          "match": 99,
+          "sub": 4,
+          "delete": 2,
+          "insert": 4,
+          "match_rate": 0.9428571428571428,
+          "lcs": 100,
+          "lcs_rate": 0.9523809523809523,
+          "edit_distance": 10,
+          "normalized_edit": 0.09345794392523364,
+          "max_hold_s": 11.609977324499937,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 3,
+          "n_native_slash": 4,
+          "n_events": 107,
+          "top_holds": [
+            {
+              "dur": 11.61,
+              "symbol": "F"
+            },
+            {
+              "dur": 5.11,
+              "symbol": "C"
+            },
+            {
+              "dur": 5.02,
+              "symbol": "Am7"
+            },
+            {
+              "dur": 4.92,
+              "symbol": "G"
+            },
+            {
+              "dur": 4.83,
+              "symbol": "Am7"
+            }
+          ],
+          "detect_s": 11.13,
+          "combo": "hold2",
+          "params": {
+            "MIN_HOLD_BEATS": 2.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "title": "Teu santo nome",
+          "n_gt": 84,
+          "n_est": 88,
+          "match": 75,
+          "sub": 6,
+          "delete": 3,
+          "insert": 7,
+          "match_rate": 0.8928571428571429,
+          "lcs": 75,
+          "lcs_rate": 0.8928571428571429,
+          "edit_distance": 16,
+          "normalized_edit": 0.18181818181818182,
+          "max_hold_s": 31.672018141000024,
+          "hold_penalty": 0.3788833394379051,
+          "soft": true,
+          "n_bass_notes": 0,
+          "n_native_slash": 1,
+          "n_events": 88,
+          "top_holds": [
+            {
+              "dur": 31.67,
+              "symbol": "G"
+            },
+            {
+              "dur": 17.55,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.06,
+              "symbol": "D"
+            },
+            {
+              "dur": 6.97,
+              "symbol": "G/D"
+            },
+            {
+              "dur": 4.74,
+              "symbol": "G"
+            }
+          ],
+          "detect_s": 15.97,
+          "combo": "hold2",
+          "params": {
+            "MIN_HOLD_BEATS": 2.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "title": "Jesus Tu És a Minha Vida",
+          "n_gt": 97,
+          "n_est": 89,
+          "match": 44,
+          "sub": 38,
+          "delete": 15,
+          "insert": 7,
+          "match_rate": 0.4536082474226804,
+          "lcs": 50,
+          "lcs_rate": 0.5154639175257731,
+          "edit_distance": 60,
+          "normalized_edit": 0.6185567010309279,
+          "max_hold_s": 11.331337868000006,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 1,
+          "n_native_slash": 23,
+          "n_events": 89,
+          "top_holds": [
+            {
+              "dur": 11.33,
+              "symbol": "G"
+            },
+            {
+              "dur": 8.45,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.24,
+              "symbol": "G"
+            },
+            {
+              "dur": 3.9,
+              "symbol": "C/D"
+            },
+            {
+              "dur": 3.81,
+              "symbol": "Cmaj7"
+            }
+          ],
+          "detect_s": 8.91,
+          "combo": "hold2",
+          "params": {
+            "MIN_HOLD_BEATS": 2.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        }
+      ]
+    },
+    {
+      "combo": "hold4",
+      "label": "MIN_HOLD_BEATS=4 (less reseg)",
+      "params": {
+        "MIN_HOLD_BEATS": 4.0,
+        "CHROMA_SCORE_MARGIN": 0.01,
+        "LONG_HOLD_FORCE_RELABEL_S": 12.0
+      },
+      "mean_match_rate": 0.7599329078710522,
+      "mean_lcs_rate": 0.7802896416298478,
+      "mean_max_hold_s": 18.204444444499988,
+      "per_song": {
+        "9yZt5ekdceI": 0.9333333333333333,
+        "LvoYT0loqLQ": 0.8928571428571429,
+        "LL5Pak4zcuA": 0.4536082474226804
+      },
+      "per_song_max_hold": {
+        "9yZt5ekdceI": 11.609977324499937,
+        "LvoYT0loqLQ": 31.672018141000024,
+        "LL5Pak4zcuA": 11.331337868000006
+      },
+      "songs": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "title": "Ao olhar pra cruz",
+          "n_gt": 105,
+          "n_est": 103,
+          "match": 98,
+          "sub": 4,
+          "delete": 3,
+          "insert": 1,
+          "match_rate": 0.9333333333333333,
+          "lcs": 99,
+          "lcs_rate": 0.9428571428571428,
+          "edit_distance": 8,
+          "normalized_edit": 0.0761904761904762,
+          "max_hold_s": 11.609977324499937,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 3,
+          "n_native_slash": 4,
+          "n_events": 103,
+          "top_holds": [
+            {
+              "dur": 11.61,
+              "symbol": "F"
+            },
+            {
+              "dur": 5.11,
+              "symbol": "C"
+            },
+            {
+              "dur": 5.02,
+              "symbol": "Am7"
+            },
+            {
+              "dur": 4.92,
+              "symbol": "G"
+            },
+            {
+              "dur": 4.83,
+              "symbol": "Am7"
+            }
+          ],
+          "detect_s": 12.88,
+          "combo": "hold4",
+          "params": {
+            "MIN_HOLD_BEATS": 4.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "title": "Teu santo nome",
+          "n_gt": 84,
+          "n_est": 86,
+          "match": 75,
+          "sub": 6,
+          "delete": 3,
+          "insert": 5,
+          "match_rate": 0.8928571428571429,
+          "lcs": 75,
+          "lcs_rate": 0.8928571428571429,
+          "edit_distance": 14,
+          "normalized_edit": 0.16279069767441862,
+          "max_hold_s": 31.672018141000024,
+          "hold_penalty": 0.3788833394379051,
+          "soft": true,
+          "n_bass_notes": 0,
+          "n_native_slash": 1,
+          "n_events": 86,
+          "top_holds": [
+            {
+              "dur": 31.67,
+              "symbol": "G"
+            },
+            {
+              "dur": 17.55,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.06,
+              "symbol": "D"
+            },
+            {
+              "dur": 6.97,
+              "symbol": "G/D"
+            },
+            {
+              "dur": 4.74,
+              "symbol": "G"
+            }
+          ],
+          "detect_s": 13.19,
+          "combo": "hold4",
+          "params": {
+            "MIN_HOLD_BEATS": 4.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "title": "Jesus Tu És a Minha Vida",
+          "n_gt": 97,
+          "n_est": 87,
+          "match": 44,
+          "sub": 37,
+          "delete": 16,
+          "insert": 6,
+          "match_rate": 0.4536082474226804,
+          "lcs": 49,
+          "lcs_rate": 0.5051546391752577,
+          "edit_distance": 59,
+          "normalized_edit": 0.6082474226804123,
+          "max_hold_s": 11.331337868000006,
+          "hold_penalty": 1.0,
+          "soft": true,
+          "n_bass_notes": 1,
+          "n_native_slash": 24,
+          "n_events": 87,
+          "top_holds": [
+            {
+              "dur": 11.33,
+              "symbol": "G"
+            },
+            {
+              "dur": 8.45,
+              "symbol": "G"
+            },
+            {
+              "dur": 7.24,
+              "symbol": "G"
+            },
+            {
+              "dur": 3.9,
+              "symbol": "C/D"
+            },
+            {
+              "dur": 3.81,
+              "symbol": "Cmaj7"
+            }
+          ],
+          "detect_s": 6.8,
+          "combo": "hold4",
+          "params": {
+            "MIN_HOLD_BEATS": 4.0,
+            "CHROMA_SCORE_MARGIN": 0.01,
+            "LONG_HOLD_FORCE_RELABEL_S": 12.0
+          }
+        }
+      ]
+    }
+  ],
+  "external_baselines": {
+    "hyp-H2": {
+      "mean_match_rate": 0.7631075110456553,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.8928571428571429,
+        "LL5Pak4zcuA": 0.4536082474226804
+      }
+    },
+    "hyp-H1b": {
+      "mean_match_rate": 0.7802896416298478,
+      "per_song": {
+        "9yZt5ekdceI": 0.9428571428571428,
+        "LvoYT0loqLQ": 0.8928571428571429,
+        "LL5Pak4zcuA": 0.5051546391752577
+      }
+    },
+    "hyp-H0": {
+      "mean_match_rate": 0.7652102765504827,
+      "per_song": {
+        "9yZt5ekdceI": 0.9333333333333333,
+        "LvoYT0loqLQ": 0.8571428571428571,
+        "LL5Pak4zcuA": 0.5051546391752577
+      }
+    }
+  },
+  "promote_rule": "mean match ≥ baseline +2pp AND no song drops >10pp",
+  "promote_eval": [
+    {
+      "combo": "force8",
+      "delta_mean_pp_vs_baseline": 0.3968253968253954,
+      "no_song_drop_gt_10pp": true,
+      "per_song_delta_pp": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "delta_pp": 1.1904761904761862
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "delta_pp": 0.0
+        }
+      ],
+      "promote": false
+    },
+    {
+      "combo": "aggressive",
+      "delta_mean_pp_vs_baseline": 0.05318278514154784,
+      "no_song_drop_gt_10pp": true,
+      "per_song_delta_pp": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "delta_pp": 1.1904761904761862
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "delta_pp": -1.0309278350515483
+        }
+      ],
+      "promote": false
+    },
+    {
+      "combo": "margin005",
+      "delta_mean_pp_vs_baseline": 0.0,
+      "no_song_drop_gt_10pp": true,
+      "per_song_delta_pp": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "delta_pp": 0.0
+        }
+      ],
+      "promote": false
+    },
+    {
+      "combo": "hold2",
+      "delta_mean_pp_vs_baseline": -0.3436426116838476,
+      "no_song_drop_gt_10pp": true,
+      "per_song_delta_pp": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "delta_pp": -1.0309278350515483
+        }
+      ],
+      "promote": false
+    },
+    {
+      "combo": "hold4",
+      "delta_mean_pp_vs_baseline": -0.6611029291441639,
+      "no_song_drop_gt_10pp": true,
+      "per_song_delta_pp": [
+        {
+          "youtube_id": "9yZt5ekdceI",
+          "delta_pp": -0.952380952380949
+        },
+        {
+          "youtube_id": "LvoYT0loqLQ",
+          "delta_pp": 0.0
+        },
+        {
+          "youtube_id": "LL5Pak4zcuA",
+          "delta_pp": -1.0309278350515483
+        }
+      ],
+      "promote": false
+    }
+  ],
+  "best_combo": "force8",
+  "recommendation": "NO-PROMOTE: keep product reseg constants"
+}

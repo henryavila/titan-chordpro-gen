@@ -13,3 +13,11 @@ details in topic files.
 
 - [PLAN lane handoff](handoffs/2026-08-05-plan-lane-self-contained.md) — advance F2 honesty + F3 prep; **no** `engines/chord/**`
 - [CHORD lane handoff](handoffs/2026-08-05-chord-lane-self-contained.md) — explore ACR architectures vs operator model charts (3 sample songs); promote only with metrics
+
+## Chord lane 2026-08-05 (resume)
+
+- Handoff: `.ai/memory/handoffs/2026-08-05-chord-lane-session-resume.md`
+- REPORT: `.ai/memory/handoffs/2026-08-05-chord-lane-REPORT.md`
+- PROMOTE: `.ai/memory/handoffs/2026-08-05-chord-lane-PROMOTE.md` (`partial-promote`)
+- Metrics snapshot: `.ai/memory/handoffs/chord-explore-metrics/`
+- Decision: keep Chordino + other+bass; H1b/H2 quality path; no H3/H4/BTC default

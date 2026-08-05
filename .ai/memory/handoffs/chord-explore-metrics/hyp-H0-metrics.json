@@ -1,0 +1,82 @@
+{
+  "hypothesis": "H0",
+  "label": "baseline pin plan/titan-v01 — frozen chords.json (post v5 reseg)",
+  "branch": "plan/titan-v01",
+  "worktree": "plan (same branch as PLAN lane — operator request)",
+  "songs": [
+    {
+      "youtube_id": "9yZt5ekdceI",
+      "title": "Ao olhar pra cruz",
+      "n_gt": 105,
+      "n_est": 105,
+      "match": 98,
+      "sub": 4,
+      "delete": 3,
+      "insert": 3,
+      "match_rate": 0.9333333333333333,
+      "lcs": 99,
+      "lcs_rate": 0.9428571428571428,
+      "edit_distance": 10,
+      "normalized_edit": 0.09523809523809523,
+      "max_hold_s": 14.67501133799999,
+      "hold_penalty": 0.8177165743597606,
+      "soft": true
+    },
+    {
+      "youtube_id": "LvoYT0loqLQ",
+      "title": "Teu santo nome",
+      "n_gt": 84,
+      "n_est": 82,
+      "match": 72,
+      "sub": 6,
+      "delete": 6,
+      "insert": 4,
+      "match_rate": 0.8571428571428571,
+      "lcs": 72,
+      "lcs_rate": 0.8571428571428571,
+      "edit_distance": 16,
+      "normalized_edit": 0.19047619047619047,
+      "max_hold_s": 31.672018141000024,
+      "hold_penalty": 0.3788833394379051,
+      "soft": true
+    },
+    {
+      "youtube_id": "LL5Pak4zcuA",
+      "title": "Jesus Tu És a Minha Vida",
+      "n_gt": 97,
+      "n_est": 90,
+      "match": 49,
+      "sub": 34,
+      "delete": 14,
+      "insert": 7,
+      "match_rate": 0.5051546391752577,
+      "lcs": 56,
+      "lcs_rate": 0.5773195876288659,
+      "edit_distance": 55,
+      "normalized_edit": 0.5670103092783505,
+      "max_hold_s": 11.331337868000006,
+      "hold_penalty": 1.0,
+      "soft": true
+    }
+  ],
+  "means": {
+    "match_rate_majmin": 0.7652102765504827,
+    "lcs_rate": 0.7924398625429553,
+    "one_minus_norm_edit": 0.7157584683357879,
+    "hold_penalty": 0.7321999712658886
+  },
+  "unit_tests_pass": true,
+  "unit_tests_note": "54 passed tests/unit/engines/chord",
+  "score": 0.7713747510490716,
+  "score_weights": {
+    "match": 0.5,
+    "edit": 0.25,
+    "hold": 0.15,
+    "unit": 0.1
+  },
+  "residuals": {
+    "9yZt5ekdceI": "F hold ~14.7s at song end; few symbol errors",
+    "LvoYT0loqLQ": "G holds 31.7s + 17.6s (reseg single-split insufficient)",
+    "LL5Pak4zcuA": "match_rate ~0.5 — key/quality drift (Cm/Em vs maj; A-D loops vs G tails); not only holds"
+  }
+}

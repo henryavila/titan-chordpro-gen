@@ -1,0 +1,354 @@
+{
+  "hypothesis": "H2",
+  "label": "duration-scaled conf/vote floors + mean/vote agreement for bass slash",
+  "songs": [
+    {
+      "youtube_id": "9yZt5ekdceI",
+      "title": "Ao olhar pra cruz",
+      "n_gt": 105,
+      "n_est": 107,
+      "match": 99,
+      "sub": 4,
+      "delete": 2,
+      "insert": 4,
+      "match_rate": 0.9428571428571428,
+      "lcs": 100,
+      "lcs_rate": 0.9523809523809523,
+      "edit_distance": 10,
+      "normalized_edit": 0.09345794392523364,
+      "max_hold_s": 11.609977324499937,
+      "hold_penalty": 1.0,
+      "soft": true,
+      "n_bass_notes": 3,
+      "n_native_slash": 4,
+      "n_events": 107,
+      "slash_detail": [
+        {
+          "symbol": "F",
+          "bass_note": "C",
+          "dur": 3.529
+        },
+        {
+          "symbol": "C/G",
+          "bass_note": null,
+          "dur": 3.065
+        },
+        {
+          "symbol": "C/E",
+          "bass_note": null,
+          "dur": 3.344
+        },
+        {
+          "symbol": "C/G",
+          "bass_note": null,
+          "dur": 3.251
+        },
+        {
+          "symbol": "C/G",
+          "bass_note": null,
+          "dur": 2.043
+        },
+        {
+          "symbol": "C",
+          "bass_note": "E",
+          "dur": 3.065
+        },
+        {
+          "symbol": "Am7",
+          "bass_note": "E",
+          "dur": 4.83
+        }
+      ],
+      "top_holds": [
+        {
+          "dur": 11.61,
+          "symbol": "F"
+        },
+        {
+          "dur": 5.11,
+          "symbol": "C"
+        },
+        {
+          "dur": 5.02,
+          "symbol": "Am7"
+        },
+        {
+          "dur": 4.92,
+          "symbol": "G"
+        },
+        {
+          "dur": 4.83,
+          "symbol": "Am7"
+        }
+      ],
+      "h1b_n_bass_notes": 4,
+      "h1b_n_native_slash": 4,
+      "h1b_match_rate": 0.9428571428571428,
+      "delta_match_rate": 0.0,
+      "delta_bass_notes": -1
+    },
+    {
+      "youtube_id": "LvoYT0loqLQ",
+      "title": "Teu santo nome",
+      "n_gt": 84,
+      "n_est": 87,
+      "match": 75,
+      "sub": 6,
+      "delete": 3,
+      "insert": 6,
+      "match_rate": 0.8928571428571429,
+      "lcs": 75,
+      "lcs_rate": 0.8928571428571429,
+      "edit_distance": 15,
+      "normalized_edit": 0.1724137931034483,
+      "max_hold_s": 31.672018141000024,
+      "hold_penalty": 0.3788833394379051,
+      "soft": true,
+      "n_bass_notes": 0,
+      "n_native_slash": 1,
+      "n_events": 87,
+      "slash_detail": [
+        {
+          "symbol": "G/D",
+          "bass_note": null,
+          "dur": 6.966
+        }
+      ],
+      "top_holds": [
+        {
+          "dur": 31.67,
+          "symbol": "G"
+        },
+        {
+          "dur": 17.55,
+          "symbol": "G"
+        },
+        {
+          "dur": 7.06,
+          "symbol": "D"
+        },
+        {
+          "dur": 6.97,
+          "symbol": "G/D"
+        },
+        {
+          "dur": 4.74,
+          "symbol": "G"
+        }
+      ],
+      "h1b_n_bass_notes": 3,
+      "h1b_n_native_slash": 1,
+      "h1b_match_rate": 0.8928571428571429,
+      "delta_match_rate": 0.0,
+      "delta_bass_notes": -3
+    },
+    {
+      "youtube_id": "LL5Pak4zcuA",
+      "title": "Jesus Tu \u00c9s a Minha Vida",
+      "n_gt": 97,
+      "n_est": 88,
+      "match": 44,
+      "sub": 37,
+      "delete": 16,
+      "insert": 7,
+      "match_rate": 0.4536082474226804,
+      "lcs": 49,
+      "lcs_rate": 0.5051546391752577,
+      "edit_distance": 60,
+      "normalized_edit": 0.6185567010309279,
+      "max_hold_s": 11.331337868000006,
+      "hold_penalty": 1.0,
+      "soft": true,
+      "n_bass_notes": 1,
+      "n_native_slash": 24,
+      "n_events": 88,
+      "slash_detail": [
+        {
+          "symbol": "D/A",
+          "bass_note": null,
+          "dur": 0.836
+        },
+        {
+          "symbol": "C/G",
+          "bass_note": null,
+          "dur": 2.043
+        },
+        {
+          "symbol": "C/G",
+          "bass_note": null,
+          "dur": 2.043
+        },
+        {
+          "symbol": "C/G",
+          "bass_note": null,
+          "dur": 1.115
+        },
+        {
+          "symbol": "G/D",
+          "bass_note": null,
+          "dur": 1.579
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 2.136
+        },
+        {
+          "symbol": "G/B",
+          "bass_note": null,
+          "dur": 1.022
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 3.808
+        },
+        {
+          "symbol": "G/B",
+          "bass_note": null,
+          "dur": 0.929
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 3.901
+        },
+        {
+          "symbol": "G/D",
+          "bass_note": null,
+          "dur": 1.765
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 1.765
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 0.836
+        },
+        {
+          "symbol": "G",
+          "bass_note": "D",
+          "dur": 2.043
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 1.765
+        },
+        {
+          "symbol": "G/B",
+          "bass_note": null,
+          "dur": 1.022
+        },
+        {
+          "symbol": "G/B",
+          "bass_note": null,
+          "dur": 0.836
+        },
+        {
+          "symbol": "C/D",
+          "bass_note": null,
+          "dur": 3.808
+        },
+        {
+          "symbol": "G/D",
+          "bass_note": null,
+          "dur": 1.858
+        },
+        {
+          "symbol": "C/D#",
+          "bass_note": null,
+          "dur": 0.929
+        },
+        {
+          "symbol": "G/Eb",
+          "bass_note": null,
+          "dur": 1.95
+        },
+        {
+          "symbol": "G/C",
+          "bass_note": null,
+          "dur": 0.929
+        },
+        {
+          "symbol": "C/D#",
+          "bass_note": null,
+          "dur": 1.858
+        },
+        {
+          "symbol": "G/Eb",
+          "bass_note": null,
+          "dur": 1.95
+        },
+        {
+          "symbol": "C/D#",
+          "bass_note": null,
+          "dur": 2.229
+        }
+      ],
+      "top_holds": [
+        {
+          "dur": 11.33,
+          "symbol": "G"
+        },
+        {
+          "dur": 8.45,
+          "symbol": "G"
+        },
+        {
+          "dur": 7.24,
+          "symbol": "G"
+        },
+        {
+          "dur": 3.9,
+          "symbol": "C/D"
+        },
+        {
+          "dur": 3.81,
+          "symbol": "G"
+        }
+      ],
+      "h1b_n_bass_notes": 1,
+      "h1b_n_native_slash": 23,
+      "h1b_match_rate": 0.5051546391752577,
+      "delta_match_rate": -0.0515463917525773,
+      "delta_bass_notes": 0
+    }
+  ],
+  "means": {
+    "match_rate_majmin": 0.7631075110456553,
+    "lcs_rate": 0.783464244804451,
+    "n_bass_notes": 1.3333333333333333
+  },
+  "vs_H1b": {
+    "9yZt5ekdceI": {
+      "delta_match_rate": 0.0,
+      "delta_bass_notes": -1,
+      "h1b_bass": 4,
+      "h2_bass": 3,
+      "h1b_match": 0.9428571428571428,
+      "h2_match": 0.9428571428571428
+    },
+    "LvoYT0loqLQ": {
+      "delta_match_rate": 0.0,
+      "delta_bass_notes": -3,
+      "h1b_bass": 3,
+      "h2_bass": 0,
+      "h1b_match": 0.8928571428571429,
+      "h2_match": 0.8928571428571429
+    },
+    "LL5Pak4zcuA": {
+      "delta_match_rate": -0.0515463917525773,
+      "delta_bass_notes": 0,
+      "h1b_bass": 1,
+      "h2_bass": 1,
+      "h1b_match": 0.5051546391752577,
+      "h2_match": 0.4536082474226804
+    }
+  },
+  "unit_tests_pass": true,
+  "commit": "05efb5dd8a46914f43dbfb7c032c91f7bacb1afe"
+}

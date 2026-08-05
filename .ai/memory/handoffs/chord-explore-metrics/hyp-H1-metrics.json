@@ -1,0 +1,140 @@
+{
+  "hypothesis": "H1",
+  "label": "multipass reseg (RESEG_MAX_PASSES=6) on Chordino+chroma",
+  "songs": [
+    {
+      "youtube_id": "9yZt5ekdceI",
+      "title": "Ao olhar pra cruz",
+      "n_gt": 105,
+      "n_est": 106,
+      "match": 98,
+      "sub": 4,
+      "delete": 3,
+      "insert": 4,
+      "match_rate": 0.9333333333333333,
+      "lcs": 99,
+      "lcs_rate": 0.9428571428571428,
+      "edit_distance": 11,
+      "normalized_edit": 0.10377358490566038,
+      "max_hold_s": 14.67501133799999,
+      "hold_penalty": 0.8177165743597606,
+      "soft": true,
+      "detect_s": 13.69,
+      "n_events": 106,
+      "top_holds": [
+        {
+          "dur": 14.68,
+          "symbol": "F"
+        },
+        {
+          "dur": 5.11,
+          "symbol": "C"
+        },
+        {
+          "dur": 5.02,
+          "symbol": "Am7"
+        },
+        {
+          "dur": 4.92,
+          "symbol": "G"
+        },
+        {
+          "dur": 4.83,
+          "symbol": "Am7"
+        }
+      ]
+    },
+    {
+      "youtube_id": "LvoYT0loqLQ",
+      "title": "Teu santo nome",
+      "n_gt": 84,
+      "n_est": 87,
+      "match": 75,
+      "sub": 6,
+      "delete": 3,
+      "insert": 6,
+      "match_rate": 0.8928571428571429,
+      "lcs": 75,
+      "lcs_rate": 0.8928571428571429,
+      "edit_distance": 15,
+      "normalized_edit": 0.1724137931034483,
+      "max_hold_s": 31.672018141000024,
+      "hold_penalty": 0.3788833394379051,
+      "soft": true,
+      "detect_s": 12.98,
+      "n_events": 87,
+      "top_holds": [
+        {
+          "dur": 31.67,
+          "symbol": "G"
+        },
+        {
+          "dur": 17.55,
+          "symbol": "G"
+        },
+        {
+          "dur": 7.06,
+          "symbol": "D"
+        },
+        {
+          "dur": 6.97,
+          "symbol": "G/D"
+        },
+        {
+          "dur": 4.74,
+          "symbol": "G"
+        }
+      ]
+    },
+    {
+      "youtube_id": "LL5Pak4zcuA",
+      "title": "Jesus Tu És a Minha Vida",
+      "n_gt": 97,
+      "n_est": 90,
+      "match": 49,
+      "sub": 34,
+      "delete": 14,
+      "insert": 7,
+      "match_rate": 0.5051546391752577,
+      "lcs": 55,
+      "lcs_rate": 0.5670103092783505,
+      "edit_distance": 55,
+      "normalized_edit": 0.5670103092783505,
+      "max_hold_s": 11.331337868000006,
+      "hold_penalty": 1.0,
+      "soft": true,
+      "detect_s": 7.47,
+      "n_events": 90,
+      "top_holds": [
+        {
+          "dur": 11.33,
+          "symbol": "G"
+        },
+        {
+          "dur": 8.45,
+          "symbol": "A"
+        },
+        {
+          "dur": 7.24,
+          "symbol": "A"
+        },
+        {
+          "dur": 5.57,
+          "symbol": "D/D#"
+        },
+        {
+          "dur": 3.81,
+          "symbol": "G"
+        }
+      ]
+    }
+  ],
+  "means": {
+    "match_rate_majmin": 0.7771150384552447,
+    "lcs_rate": 0.8009081983308787,
+    "one_minus_norm_edit": 0.7189341042375137,
+    "hold_penalty": 0.7321999712658886
+  },
+  "unit_tests_pass": true,
+  "score": 0.778121040976884
+}
