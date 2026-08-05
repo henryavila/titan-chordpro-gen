@@ -61,6 +61,14 @@ MIN_CHORD_DURATION_S = 0.60
 DEFAULT_BEAT_PERIOD_S = 0.75  # ~80 BPM fallback when onsets are sparse
 MIN_HOLD_BEATS = 3.0  # ~1.5 half-bars / short multi-beat tonic pads
 MIN_ALT_BEATS = 1.0  # alternate root must dominate ≥1 beat to split
+# H1: peel multi-change pads. One pass inserts only the first alternate and
+# suffix-commits it; further passes re-scan long pieces so a 30s hold can
+# surface 2–3 harmonic changes without recursive window flutter inside one split.
+RESEG_MAX_PASSES = 6
+# Holds at/above this duration use full beat-window relabel (run merge) instead
+# of single first-alt split — fixes wrong-onset pads (e.g. F labeled for a span
+# that opens on C) and multi-change outros without song-specific thresholds.
+LONG_HOLD_FORCE_RELABEL_S = 12.0
 CHROMA_SCORE_MARGIN = 0.01  # baseline edge over current-label score
 # Primary harmonic functions (I/IV/V/vi) get the baseline or easier margin;
 # secondary (ii/iii/dim) need a larger edge to suppress pad-overtone FPs.
@@ -611,6 +619,7 @@ def resegment_long_holds(
     min_hold_s: float | None = None,
     min_alt_s: float | None = None,
     score_margin: float = CHROMA_SCORE_MARGIN,
+    max_passes: int = RESEG_MAX_PASSES,
 ) -> list[ChordEvent]:
     """Split multi-beat chord holds when chroma favors another diatonic triad.
 
@@ -621,6 +630,12 @@ def resegment_long_holds(
     committed when it wins by a *function-aware* margin over the current
     event's majmin label for a contiguous span ≥ ``min_alt_s`` (default 1
     beat): dominant (V) is easier, secondary (ii/iii) harder.
+
+    Each pass inserts at most one alternate per long hold (suffix-commit).
+    Multiple passes (``max_passes``, default ``RESEG_MAX_PASSES``) re-scan
+    newly created long pieces so multi-change pads (C→G→F under one Chordino
+    event) peel progressively without recursive window flutter inside a single
+    split. Stops early when a pass produces no new events.
 
     Pure w.r.t. audio: callers supply a precomputed chromagram. Empty
     input and short events pass through unchanged. Coverage of
@@ -637,25 +652,193 @@ def resegment_long_holds(
     if not candidates:
         return list(events)
 
-    out: list[ChordEvent] = []
-    for ev in events:
-        dur = ev.timestamp.end - ev.timestamp.start
-        if dur < hold_floor:
-            out.append(ev)
+    passes = max(1, int(max_passes))
+    current = list(events)
+    for _ in range(passes):
+        out: list[ChordEvent] = []
+        changed = False
+        for ev in current:
+            dur = ev.timestamp.end - ev.timestamp.start
+            if dur < hold_floor:
+                out.append(ev)
+                continue
+            if dur >= LONG_HOLD_FORCE_RELABEL_S - 1e-9:
+                pieces = _relabel_long_hold(
+                    ev,
+                    chroma=chroma,
+                    frame_times=frame_times,
+                    beat_period=beat_period,
+                    candidates=candidates,
+                    alt_floor=alt_floor,
+                    score_margin=score_margin,
+                    key_root=key_root,
+                    mode=mode,
+                )
+            else:
+                pieces = _split_one_hold(
+                    ev,
+                    chroma=chroma,
+                    frame_times=frame_times,
+                    beat_period=beat_period,
+                    candidates=candidates,
+                    alt_floor=alt_floor,
+                    score_margin=score_margin,
+                    key_root=key_root,
+                    mode=mode,
+                )
+            if len(pieces) > 1:
+                changed = True
+            out.extend(pieces)
+        current = out
+        if not changed:
+            break
+    return current
+
+
+def _relabel_long_hold(
+    ev: ChordEvent,
+    *,
+    chroma: Any,
+    frame_times: Any,
+    beat_period: float,
+    candidates: list[tuple[str, str]],
+    alt_floor: float,
+    score_margin: float,
+    key_root: str = "C",
+    mode: str = "major",
+) -> list[ChordEvent]:
+    """Full beat-window relabel for very long holds (H1b).
+
+    Unlike ``_split_one_hold`` (keeps Chordino onset, one mid-hold alternate),
+    this path rewrites the entire span from window-best primary labels and
+    merges runs shorter than ``alt_floor`` into neighbours. Used only when the
+    hold is ≥ ``LONG_HOLD_FORCE_RELABEL_S`` so ordinary multi-beat pads still
+    use the conservative single-split path.
+    """
+    t0 = ev.timestamp.start
+    t1 = ev.timestamp.end
+    cur_root = _chord_root(ev.symbol)
+    cur_qual = _majmin_quality(ev.symbol)
+    # Pool includes current label so stable pads stay put.
+    pool: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for r, q in [(cur_root, cur_qual), *candidates]:
+        if not r or (r, q) in seen:
             continue
-        pieces = _split_one_hold(
-            ev,
-            chroma=chroma,
-            frame_times=frame_times,
-            beat_period=beat_period,
-            candidates=candidates,
-            alt_floor=alt_floor,
-            score_margin=score_margin,
-            key_root=key_root,
-            mode=mode,
+        seen.add((r, q))
+        pool.append((r, q))
+
+    windows: list[tuple[float, float, str, str]] = []
+    t = t0
+    while t < t1 - 1e-9:
+        w_end = min(t + beat_period, t1)
+        vec = _window_mean_chroma(chroma, frame_times, t, w_end)
+        label_r, label_q = cur_root, cur_qual
+        if vec is not None:
+            import numpy as np
+
+            v = np.asarray(vec, dtype=float).reshape(-1)
+            vs = float(v.sum())
+            if vs > 0:
+                v = v / vs
+            cur_s = _triad_score(vec, cur_root, cur_qual)
+            best_s = cur_s
+            # Score-first ranking (class rank is only a tie-break). Preferring
+            # dominant-over-primary by rank alone would rewrite C pads as G.
+            best_cls_rank = 1
+            cur_pc = _PC.index(cur_root) if cur_root in _PC else None
+            cur_root_e = float(v[cur_pc]) if cur_pc is not None else 0.0
+            for r, q in pool:
+                if r not in _PC:
+                    continue
+                raw_s = _triad_score(vec, r, q)
+                s = _score_with_priors(raw_s, r, q, key_root, mode)
+                if r == cur_root and q == cur_qual:
+                    # Current label: no margin; win ties to avoid flutter.
+                    if s >= best_s - 1e-12:
+                        best_s = max(best_s, s)
+                        label_r, label_q = r, q
+                        best_cls_rank = 1
+                    continue
+                alt_root_e = float(v[_PC.index(r)])
+                margin = _margin_for_candidate(r, q, key_root, mode, score_margin)
+                # Long holds: slightly easier primary/dominant inserts.
+                cls = _function_class(r, q, key_root, mode)
+                if cls in ("dominant", "primary"):
+                    margin = min(margin, score_margin * 0.5)
+                cls_rank = 0 if cls == "dominant" else (1 if cls == "primary" else 2)
+                if cls == "secondary":
+                    root_ok = alt_root_e >= cur_root_e + 0.02
+                else:
+                    root_ok = alt_root_e >= cur_root_e - (0.03 if cls == "dominant" else 0.0)
+                if not root_ok or s <= cur_s + margin:
+                    continue
+                if s > best_s + 1e-12 or (abs(s - best_s) <= 1e-9 and cls_rank < best_cls_rank):
+                    best_s = s
+                    best_cls_rank = cls_rank
+                    label_r, label_q = r, q
+        windows.append((t, w_end, label_r, label_q))
+        t = w_end
+
+    if not windows:
+        return [ev]
+
+    # Compress consecutive same labels into runs.
+    runs: list[tuple[float, float, str, str]] = []
+    for wt0, wt1, wr, wq in windows:
+        if runs and runs[-1][2] == wr and runs[-1][3] == wq:
+            prev = runs[-1]
+            runs[-1] = (prev[0], wt1, wr, wq)
+        else:
+            runs.append((wt0, wt1, wr, wq))
+
+    # Absorb short runs (< alt_floor) into the longer neighbour.
+    if len(runs) > 1:
+        merged: list[tuple[float, float, str, str]] = []
+        for run in runs:
+            dur = run[1] - run[0]
+            if merged and dur < alt_floor - 1e-9:
+                prev = merged[-1]
+                merged[-1] = (prev[0], run[1], prev[2], prev[3])
+            else:
+                merged.append(run)
+        # Trailing short run: fold into previous if any.
+        if len(merged) >= 2:
+            last = merged[-1]
+            if last[1] - last[0] < alt_floor - 1e-9:
+                prev = merged[-2]
+                merged[-2] = (prev[0], last[1], prev[2], prev[3])
+                merged.pop()
+        runs = merged
+
+    if len(runs) <= 1:
+        # Possibly only a full rewrite of the symbol with same span.
+        if not runs:
+            return [ev]
+        wr, wq = runs[0][2], runs[0][3]
+        if wr != cur_root or wq != cur_qual:
+            return [
+                ev.model_copy(
+                    update={
+                        "symbol": _symbol_for_root_quality(wr, wq),
+                        "bass_note": None,
+                    }
+                )
+            ]
+        return [ev]
+
+    pieces: list[ChordEvent] = []
+    for rt0, rt1, wr, wq in runs:
+        pieces.append(
+            ev.model_copy(
+                update={
+                    "symbol": _symbol_for_root_quality(wr, wq),
+                    "bass_note": None,
+                    "timestamp": TimeStamp(start=rt0, end=rt1),
+                }
+            )
         )
-        out.extend(pieces)
-    return out
+    return pieces
 
 
 def _split_one_hold(

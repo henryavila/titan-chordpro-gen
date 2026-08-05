@@ -831,6 +831,97 @@ class TestResegmentLongHolds:
                 f"split piece {piece.symbol}@{piece.timestamp.start} kept bass={piece.bass_note}"
             )
 
+    def test_multipass_splits_second_change_in_long_hold(self) -> None:
+        """H1: single-split leaves a long alternate suffix; multipass peels again.
+
+        Synthetic 12s C hold with chroma C→G→F (4s each). One pass yields
+        C|G(rest) via suffix-commit; a second pass must still split G→F so the
+        multi-bar pad does not swallow the final chord.
+        """
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("C", 0.0, 12.0)]
+        chroma, times = self._chroma_from_segments(
+            [
+                ("C", "maj", 0.0, 4.0),
+                ("G", "maj", 4.0, 8.0),
+                ("F", "maj", 8.0, 12.0),
+            ],
+            duration=12.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+            max_passes=4,
+        )
+        symbols = [e.symbol for e in out]
+        assert "G" in symbols, f"expected G insert, got {symbols}"
+        assert "F" in symbols, f"expected multipass F peel, got {symbols}"
+        assert symbols[0].startswith("C")
+        assert out[0].timestamp.start == pytest.approx(0.0)
+        assert out[-1].timestamp.end == pytest.approx(12.0)
+        # Three pieces (or more after post-collapse) covering the progression.
+        assert len(out) >= 3, f"expected ≥3 segments after multipass, got {symbols}"
+
+    def test_multipass_stable_when_no_further_split(self) -> None:
+        """Consistent chroma must still be a single event even with max_passes>1."""
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("C", 0.0, 8.0)]
+        chroma, times = self._chroma_from_segments(
+            [("C", "maj", 0.0, 8.0)],
+            duration=8.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.8,
+            key_root="C",
+            mode="major",
+            max_passes=6,
+        )
+        assert len(out) == 1
+        assert out[0].symbol == "C"
+
+    def test_force_relabel_rewrites_wrong_onset_on_very_long_hold(self) -> None:
+        """H1b: ≥12s hold with chroma C then F must emit C|F (onset rewrite).
+
+        Single-split keeps Chordino onset and only inserts mid-hold alternates,
+        so a span mislabeled F that actually opens on C never fixes the head.
+        """
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("F", 0.0, 14.0)]
+        chroma, times = self._chroma_from_segments(
+            [
+                ("C", "maj", 0.0, 3.0),
+                ("F", "maj", 3.0, 14.0),
+            ],
+            duration=14.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=1.0,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+            min_alt_s=1.0,
+        )
+        symbols = [e.symbol for e in out]
+        assert symbols[0].startswith("C"), f"expected C onset rewrite, got {symbols}"
+        assert any(s.startswith("F") for s in symbols), f"expected F retained, got {symbols}"
+        assert out[0].timestamp.start == pytest.approx(0.0)
+        assert out[-1].timestamp.end == pytest.approx(14.0)
+        assert len(out) >= 2
+
 
 @pytest.mark.unit
 class TestBassRecomputeAfterReseg:
