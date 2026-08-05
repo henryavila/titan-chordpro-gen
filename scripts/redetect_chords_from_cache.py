@@ -60,12 +60,47 @@ def _parse_value(raw: str):
         return raw
 
 
+def _sync_ablation_defaults(ch: object) -> None:
+    """Refresh def-time defaults that captured module constants at import.
+
+    Python binds default argument values once at ``def`` time. Monkeypatching
+    the module globals alone does not change:
+
+    * ``merge_short_chords(min_duration=MIN_CHORD_DURATION_S)``
+    * ``_reseg_candidate_pool(primary_only=RESEG_PRIMARY_ONLY,
+      allow_secondary=RESEG_ALLOW_SECONDARY)``
+    * ``resegment_long_holds(score_margin=CHROMA_SCORE_MARGIN,
+      max_passes=RESEG_MAX_PASSES)``
+
+    Runtime reads (``MIN_HOLD_BEATS``, ``LONG_HOLD_FORCE_RELABEL_S``,
+    ``CHROMA_SCORE_MARGIN_*``, ``BASS_NOTE_MIN_CONFIDENCE``, etc.) already
+    pick up ``setattr`` without this helper.
+    """
+    merge_fn = ch.merge_short_chords  # type: ignore[attr-defined]
+    if merge_fn.__defaults__ is not None:
+        # signature: (events, min_duration=MIN_CHORD_DURATION_S)
+        merge_fn.__defaults__ = (ch.MIN_CHORD_DURATION_S,)  # type: ignore[attr-defined]
+
+    pool_fn = ch._reseg_candidate_pool  # type: ignore[attr-defined]
+    if pool_fn.__kwdefaults__ is not None:
+        kw = dict(pool_fn.__kwdefaults__)
+        kw["primary_only"] = ch.RESEG_PRIMARY_ONLY  # type: ignore[attr-defined]
+        kw["allow_secondary"] = ch.RESEG_ALLOW_SECONDARY  # type: ignore[attr-defined]
+        pool_fn.__kwdefaults__ = kw
+
+    reseg_fn = ch.resegment_long_holds  # type: ignore[attr-defined]
+    if reseg_fn.__kwdefaults__ is not None:
+        kw = dict(reseg_fn.__kwdefaults__)
+        kw["score_margin"] = ch.CHROMA_SCORE_MARGIN  # type: ignore[attr-defined]
+        kw["max_passes"] = ch.RESEG_MAX_PASSES  # type: ignore[attr-defined]
+        reseg_fn.__kwdefaults__ = kw
+
+
 def apply_ablation(params: dict[str, object]) -> dict[str, object]:
     """Monkeypatch titan_chordpro.engines.chord.chordino module constants.
 
-    Also rewrites ``resegment_long_holds`` keyword defaults so frozen
-    ``score_margin=CHROMA_SCORE_MARGIN`` / ``max_passes`` pick up new values
-    (Python binds those defaults at def-time).
+    Also rewrites function defaults that frozen the constants at import time
+    so every key in ``ABLATION_KEYS`` actually takes effect on the detect path.
     """
     import titan_chordpro.engines.chord.chordino as ch
 
@@ -76,15 +111,7 @@ def apply_ablation(params: dict[str, object]) -> dict[str, object]:
         previous[key] = getattr(ch, key)
         setattr(ch, key, val)
 
-    # Refresh kwdefaults that captured module constants at import time.
-    fn = ch.resegment_long_holds
-    if fn.__kwdefaults__ is not None:
-        kw = dict(fn.__kwdefaults__)
-        if "score_margin" in kw and "CHROMA_SCORE_MARGIN" in params:
-            kw["score_margin"] = params["CHROMA_SCORE_MARGIN"]
-        if "max_passes" in kw and "RESEG_MAX_PASSES" in params:
-            kw["max_passes"] = params["RESEG_MAX_PASSES"]
-        fn.__kwdefaults__ = kw
+    _sync_ablation_defaults(ch)
     return previous
 
 
@@ -93,14 +120,7 @@ def restore_ablation(previous: dict[str, object]) -> None:
 
     for key, val in previous.items():
         setattr(ch, key, val)
-    fn = ch.resegment_long_holds
-    if fn.__kwdefaults__ is not None:
-        kw = dict(fn.__kwdefaults__)
-        if "score_margin" in kw and "CHROMA_SCORE_MARGIN" in previous:
-            kw["score_margin"] = previous["CHROMA_SCORE_MARGIN"]
-        if "max_passes" in kw and "RESEG_MAX_PASSES" in previous:
-            kw["max_passes"] = previous["RESEG_MAX_PASSES"]
-        fn.__kwdefaults__ = kw
+    _sync_ablation_defaults(ch)
 
 
 def load_stems(cache_id: str) -> dict:

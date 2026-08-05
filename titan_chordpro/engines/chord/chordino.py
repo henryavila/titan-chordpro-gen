@@ -794,32 +794,46 @@ def _relabel_long_hold(
             runs.append((wt0, wt1, wr, wq))
 
     # Absorb short runs (< alt_floor) into a neighbour.
-    # Leading short: fold into the NEXT run (avoid sub-floor onset blips).
+    # Leading shorts: fold ALL of them into the first run that *individually*
+    # meets alt_floor (same label or next sustained). Do NOT chain short runs
+    # into a synthetic floor-length alternate (e.g. 0.5s G + 0.5s F must not
+    # become a 1.0s F onset when alt_floor=1.0).
     # Middle/trailing short: fold into the previous run.
+    # If only shorts exist: keep residual as original/current-label span.
     if len(runs) > 1:
         merged: list[tuple[float, float, str, str]] = []
-        pending_lead: tuple[float, float, str, str] | None = None
+        pending_lead_start: float | None = None
+        pending_lead_end: float | None = None
         for run in runs:
-            if pending_lead is not None:
-                # Extend next run backward; keep next's label.
-                run = (pending_lead[0], run[1], run[2], run[3])
-                pending_lead = None
-            dur = run[1] - run[0]
-            if dur < alt_floor - 1e-9:
+            t0_r, t1_r, wr, wq = run
+            individual_dur = t1_r - t0_r
+            if pending_lead_start is not None:
+                # Still absorbing leading blips until a sustained run appears.
+                if individual_dur < alt_floor - 1e-9:
+                    pending_lead_end = t1_r
+                    continue
+                # First individually long run: fold all leading shorts into it.
+                merged.append((pending_lead_start, t1_r, wr, wq))
+                pending_lead_start = None
+                pending_lead_end = None
+                continue
+            if individual_dur < alt_floor - 1e-9:
                 if merged:
                     prev = merged[-1]
-                    merged[-1] = (prev[0], run[1], prev[2], prev[3])
+                    merged[-1] = (prev[0], t1_r, prev[2], prev[3])
                 else:
-                    pending_lead = run
+                    pending_lead_start = t0_r
+                    pending_lead_end = t1_r
             else:
                 merged.append(run)
-        if pending_lead is not None:
-            # Entire sequence was short runs; keep the residual span.
+        if pending_lead_start is not None and pending_lead_end is not None:
+            # No sustained run found after leading shorts.
             if merged:
                 prev = merged[-1]
-                merged[-1] = (prev[0], pending_lead[1], prev[2], prev[3])
+                merged[-1] = (prev[0], pending_lead_end, prev[2], prev[3])
             else:
-                merged.append(pending_lead)
+                # Entire sequence was short runs — keep original label span.
+                merged.append((pending_lead_start, pending_lead_end, cur_root, cur_qual))
         # Trailing short run: fold into previous if any.
         if len(merged) >= 2:
             last = merged[-1]

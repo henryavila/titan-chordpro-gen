@@ -994,6 +994,46 @@ class TestResegmentLongHolds:
         assert out[0].timestamp.start == pytest.approx(0.0)
         assert out[0].timestamp.end == pytest.approx(14.0)
 
+    def test_force_relabel_folds_chained_leading_sub_floor_runs(self) -> None:
+        """P2: consecutive leading shorts must not synthesize a floor-length alt.
+
+        beat_period=0.5, min_alt_s=1.0. Leading 0.5s G then 0.5s F then long C
+        must yield a single C — chaining two sub-floor blips into a 1.0s F
+        onset (F|C) is incorrect; only a run that individually meets
+        alt_floor may become an alternate.
+        """
+        from titan_chordpro.engines.chord.chordino import resegment_long_holds
+
+        events = [self._evt("C", 0.0, 14.0)]
+        chroma, times = self._chroma_from_segments(
+            [
+                ("G", "maj", 0.0, 0.5),
+                ("F", "maj", 0.5, 1.0),
+                ("C", "maj", 1.0, 14.0),
+            ],
+            duration=14.0,
+        )
+        out = resegment_long_holds(
+            events,
+            chroma=chroma,
+            frame_times=times,
+            beat_period=0.5,
+            key_root="C",
+            mode="major",
+            min_hold_s=2.5,
+            min_alt_s=1.0,
+        )
+        symbols = [e.symbol for e in out]
+        assert len(out) == 1, (
+            f"expected single C after folding chained leading blips, got {symbols}"
+        )
+        assert symbols[0].startswith("C"), f"expected C, got {symbols}"
+        assert not any(s.startswith("F") for s in symbols), (
+            f"chained shorts must not synthesize F onset: {symbols}"
+        )
+        assert out[0].timestamp.start == pytest.approx(0.0)
+        assert out[0].timestamp.end == pytest.approx(14.0)
+
 
 @pytest.mark.unit
 class TestBassRecomputeAfterReseg:
