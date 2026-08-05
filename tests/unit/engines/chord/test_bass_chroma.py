@@ -145,3 +145,89 @@ class TestExtractBassNote:
         assert filter_bass_to_chord_tones("C", chord_symbol="C") == "C"
         assert filter_bass_to_chord_tones("E", chord_symbol="Am") == "E"
         assert filter_bass_to_chord_tones("B", chord_symbol="G") == "B"
+
+
+class TestBassEmissionThresholds:
+    """H2: duration-scaled conf / vote floors suppress false short slashes."""
+
+    def test_short_interval_stricter_than_long(self) -> None:
+        from titan_chordpro.engines.chord.bass_chroma import bass_emission_thresholds
+
+        short_conf, short_vote = bass_emission_thresholds(0.5)
+        mid_conf, mid_vote = bass_emission_thresholds(1.5)
+        long_conf, long_vote = bass_emission_thresholds(4.0)
+        assert short_conf > long_conf
+        assert mid_conf > long_conf
+        assert short_vote >= mid_vote >= long_vote
+        # Mid-length pads (common false-inversion window) still need high conf.
+        assert mid_conf >= 0.65
+        assert mid_vote >= 0.55
+
+    def test_resolve_rejects_mean_vote_disagreement(self) -> None:
+        """Slash emission requires mean argmax to agree with majority vote."""
+        from titan_chordpro.engines.chord.bass_chroma import resolve_bass_pc
+
+        # Mean energy peaks at A (9); frames majority-vote to E (4).
+        weights = np.zeros(12, dtype=np.float64)
+        weights[9] = 1.0  # A
+        weights[4] = 0.7  # E
+        weights[0] = 0.2
+        frame_winners = np.array([4, 4, 4, 4, 9, 9], dtype=np.int64)
+        pc, conf = resolve_bass_pc(weights, frame_winners, duration=3.0)
+        assert pc is None
+        assert conf > 0.0  # confidence still reported for diagnostics
+
+    def test_resolve_rejects_low_vote_share_on_mid_interval(self) -> None:
+        """Weak majority on mid-duration slice → no bass letter (false slash guard)."""
+        from titan_chordpro.engines.chord.bass_chroma import resolve_bass_pc
+
+        weights = np.zeros(12, dtype=np.float64)
+        weights[11] = 0.70  # B
+        weights[2] = 0.48  # D residual
+        weights[0] = 0.22
+        # Agree on B but only ~50% of frames — below mid vote floor.
+        frame_winners = np.array([11, 11, 11, 2, 2, 0], dtype=np.int64)
+        pc, conf = resolve_bass_pc(weights, frame_winners, duration=1.8)
+        assert conf >= 0.5  # raw peakiness ok
+        assert pc is None
+
+    def test_resolve_accepts_decisive_long_interval(self) -> None:
+        from titan_chordpro.engines.chord.bass_chroma import (
+            pitch_class_letter,
+            resolve_bass_pc,
+        )
+
+        weights = np.zeros(12, dtype=np.float64)
+        weights[4] = 0.90  # E under C → true inversion
+        weights[0] = 0.25
+        weights[2] = 0.20
+        frame_winners = np.array([4] * 8 + [0, 2], dtype=np.int64)
+        pc, conf = resolve_bass_pc(weights, frame_winners, duration=3.5)
+        assert pc is not None
+        assert pitch_class_letter(pc) == "E"
+        assert conf >= 0.5
+
+    def test_resolve_rejects_mid_conf_below_raised_floor(self) -> None:
+        """conf in (0.5, mid_floor) on a mid-length slice must not emit."""
+        from titan_chordpro.engines.chord.bass_chroma import resolve_bass_pc
+
+        # max=0.55, median of zeros+peak ≈ 0 → conf ≈ 1.0 if only one peak.
+        # Need conf just above 0.5 but below mid floor (~0.70): peak only slightly
+        # above median of a flatter distribution.
+        weights = np.full(12, 0.40, dtype=np.float64)
+        weights[2] = 0.85  # D — conf = (0.85-0.40)/0.85 ≈ 0.529
+        frame_winners = np.array([2] * 10, dtype=np.int64)  # decisive vote
+        pc, conf = resolve_bass_pc(weights, frame_winners, duration=1.3)
+        assert 0.5 <= conf < 0.70
+        assert pc is None
+
+    def test_short_pure_tone_still_emits_when_decisive(self, tmp_path: Path) -> None:
+        """Raised short floor must not kill clean short bass (true reseg slice)."""
+        from titan_chordpro.engines.chord.bass_chroma import extract_bass_note
+
+        audio = _synthesize_tone(freq=110.0, duration=0.8)
+        p = tmp_path / "short_a.wav"
+        sf.write(str(p), audio, SR)
+        letter, conf = extract_bass_note(p, start=0.05, end=0.75)
+        assert letter == "A"
+        assert conf >= 0.70

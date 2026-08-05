@@ -30,6 +30,7 @@ from typing import Any, Literal
 from titan_chordpro.core.exceptions import ChordRecognitionError, EngineUnavailableError
 from titan_chordpro.core.schemas import ChordEvent, EngineInfo, TimeStamp
 from titan_chordpro.engines.chord.bass_chroma import (
+    bass_emission_thresholds,
     extract_bass_note,
     filter_bass_to_chord_tones,
 )
@@ -1159,6 +1160,10 @@ def _attach_bass_notes(events: list[ChordEvent], bass_stem: Path) -> list[ChordE
     Skips events whose symbol already encodes a slash (native Chordino slash
     spelling). Applies triad-tone gate so non-chord-tone pedals do not emit
     random slashes. Root-position bass is suppressed (no F/F).
+
+    H2: duration-scaled confidence floor (via ``bass_emission_thresholds``)
+    so short/mid post-reseg slices need higher conf than the long-pad 0.5
+    baseline before a slash is emitted.
     """
     out: list[ChordEvent] = []
     for e in events:
@@ -1167,6 +1172,7 @@ def _attach_bass_notes(events: list[ChordEvent], bass_stem: Path) -> list[ChordE
             continue
         start = e.timestamp.start
         end = e.timestamp.end
+        duration = max(0.0, end - start)
         letter: str | None = None
         conf = 0.0
         try:
@@ -1175,7 +1181,10 @@ def _attach_bass_notes(events: list[ChordEvent], bass_stem: Path) -> list[ChordE
             _log.warning("bass_stem path %s vanished mid-detection; skipping", bass_stem)
         except Exception as exc:  # noqa: BLE001
             _log.warning("bass_chroma failed on interval %.3f-%.3f: %s", start, end, exc)
-        if letter is None or conf < BASS_NOTE_MIN_CONFIDENCE:
+        min_conf, _min_vote = bass_emission_thresholds(duration)
+        # Floor is at least the module baseline; short/mid raise it further.
+        conf_floor = max(BASS_NOTE_MIN_CONFIDENCE, min_conf)
+        if letter is None or conf < conf_floor:
             out.append(e.model_copy(update={"bass_note": None}))
             continue
         letter = filter_bass_to_chord_tones(letter, e.symbol)

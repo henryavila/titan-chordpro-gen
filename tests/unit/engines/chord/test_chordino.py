@@ -267,6 +267,45 @@ class TestBassNoteIntegration:
 
         assert events[0].bass_note is None
 
+    def test_bass_note_suppressed_on_mid_interval_with_marginal_conf(self, tmp_path: Path) -> None:
+        """H2: mid-duration post-reseg slice needs conf above raised floor.
+
+        extract_bass_note may still return a letter with conf in (0.5, mid_floor)
+        for diagnostic callers; attach must not emit slash on that band.
+        """
+        from titan_chordpro.engines.chord.chordino import ChordinoEngine
+
+        chord_a = MagicMock()
+        chord_a.chord = "G:maj"
+        chord_a.timestamp = 0.0
+        chord_b = MagicMock()
+        chord_b.chord = "C:maj"
+        chord_b.timestamp = 1.5  # → first event duration 1.5s (mid band)
+
+        bass = tmp_path / "bass.wav"
+        bass.write_bytes(b"\x00" * 100)
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = [chord_a, chord_b]
+        with patch(
+            "titan_chordpro.engines.chord.chordino._load_extractor",
+            return_value=mock_extractor,
+        ):
+            with patch(
+                "titan_chordpro.engines.chord.chordino._probe_duration",
+                return_value=4.0,
+            ):
+                with patch(
+                    "titan_chordpro.engines.chord.chordino.extract_bass_note",
+                    return_value=("B", 0.60),  # above old 0.5 floor, below mid floor
+                ):
+                    engine = ChordinoEngine()
+                    events = engine.detect(Path("fake.wav"), bass_stem=bass)
+
+        g_events = [e for e in events if e.symbol == "G"]
+        assert g_events
+        assert g_events[0].bass_note is None
+
     def test_native_slash_symbol_is_not_overridden_by_bass_chroma(self, tmp_path: Path) -> None:
         """Phase C T70-iter2 follow-up: when chordino itself emits a slash
         chord (e.g. 'C#/E#'), the wrapper must NOT also set bass_note from
