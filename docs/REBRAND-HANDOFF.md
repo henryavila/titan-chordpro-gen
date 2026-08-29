@@ -85,7 +85,7 @@ CLI entrypoint today: `titan-chordpro` — **keep** the command name (product fa
 
 - [x] Rename GitHub repository `titan-chordpro-lib` → `titan-chordpro-gen`.
 - [x] Update workflow `paths` / badge URLs if any embed the old name. (workflows had none; badges flipped)
-- [ ] Local folder rename: `code/titan-chordpro-lib` → `code/titan-chordpro-gen` (operator).
+- [x] Local folder rename: `code/titan-chordpro-lib` → `code/titan-chordpro-gen` (operator).
 - [ ] Update sibling docs that point at `../titan-chordpro-lib` (`chordpro-viewer/docs/NAMING.md`, sda `07b`, etc.) in the **same** change window when possible.
 
 ### 4.5 External consumers (notify / PR)
