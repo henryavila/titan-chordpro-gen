@@ -1,11 +1,13 @@
-# Titan ChordPro Lib
+# Titan ChordPro Lib → **Gen**
 
 [![CI](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/ci.yml)
 [![Nightly](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/nightly.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/nightly.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0c0-blue.svg)](CHANGELOG.md)
 
-Audio-to-ChordPro Python library with chord-on-syllable placement.
+Audio-to-ChordPro Python **generator** with chord-on-syllable placement.
+
+**Rebrand (locked):** this repo renames to **`titan-chordpro-gen`**. Sibling UI (view+edit) = **`titan-chordpro-ui`**, separate repo — not a monorepo. Execute: [`docs/REBRAND-HANDOFF.md`](docs/REBRAND-HANDOFF.md).
 
 **Status:** Phase C (validation harness + quality loop) — closing toward tag `v0.1.0-c0`. Phase A (`v0.1.0-a0`) and Phase B (`v0.1.0-b0`/`b1`) shipped. See [`docs/roadmap.md`](docs/roadmap.md).
 

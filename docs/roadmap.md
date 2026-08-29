@@ -249,9 +249,12 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 
 | Projeto | Status |
 |---|---|
-| `titan-chordpro-render` | ⏸ |
-| Theme CSS + editor drag-to-correct | ⏸ |
+| **`titan-chordpro-ui`** (view + edit; seed: `chordpro-viewer`) | 🚧 naming locked 2026-08-28 — **separate repo**, not monorepo |
+| This repo → rename target **`titan-chordpro-gen`** | ⏸ execute [`REBRAND-HANDOFF.md`](REBRAND-HANDOFF.md) |
+| Titan **app**/studio | ⏸ none for now |
 | `LearnableChordEngine` | ⏸ (`CorrectionLog` schema reserved) |
+
+Supersedes old labels `titan-chordpro-render` + “Theme CSS + editor” as one **ui** package. Sibling naming: `../chordpro-viewer/docs/NAMING.md`. **This repo’s rename checklist:** [`REBRAND-HANDOFF.md`](REBRAND-HANDOFF.md).
 
 ---
 
