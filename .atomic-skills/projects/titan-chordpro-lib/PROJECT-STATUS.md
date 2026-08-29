@@ -1,8 +1,8 @@
 ---
-lastUpdated: 2026-08-04T16:10:45Z
+lastUpdated: 2026-08-29T02:48:40Z
 schemaVersion: '0.1'
 activePlans: 1
-activeInitiatives: 0
+activeInitiatives: 1
 archivedCount: 1
 ---
 
@@ -20,13 +20,20 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 | Slug | Status | Current Phase | Branch | Started |
 |------|--------|---------------|--------|---------|
-| titan-v01 | active | F2 — Phase C Validation and quality | plan/titan-v01 | 2026-05-08 |
+| rebrand-gen | active | F0 — Anchor and inventory | plan/rebrand-gen | 2026-08-28 |
+| titan-v01 | paused | F2 — Phase C Validation and quality | plan/titan-v01 | 2026-05-08 |
 
-### titan-v01 — active phase initiatives
+### rebrand-gen — active phase initiatives
 
 | Slug | Phase | Status | Next Action |
 |------|-------|--------|-------------|
-| titan-v01-f2-phase-c-validation-and-quality | F2 | active | Execute T-003: T70 quality loop (detection and placement) |
+| rebrand-gen-f0-anchor-and-inventory | F0 | active | Start T-001: Ancorar iniciativa / ad-hoc |
+
+### titan-v01 — paused phase initiatives
+
+| Slug | Phase | Status | Next Action |
+|------|-------|--------|-------------|
+| titan-v01-f2-phase-c-validation-and-quality | F2 | paused | (paused for rebrand-gen) |
 
 ## Active Initiatives (standalone)
 
@@ -42,4 +49,5 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 | Timestamp | Description |
 |-----------|-------------|
+| 2026-08-28 | pause titan-v01; materialize rebrand-gen on plan/rebrand-gen worktree |
 | 2026-08-04 | adopt titan-v01 nested; legacy flat → legacy-flat-pre-adopt-2026-08-04 |

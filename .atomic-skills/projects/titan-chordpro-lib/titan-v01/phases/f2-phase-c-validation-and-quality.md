@@ -4,10 +4,10 @@ slug: titan-v01-f2-phase-c-validation-and-quality
 title: Phase C Validation and quality
 goal: Validation harness over the 151-song corpus, F-004 bass inversions, stage cache, and quality loop until sample WCSR and placement are release-credible; then CLI polish and tag `v0.1.0-c0`.
 summary: Phase C Validation and quality
-status: active
+status: paused
 branch: plan/titan-v01
 started: 2026-08-04T16:08:35Z
-lastUpdated: 2026-08-04T17:50:34Z
+lastUpdated: 2026-08-29T02:46:28Z
 startedCommit: fdd8abf8c0c096de5954872c8ee0648ef44a2fa9
 nextAction: Continue T-003 quality loop until mean WCSR-majmin >= 0.70, then done T-003
 parentPlan: titan-v01
