@@ -1,13 +1,13 @@
 # Titan ChordPro Gen
 
-[![CI](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/ci.yml)
-[![Nightly](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/nightly.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/nightly.yml)
+[![CI](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/ci.yml)
+[![Nightly](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/nightly.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/nightly.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0c0-blue.svg)](CHANGELOG.md)
 
 Audio-to-ChordPro Python **generator** with chord-on-syllable placement.
 
-Formerly **`titan-chordpro-lib`**. PyPI/project name is **`titan-chordpro-gen`**; Python import stays **`titan_chordpro`** (Option A). CLI primary: **`titan-chordpro-gen`** (alias `titan-chordpro`). Sibling UI (view+edit) = **`titan-chordpro-ui`**, separate repo — not a monorepo. GitHub/folder rename is operator-owned — see [`docs/REBRAND-HANDOFF.md`](docs/REBRAND-HANDOFF.md). Badges still point at the pre-rename GitHub slug until that cutover.
+Formerly **`titan-chordpro-lib`**. GitHub + PyPI/project name are **`titan-chordpro-gen`**; Python import stays **`titan_chordpro`** (Option A). CLI primary: **`titan-chordpro-gen`** (alias `titan-chordpro`). Sibling UI (view+edit) = **`titan-chordpro-ui`**, separate repo — not a monorepo. Local folder rename (if still `…/titan-chordpro-lib`) is optional cleanup — see [`docs/REBRAND-HANDOFF.md`](docs/REBRAND-HANDOFF.md).
 
 **Status:** Phase C (validation harness + quality loop) — closing toward tag `v0.1.0-c0`. Phase A (`v0.1.0-a0`) and Phase B (`v0.1.0-b0`/`b1`) shipped. See [`docs/roadmap.md`](docs/roadmap.md).
 

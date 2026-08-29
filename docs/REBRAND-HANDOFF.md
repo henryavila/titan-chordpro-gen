@@ -75,7 +75,7 @@ CLI entrypoint today: `titan-chordpro` — **keep** the command name (product fa
 ### 4.3 Docs & branding strings
 
 - [x] README title: **Titan ChordPro Gen** (was “Lib”).
-- [ ] Badges: CI/Nightly URLs → `henryavila/titan-chordpro-gen` (after remote rename).
+- [x] Badges: CI/Nightly URLs → `henryavila/titan-chordpro-gen`.
 - [x] `docs/roadmap.md` — Phase 2 table uses `titan-chordpro-gen` / `titan-chordpro-ui`.
 - [x] Link this file from README (“Rebrand”).
 - [x] `CHANGELOG.md` — entry under Unreleased: repo & PyPI rename; import path unchanged (A).
@@ -83,8 +83,8 @@ CLI entrypoint today: `titan-chordpro` — **keep** the command name (product fa
 
 ### 4.4 CI / GitHub
 
-- [ ] Rename GitHub repository `titan-chordpro-lib` → `titan-chordpro-gen` (operator).
-- [ ] Update workflow `paths` / badge URLs if any embed the old name.
+- [x] Rename GitHub repository `titan-chordpro-lib` → `titan-chordpro-gen`.
+- [x] Update workflow `paths` / badge URLs if any embed the old name. (workflows had none; badges flipped)
 - [ ] Local folder rename: `code/titan-chordpro-lib` → `code/titan-chordpro-gen` (operator).
 - [ ] Update sibling docs that point at `../titan-chordpro-lib` (`chordpro-viewer/docs/NAMING.md`, sda `07b`, etc.) in the **same** change window when possible.
 
