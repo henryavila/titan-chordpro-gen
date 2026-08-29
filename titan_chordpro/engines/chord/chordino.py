@@ -4,7 +4,7 @@
 Chordino is a VAMP plugin (GPL-2.0). It must be installed via
 `scripts/install_vamp.sh` (T49). chord-extractor (MIT-licensed Python
 wrapper) calls Chordino as a subprocess; runtime separation means the
-GPL contagion does not extend to titan-chordpro-lib (which stays MIT).
+GPL contagion does not extend to titan-chordpro-gen (which stays MIT).
 
 Output format:
   - chord_extractor returns objects with `.chord` (e.g. "C:maj", "G:min7",

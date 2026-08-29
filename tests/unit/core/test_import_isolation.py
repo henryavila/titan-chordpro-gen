@@ -77,8 +77,8 @@ def test_package_root_public_api_remains_importable() -> None:
     payload = json.loads(result.stdout)
     assert payload == {
         "document_name": "ChordProDocument",
-        "version": "0.1.0b2",
-        "expected_version": "0.1.0b2",
+        "version": "0.1.0c0",
+        "expected_version": "0.1.0c0",
         "transcribe_callable": True,
     }
 

@@ -21,8 +21,12 @@ def test_project_version_is_aligned_for_curta_contract() -> None:
 
     from titan_chordpro.version import __version__
 
-    assert pyproject["project"]["version"] == "0.1.0b2"
-    assert __version__ == "0.1.0b2"
+    assert pyproject["project"]["name"] == "titan-chordpro-gen"
+    assert pyproject["project"]["version"] == "0.1.0c0"
+    assert __version__ == "0.1.0c0"
+    scripts = pyproject["project"]["scripts"]
+    assert scripts["titan-chordpro-gen"] == "titan_chordpro.cli:main"
+    assert scripts["titan-chordpro"] == "titan_chordpro.cli:main"
 
 
 @pytest.mark.unit
@@ -32,7 +36,7 @@ def test_readme_documents_only_the_public_hardware_infra_contract() -> None:
         "\n## ", maxsplit=1
     )[0]
 
-    assert "Version: `0.1.0b2`" in section
+    assert "Version: `0.1.0c0`" in section
     for symbol in PUBLIC_HARDWARE_API:
         assert f"`{symbol}`" in section
     assert section.count("`titan_chordpro.core.hardware.") == len(PUBLIC_HARDWARE_API)

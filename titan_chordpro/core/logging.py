@@ -1,5 +1,5 @@
 # titan_chordpro/core/logging.py
-"""Logging utilities for Titan ChordPro Lib.
+"""Logging utilities for Titan ChordPro Gen.
 
 A ContextFilter adds audio_id/stage/engine/elapsed_ms to log records via
 contextvars. Use set_context() as a context manager to scope these fields.

@@ -1,8 +1,8 @@
-# Titan ChordPro Lib — Roadmap
+# Titan ChordPro Gen — Roadmap
 
 > **Living document** — Atualize sempre que mudar status de uma tarefa, terminar uma fase, ou repriorizar. Substitui o `docs/research/00-original-roadmap.md` (artefato histórico de pesquisa inicial).
 >
-> **Última atualização:** 2026-08-04
+> **Última atualização:** 2026-08-29
 > **Fase atual:** Phase C — ✅ closed at package `0.1.0c0` (ready for operator tag `v0.1.0-c0`)
 > **Versão no código:** `0.1.0c0`
 > **Próxima milestone:** Henry tags `v0.1.0-c0` after final review → Phase D
@@ -250,7 +250,7 @@ Tags: **`v0.1.0-b0`** (2026-05-18) → hot-fix **`v0.1.0-b1`** (2026-05-19).
 | Projeto | Status |
 |---|---|
 | **`titan-chordpro-ui`** (view + edit; seed: `chordpro-viewer`) | 🚧 naming locked 2026-08-28 — **separate repo**, not monorepo |
-| This repo → rename target **`titan-chordpro-gen`** | ⏸ execute [`REBRAND-HANDOFF.md`](REBRAND-HANDOFF.md) |
+| This repo → **`titan-chordpro-gen`** (PyPI/docs/CLI done; GitHub/folder = operator) | 🚧 [`REBRAND-HANDOFF.md`](REBRAND-HANDOFF.md) |
 | Titan **app**/studio | ⏸ none for now |
 | `LearnableChordEngine` | ⏸ (`CorrectionLog` schema reserved) |
 
