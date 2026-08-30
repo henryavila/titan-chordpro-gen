@@ -1,4 +1,4 @@
-"""Engine Protocols for Titan ChordPro Lib.
+"""Engine Protocols for Titan ChordPro Gen.
 
 The orchestrator depends EXCLUSIVELY on these interfaces. ML implementations
 are in titan_chordpro/engines/ (Phase B); mocks are in tests/conftest.py.

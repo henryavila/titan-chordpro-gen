@@ -1,6 +1,7 @@
-# titan-chordpro-lib
+# titan-chordpro-gen
 
-Python library for generating ChordPro files from audio + lyrics using AI-based beat/chord detection.
+Python generator for ChordPro files from audio + lyrics using AI-based beat/chord detection.
+(Import package remains `titan_chordpro` — Option A.)
 
 <!-- atomic-skills:status-gate:start -->
 ## HARD GATE — NO IMPLEMENTATION WITHOUT ANCHORED INITIATIVE

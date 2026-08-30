@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "titan-chordpro-lib"
+name = "titan-chordpro-gen"
 version = "0.1.0c0"
-description = "Audio-to-ChordPro Python library with chord-on-syllable placement"
+description = "Audio-to-ChordPro generator with chord-on-syllable placement"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Henry Ávila", email = "personal@henryavila.com" }]
@@ -82,6 +82,7 @@ validation = [
 ]
 
 [project.scripts]
+titan-chordpro-gen = "titan_chordpro.cli:main"
 titan-chordpro = "titan_chordpro.cli:main"
 
 [tool.hatch.build.targets.wheel]

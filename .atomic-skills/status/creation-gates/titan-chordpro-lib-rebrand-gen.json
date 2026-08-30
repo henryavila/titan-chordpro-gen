@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "0.1",
+  "kind": "new-plan",
+  "projectId": "titan-chordpro-lib",
+  "slug": "rebrand-gen",
+  "stage": "materialized",
+  "updatedAt": "2026-08-29T02:48:40.557Z",
+  "businessIntentAccepted": true,
+  "sourcePath": ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/source.md",
+  "status": "pending",
+  "filesPlanned": [
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/plan.md",
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/phases/f0-anchor-and-inventory.md",
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/phases/f1-this-repo-identity-flip.source.json",
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/phases/f2-operator-rename-consumer-window.source.json"
+  ],
+  "filesWritten": [
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/plan.md",
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/phases/f0-anchor-and-inventory.md",
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/phases/f1-this-repo-identity-flip.source.json",
+    ".atomic-skills/projects/titan-chordpro-lib/rebrand-gen/phases/f2-operator-rename-consumer-window.source.json"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "captureVersion": "0.1",
+  "phaseId": "F1",
+  "slug": "rebrand-gen-f1-this-repo-identity-flip",
+  "title": "This-repo identity flip",
+  "goal": "This repository\u2019s distribution name, CLI scripts, live docs, and CHANGELOG reflect `titan-chordpro-gen` with Option A imports; tests green.",
+  "tasks": [
+    {
+      "id": "T-010",
+      "title": "pyproject name + dual scripts",
+      "summary": "pyproject name + dual scripts",
+      "description": "`pyproject.toml`: `[project].name = \"titan-chordpro-gen\"`; description may say generator/audio-to-ChordPro; dual `[project.scripts]` (`titan-chordpro-gen` primary + `titan-chordpro` alias).",
+      "weight": 1
+    },
+    {
+      "id": "T-011",
+      "title": "Regenerar uv.lock",
+      "summary": "Regenerar uv.lock",
+      "description": "Regenerate `uv.lock` for the new distribution name.",
+      "weight": 1
+    },
+    {
+      "id": "T-012",
+      "title": "CHANGELOG Unreleased chore",
+      "summary": "CHANGELOG Unreleased chore",
+      "description": "CHANGELOG: add `[Unreleased]` chore entry \u2014 repo/PyPI rename; import path unchanged; CLI primary + alias.",
+      "weight": 1
+    },
+    {
+      "id": "T-013",
+      "title": "Docs live README/roadmap/CLAUDE/install",
+      "summary": "Docs live README/roadmap/CLAUDE/install",
+      "description": "Live docs: README title **Titan ChordPro Gen** + formerly line + link to `docs/REBRAND-HANDOFF.md`; roadmap H1; CLAUDE.md H1; `scripts/install.sh` banner/strings.",
+      "weight": 2
+    },
+    {
+      "id": "T-014",
+      "title": "Docstrings produto Gen",
+      "summary": "Docstrings produto Gen",
+      "description": "Live product strings in `titan_chordpro/core/{exceptions,schemas,protocols,logging}.py` and `engines/chord/chordino.py` MIT blurb \u2192 Gen / new dist name where product-titled.",
+      "weight": 1
+    },
+    {
+      "id": "T-015",
+      "title": "Verificar pytest/import/CLIs",
+      "summary": "Verificar pytest/import/CLIs",
+      "description": "Verify: `pytest` (unit) green; `python -c \"import titan_chordpro\"`; `titan-chordpro-gen --help` and `titan-chordpro --help` after editable install.",
+      "weight": 2
+    },
+    {
+      "id": "T-016",
+      "title": "Commit/PR deste repo",
+      "summary": "Commit/PR deste repo",
+      "description": "Commit `chore: rebrand repository to titan-chordpro-gen` (per handoff \u00a77); open/merge PR for this repo only. **Do not** flip badge URLs to `-gen` until F2 operator rename lands (or flip in a follow-up commit same window).",
+      "weight": 1
+    }
+  ],
+  "exitGates": []
+}

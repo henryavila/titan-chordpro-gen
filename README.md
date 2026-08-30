@@ -1,13 +1,13 @@
-# Titan ChordPro Lib → **Gen**
+# Titan ChordPro Gen
 
-[![CI](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/ci.yml)
-[![Nightly](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/nightly.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-lib/actions/workflows/nightly.yml)
+[![CI](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/ci.yml)
+[![Nightly](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/nightly.yml/badge.svg)](https://github.com/henryavila/titan-chordpro-gen/actions/workflows/nightly.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0c0-blue.svg)](CHANGELOG.md)
 
 Audio-to-ChordPro Python **generator** with chord-on-syllable placement.
 
-**Rebrand (locked):** this repo renames to **`titan-chordpro-gen`**. Sibling UI (view+edit) = **`titan-chordpro-ui`**, separate repo — not a monorepo. Execute: [`docs/REBRAND-HANDOFF.md`](docs/REBRAND-HANDOFF.md).
+Formerly **`titan-chordpro-lib`**. GitHub + PyPI/project name are **`titan-chordpro-gen`**; Python import stays **`titan_chordpro`** (Option A). CLI primary: **`titan-chordpro-gen`** (alias `titan-chordpro`). Sibling UI (view+edit) = **`titan-chordpro-ui`**, separate repo — not a monorepo. Local folder rename (if still `…/titan-chordpro-lib`) is optional cleanup — see [`docs/REBRAND-HANDOFF.md`](docs/REBRAND-HANDOFF.md).
 
 **Status:** Phase C (validation harness + quality loop) — closing toward tag `v0.1.0-c0`. Phase A (`v0.1.0-a0`) and Phase B (`v0.1.0-b0`/`b1`) shipped. See [`docs/roadmap.md`](docs/roadmap.md).
 
@@ -77,11 +77,11 @@ The fastest path from a URL to a chord chart is the `render_from_url.py` wrapper
     --output ao-olhar.chordpro \
     --beatgrid
 
-# Or use the CLI entrypoint on a local file
-titan-chordpro path/to/audio.mp3 --output song.chordpro --profile inline_slash
+# Or use the CLI entrypoint on a local file (alias: titan-chordpro)
+titan-chordpro-gen path/to/audio.mp3 --output song.chordpro --profile inline_slash
 ```
 
-Flags: `--title` (embedded in `{title:}`; default = YouTube id), `--language` (default `pt`), `--output`, `--profile` (default `inline_slash` — run `titan-chordpro --list-profiles` for the full set), `--beatgrid` (writes `<slug>.beatgrid.txt` next to the chord chart).
+Flags: `--title` (embedded in `{title:}`; default = YouTube id), `--language` (default `pt`), `--output`, `--profile` (default `inline_slash` — run `titan-chordpro-gen --list-profiles` for the full set), `--beatgrid` (writes `<slug>.beatgrid.txt` next to the chord chart).
 
 Cold first run on a new URL is ~5 min (audio download + htdemucs separation + whisper medium + chord/beat/align). Same URL re-run is <1 s — the orchestrator hits the document-level cache directly.
 
@@ -111,10 +111,10 @@ pip install ".[mac,validation]"
 .venv-py312/bin/python scripts/sample_run.py
 
 # Or CLI: first N corpus rows with rich progress
-titan-chordpro --validate chordpros.csv/songs.csv --sample-size 3
+titan-chordpro-gen --validate chordpros.csv/songs.csv --sample-size 3
 
 # Larger sample / full corpus (slow — hours on M-series)
-titan-chordpro --validate chordpros.csv/songs.csv --sample-size 30
+titan-chordpro-gen --validate chordpros.csv/songs.csv --sample-size 30
 BENCHMARKS_SAMPLE_SIZE=151 pytest -m corpus_full -v
 ```
 

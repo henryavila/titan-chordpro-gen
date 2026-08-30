@@ -1,5 +1,5 @@
 # titan_chordpro/core/schemas.py
-"""Pydantic v2 schemas for Titan ChordPro Lib.
+"""Pydantic v2 schemas for Titan ChordPro Gen.
 
 All inter-module communication uses these models. Validation is fail-fast:
 invalid data raises pydantic.ValidationError at construction time.

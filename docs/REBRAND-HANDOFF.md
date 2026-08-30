@@ -67,25 +67,25 @@ CLI entrypoint today: `titan-chordpro` — **keep** the command name (product fa
 
 ### 4.2 Project metadata
 
-- [ ] `pyproject.toml` → `[project].name = "titan-chordpro-gen"`.
-- [ ] Description may say “generator” / “audio-to-ChordPro”.
-- [ ] Scripts/entry points: keep `titan-chordpro` console script; optional second name.
+- [x] `pyproject.toml` → `[project].name = "titan-chordpro-gen"`.
+- [x] Description may say “generator” / “audio-to-ChordPro”.
+- [x] Scripts/entry points: primary `titan-chordpro-gen` + alias `titan-chordpro`.
 - [ ] License/authors unchanged.
 
 ### 4.3 Docs & branding strings
 
-- [ ] README title: **Titan ChordPro Gen** (was “Lib”).
-- [ ] Badges: CI/Nightly URLs → `henryavila/titan-chordpro-gen` (after remote rename).
-- [ ] `docs/roadmap.md` — Phase 2 table uses `titan-chordpro-gen` / `titan-chordpro-ui`.
-- [ ] Link this file from README (“Rebrand”).
-- [ ] `CHANGELOG.md` — entry under Unreleased / next patch: repo & PyPI rename; import path unchanged (if A).
-- [ ] Replace user-facing “ChordPro Lib” with “ChordPro Gen” where it means **this product**; leave historical commit messages alone.
+- [x] README title: **Titan ChordPro Gen** (was “Lib”).
+- [x] Badges: CI/Nightly URLs → `henryavila/titan-chordpro-gen`.
+- [x] `docs/roadmap.md` — Phase 2 table uses `titan-chordpro-gen` / `titan-chordpro-ui`.
+- [x] Link this file from README (“Rebrand”).
+- [x] `CHANGELOG.md` — entry under Unreleased: repo & PyPI rename; import path unchanged (A).
+- [x] Replace user-facing “ChordPro Lib” with “ChordPro Gen” where it means **this product**; leave historical commit messages alone.
 
 ### 4.4 CI / GitHub
 
-- [ ] Rename GitHub repository `titan-chordpro-lib` → `titan-chordpro-gen` (operator).
-- [ ] Update workflow `paths` / badge URLs if any embed the old name.
-- [ ] Local folder rename: `code/titan-chordpro-lib` → `code/titan-chordpro-gen` (operator).
+- [x] Rename GitHub repository `titan-chordpro-lib` → `titan-chordpro-gen`.
+- [x] Update workflow `paths` / badge URLs if any embed the old name. (workflows had none; badges flipped)
+- [x] Local folder rename: `code/titan-chordpro-lib` → `code/titan-chordpro-gen` (operator).
 - [ ] Update sibling docs that point at `../titan-chordpro-lib` (`chordpro-viewer/docs/NAMING.md`, sda `07b`, etc.) in the **same** change window when possible.
 
 ### 4.5 External consumers (notify / PR)
@@ -99,10 +99,10 @@ CLI entrypoint today: `titan-chordpro` — **keep** the command name (product fa
 
 ### 4.6 Verify
 
-- [ ] `pytest` (unit) green after string renames.
-- [ ] `pip install -e ".[mac]"` (or project’s install path) still exposes `import titan_chordpro` (option A).
-- [ ] CLI `titan-chordpro --help` works.
-- [ ] README install instructions still accurate.
+- [x] `pytest` (unit) green after string renames.
+- [x] editable install still exposes `import titan_chordpro` (option A).
+- [x] CLI `titan-chordpro-gen --help` + alias `titan-chordpro --help` work.
+- [x] README install instructions still accurate.
 
 ### 4.7 Done criteria
 
@@ -128,6 +128,10 @@ sda-v2/                 ← consumes ui only
 Interchange format between gen and ui: **ChordPro text** (`.chordpro` / `.cho`). No shared Python/TS runtime required.
 
 ---
+
+## 5b. Follow-up (approved, not this PR)
+
+Optional later split: thin **`titan-chordpro-lib`** (infra only — what `curta` consumes) extracted from this tree; **`titan-chordpro-gen`** keeps the audio→ChordPro pipeline and depends on that lib. **Not** part of this rename cutover.
 
 ## 6. Explicit non-goals
 

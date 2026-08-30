@@ -65,11 +65,12 @@ class TestTranscribePipeline:
         assert len(out_path.read_text()) > 0
 
     def test_chord_engine_receives_audio_not_bass(self, tmp_path: Path, monkeypatch) -> None:
-        """Orchestrator must pass the harmonic source (audio) to chord_engine.detect,
-        not the bass stem (regression: F-002).
+        """Orchestrator must pass a harmonic mix (other+bass or other fallback),
+        never the bass stem alone (regression: F-002 / T70 quality loop).
 
         Pre-fix bug: chord_engine.detect(stems.bass) starved Chordino of harmonic
-        content, producing empty/wrong chord progressions in real-engine mode.
+        content. Spec path is other+bass mix; mock/smoke may fall back to
+        stems.other when numpy/soundfile cannot build the mix.
         """
         from titan_chordpro import factory
 
@@ -94,11 +95,13 @@ class TestTranscribePipeline:
         audio.write_bytes(b"RIFF" + b"\x00" * 44)
         transcribe(audio, force_mock=True)
 
-        # harmonic_mix should be the original audio file, NOT a bass stem path.
-        assert captured["harmonic_mix"] == audio, (
-            f"chord_engine.detect got {captured['harmonic_mix']!r} as harmonic_mix; "
-            f"expected the original audio path {audio!r}"
+        harmonic = Path(str(captured["harmonic_mix"]))
+        bass = captured["bass_stem"]
+        assert bass is not None
+        assert bass != audio
+        # Never starve Chordino with bass-only; never feed the full mix w/ vocals.
+        assert harmonic != Path(str(bass))
+        assert harmonic != audio
+        assert harmonic.name in {"other.wav", "harmonic_mix.wav"}, (
+            f"chord_engine.detect got unexpected harmonic_mix {harmonic!r}"
         )
-        # bass_stem should be populated (mock separator emits stems.bass).
-        assert captured["bass_stem"] is not None
-        assert captured["bass_stem"] != audio

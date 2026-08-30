@@ -1,0 +1,52 @@
+{
+  "captureVersion": "0.1",
+  "phaseId": "F2",
+  "slug": "rebrand-gen-f2-operator-rename-consumer-window",
+  "title": "Operator rename + consumer window",
+  "goal": "GitHub repo and local directory are `titan-chordpro-gen`; badges point at new slug; curta and chordpro-viewer paths/pins updated same day.",
+  "tasks": [
+    {
+      "id": "T-020",
+      "title": "Operator rename GitHub+pasta",
+      "summary": "Operator rename GitHub+pasta",
+      "description": "**Operator:** rename GitHub `titan-chordpro-lib` \u2192 `titan-chordpro-gen`; update local folder + `git remote -v`.",
+      "weight": 3
+    },
+    {
+      "id": "T-021",
+      "title": "Flip badges README",
+      "summary": "Flip badges README",
+      "description": "Flip README CI/Nightly badge URLs to `henryavila/titan-chordpro-gen`.",
+      "weight": 1
+    },
+    {
+      "id": "T-022",
+      "title": "Atualizar pins/path curta",
+      "summary": "Atualizar pins/path curta",
+      "description": "**curta:** update `pyproject.toml` git pins/distribution name; `bin/setup` default `../titan-chordpro-gen` + log strings; regen lock; keep `import titan_chordpro`.",
+      "weight": 2
+    },
+    {
+      "id": "T-023",
+      "title": "Atualizar NAMING chordpro-viewer",
+      "summary": "Atualizar NAMING chordpro-viewer",
+      "description": "**chordpro-viewer:** update `docs/NAMING.md` relative link to handoff; scrub transitional \u201choje lib\u201d in README/SPEC if still present.",
+      "weight": 1
+    },
+    {
+      "id": "T-024",
+      "title": "Polish sda 07b docs",
+      "summary": "Polish sda 07b docs",
+      "description": "**sda-v2 (docs only):** polish `07b-cifra-viewer.md` transitional wording if needed.",
+      "weight": 1
+    },
+    {
+      "id": "T-025",
+      "title": "Checklist handoff \u00a74.7",
+      "summary": "Checklist handoff \u00a74.7",
+      "description": "Fill handoff checklist boxes in PR body; confirm done criteria \u00a74.7.",
+      "weight": 1
+    }
+  ],
+  "exitGates": []
+}

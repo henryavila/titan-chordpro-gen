@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Rebrand:** distribution / project name `titan-chordpro-lib` → **`titan-chordpro-gen`**.
+- Python import package remains **`titan_chordpro`** (Option A — no caller import churn).
+- CLI primary entrypoint is **`titan-chordpro-gen`**; **`titan-chordpro`** kept as a compatibility alias.
+- Live docs / product title strings updated to **Titan ChordPro Gen**. GitHub repo and local folder rename remain operator-owned (see `docs/REBRAND-HANDOFF.md`).
+- Follow-up (not this change): optional extract of a thin infra `-lib` package for `curta`; deferred.
+
 ## [0.1.0c0] — 2026-08-04
 
 Phase C closeout package (`0.1.0c0`). Operator tags `v0.1.0-c0` after final review

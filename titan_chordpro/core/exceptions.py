@@ -1,5 +1,5 @@
 # titan_chordpro/core/exceptions.py
-"""Exception hierarchy for Titan ChordPro Lib.
+"""Exception hierarchy for Titan ChordPro Gen.
 
 All errors carry rich context (audio_id, stage, engine, cause) so users get
 debuggable messages with suggested actions, not bare stacktraces.

@@ -12,7 +12,7 @@ from titan_chordpro.writer.profiles import PROFILES
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="titan-chordpro")
+    parser = argparse.ArgumentParser(prog="titan-chordpro-gen")
     parser.add_argument("audio", type=Path, nargs="?")
     parser.add_argument("--profile", default="inline_slash")
     parser.add_argument("--language", default=None)

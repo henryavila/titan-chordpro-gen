@@ -1,5 +1,5 @@
 ---
-lastUpdated: 2026-08-04T16:10:45Z
+lastUpdated: 2026-08-30T13:23:58Z
 schemaVersion: '0.1'
 activePlans: 1
 activeInitiatives: 0
@@ -20,13 +20,22 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 | Slug | Status | Current Phase | Branch | Started |
 |------|--------|---------------|--------|---------|
-| titan-v01 | active | F2 — Phase C Validation and quality | plan/titan-v01 | 2026-05-08 |
+| rebrand-gen | active (phases done — ready to publish) | F2 done | plan/rebrand-gen | 2026-08-28 |
+| titan-v01 | paused | F2 — Phase C Validation and quality | plan/titan-v01 | 2026-05-08 |
 
-### titan-v01 — active phase initiatives
+### rebrand-gen — phase initiatives
 
 | Slug | Phase | Status | Next Action |
 |------|-------|--------|-------------|
-| titan-v01-f2-phase-c-validation-and-quality | F2 | active | Execute T-003: T70 quality loop (detection and placement) |
+| rebrand-gen-f0-anchor-and-inventory | F0 | done | finalize / PR |
+| rebrand-gen-f1-this-repo-identity-flip | F1 | done | — |
+| rebrand-gen-f2-operator-rename-consumer-window | F2 | done | — |
+
+### titan-v01 — paused phase initiatives
+
+| Slug | Phase | Status | Next Action |
+|------|-------|--------|-------------|
+| titan-v01-f2-phase-c-validation-and-quality | F2 | paused | (paused for rebrand-gen) |
 
 ## Active Initiatives (standalone)
 
@@ -42,4 +51,6 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 | Timestamp | Description |
 |-----------|-------------|
+| 2026-08-30 | validated rebrand deliverables; close phases post-hoc; publish PR vs plan/titan-v01 |
+| 2026-08-28 | pause titan-v01; materialize rebrand-gen on plan/rebrand-gen worktree |
 | 2026-08-04 | adopt titan-v01 nested; legacy flat → legacy-flat-pre-adopt-2026-08-04 |

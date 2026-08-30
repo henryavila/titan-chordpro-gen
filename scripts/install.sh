@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/install.sh
-# End-to-end installer for Titan ChordPro Lib on macOS Apple Silicon.
+# End-to-end installer for Titan ChordPro Gen on macOS Apple Silicon.
 #
 # Sets up everything needed for `scripts/render_from_url.py` to work from
 # a fresh clone:

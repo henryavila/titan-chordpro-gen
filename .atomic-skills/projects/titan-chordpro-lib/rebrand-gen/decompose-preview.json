@@ -1,0 +1,170 @@
+{
+  "plan": {
+    "title": "Rebrand to titan-chordpro-gen",
+    "narrative": "Flip external identity (repo, PyPI name, live docs, CLI primary) from `titan-chordpro-lib` to `titan-chordpro-gen` while keeping the Python import package `titan_chordpro` stable (Option A). Coordinate the GitHub/folder rename window with `curta` pins and sibling path links. Design SoT: `design.md` (critic Approved, user Approved 2026-08-28).",
+    "principles": [
+      {
+        "id": "P1",
+        "title": "External identity, stable import",
+        "body": "Change what people install and type (`titan-chordpro-gen`); do not rename `import titan_chordpro` in this plan."
+      },
+      {
+        "id": "P2",
+        "title": "Live surface only",
+        "body": "Update README, roadmap H1, CLAUDE.md, install scripts, live product docstrings, CHANGELOG Unreleased. Leave `docs/research/**` and `docs/superpowers/**` untouched."
+      },
+      {
+        "id": "P3",
+        "title": "Staged cutover with a same-day consumer window",
+        "body": "Merge metadata/docs PR in this repo first; then operator renames GitHub + local folder; same operational day update `curta` pins/paths and `chordpro-viewer` NAMING link."
+      },
+      {
+        "id": "P4",
+        "title": "Own initiative — not F2",
+        "body": "Do not piggyback on the Phase C quality loop. Anchor `rebrand-gen` (or explicit ad-hoc) before code edits."
+      },
+      {
+        "id": "P5",
+        "title": "Operator owns irreversible renames",
+        "body": "GitHub repository rename and local directory rename are operator steps; agent prepares strings and verifies after."
+      }
+    ],
+    "glossary": [
+      {
+        "term": "Option A",
+        "definition": "Keep Python import package `titan_chordpro`; only distribution/repo/docs/CLI surface rename"
+      },
+      {
+        "term": "Primary CLI",
+        "definition": "Console script `titan-chordpro-gen` → `titan_chordpro.cli:main`"
+      },
+      {
+        "term": "Alias CLI",
+        "definition": "Console script `titan-chordpro` kept for compat (same entry)"
+      },
+      {
+        "term": "Live surface",
+        "definition": "Installable/product-facing docs and strings (not historical research)"
+      },
+      {
+        "term": "Cutover window",
+        "definition": "Same-day operator GitHub+folder rename + curta pin/path PR"
+      }
+    ],
+    "phaseIds": [
+      "F0",
+      "F1",
+      "F2"
+    ]
+  },
+  "initiatives": [
+    {
+      "phaseId": "F0",
+      "slug": "rebrand-gen-f0-anchor-and-inventory",
+      "title": "Anchor and inventory",
+      "goal": "Initiative/branch anchored; MUST_CHANGE inventory confirmed against design; no code rename yet.",
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "T-001",
+          "description": "Declare / materialize initiative for `rebrand-gen` (or explicit ad-hoc) matching the working branch; park or leave F2 untouched."
+        },
+        {
+          "id": "T-002",
+          "title": "T-002",
+          "description": "Freeze MUST_CHANGE list from `research-digest.md` + design (pyproject, uv.lock, README, CLAUDE, roadmap H1, CHANGELOG Unreleased, install.sh, live core docstrings, chordino MIT blurb)."
+        },
+        {
+          "id": "T-003",
+          "title": "T-003",
+          "description": "Note curta + chordpro-viewer external paths for the cutover window (no edit yet)."
+        }
+      ],
+      "exitGates": []
+    },
+    {
+      "phaseId": "F1",
+      "slug": "rebrand-gen-f1-this-repo-identity-flip",
+      "title": "This-repo identity flip",
+      "goal": "This repository’s distribution name, CLI scripts, live docs, and CHANGELOG reflect `titan-chordpro-gen` with Option A imports; tests green.",
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "T-010",
+          "description": "`pyproject.toml`: `[project].name = \"titan-chordpro-gen\"`; description may say generator/audio-to-ChordPro; dual `[project.scripts]` (`titan-chordpro-gen` primary + `titan-chordpro` alias)."
+        },
+        {
+          "id": "T-002",
+          "title": "T-011",
+          "description": "Regenerate `uv.lock` for the new distribution name."
+        },
+        {
+          "id": "T-003",
+          "title": "T-012",
+          "description": "CHANGELOG: add `[Unreleased]` chore entry — repo/PyPI rename; import path unchanged; CLI primary + alias."
+        },
+        {
+          "id": "T-004",
+          "title": "T-013",
+          "description": "Live docs: README title **Titan ChordPro Gen** + formerly line + link to `docs/REBRAND-HANDOFF.md`; roadmap H1; CLAUDE.md H1; `scripts/install.sh` banner/strings."
+        },
+        {
+          "id": "T-005",
+          "title": "T-014",
+          "description": "Live product strings in `titan_chordpro/core/{exceptions,schemas,protocols,logging}.py` and `engines/chord/chordino.py` MIT blurb → Gen / new dist name where product-titled."
+        },
+        {
+          "id": "T-006",
+          "title": "T-015",
+          "description": "Verify: `pytest` (unit) green; `python -c \"import titan_chordpro\"`; `titan-chordpro-gen --help` and `titan-chordpro --help` after editable install."
+        },
+        {
+          "id": "T-007",
+          "title": "T-016",
+          "description": "Commit `chore: rebrand repository to titan-chordpro-gen` (per handoff §7); open/merge PR for this repo only. **Do not** flip badge URLs to `-gen` until F2 operator rename lands (or flip in a follow-up commit same window)."
+        }
+      ],
+      "exitGates": []
+    },
+    {
+      "phaseId": "F2",
+      "slug": "rebrand-gen-f2-operator-rename-consumer-window",
+      "title": "Operator rename + consumer window",
+      "goal": "GitHub repo and local directory are `titan-chordpro-gen`; badges point at new slug; curta and chordpro-viewer paths/pins updated same day.",
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "T-020",
+          "description": "**Operator:** rename GitHub `titan-chordpro-lib` → `titan-chordpro-gen`; update local folder + `git remote -v`."
+        },
+        {
+          "id": "T-002",
+          "title": "T-021",
+          "description": "Flip README CI/Nightly badge URLs to `henryavila/titan-chordpro-gen`."
+        },
+        {
+          "id": "T-003",
+          "title": "T-022",
+          "description": "**curta:** update `pyproject.toml` git pins/distribution name; `bin/setup` default `../titan-chordpro-gen` + log strings; regen lock; keep `import titan_chordpro`."
+        },
+        {
+          "id": "T-004",
+          "title": "T-023",
+          "description": "**chordpro-viewer:** update `docs/NAMING.md` relative link to handoff; scrub transitional “hoje lib” in README/SPEC if still present."
+        },
+        {
+          "id": "T-005",
+          "title": "T-024",
+          "description": "**sda-v2 (docs only):** polish `07b-cifra-viewer.md` transitional wording if needed."
+        },
+        {
+          "id": "T-006",
+          "title": "T-025",
+          "description": "Fill handoff checklist boxes in PR body; confirm done criteria §4.7."
+        }
+      ],
+      "exitGates": []
+    }
+  ],
+  "warnings": []
+}
