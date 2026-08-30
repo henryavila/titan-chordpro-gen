@@ -5,9 +5,9 @@ title: Rebrand to titan-chordpro-gen
 version: "1.0"
 status: active
 started: 2026-08-29T02:46:42.203Z
-lastUpdated: 2026-08-29T02:46:42.203Z
+lastUpdated: 2026-08-30T13:23:58Z
 branch: plan/rebrand-gen
-currentPhase: F0
+currentPhase: F2
 parallelismAllowed: false
 principles:
   - id: P1
@@ -58,11 +58,29 @@ phases:
       criteria:
         - id: F0-G1
           description: Branch plan/rebrand-gen ativa e titan-v01 pausado
-          status: pending
+          status: met
+          metAt: 2026-08-30T13:23:58Z
+          evidence:
+            verifierKind: manual
+            verifiedAt: 2026-08-30T13:23:58Z
+            verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
+            passed: true
+            outputSummary: Validated 2026-08-30 against worktree + consumers
         - id: F0-G2
           description: Inventário MUST_CHANGE alinhado ao design/digest
-          status: pending
-    status: active
+          status: met
+          metAt: 2026-08-30T13:23:58Z
+          evidence:
+            verifierKind: manual
+            verifiedAt: 2026-08-30T13:23:58Z
+            verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
+            passed: true
+            outputSummary: Validated 2026-08-30 against worktree + consumers
+    reviewGate:
+      status: skipped
+      reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
+      verifiedAt: 2026-08-30T13:23:58Z
+    status: done
     businessIntent:
       value: Acabar a ambiguidade -lib vs UI alinhando repo, PyPI e CLI primary a
         titan-chordpro-gen sem quebrar callers.
@@ -79,7 +97,7 @@ phases:
   - id: F1
     slug: rebrand-gen-f1-this-repo-identity-flip
     title: This-repo identity flip
-    goal: This repository’s distribution name, CLI scripts, live docs, and CHANGELOG
+    goal: This repository's distribution name, CLI scripts, live docs, and CHANGELOG
       reflect `titan-chordpro-gen` with Option A imports; tests green.
     dependsOn:
       - F0
@@ -90,11 +108,29 @@ phases:
       criteria:
         - id: F1-G1
           description: pyproject name titan-chordpro-gen e dual scripts
-          status: pending
+          status: met
+          metAt: 2026-08-30T13:23:58Z
+          evidence:
+            verifierKind: manual
+            verifiedAt: 2026-08-30T13:23:58Z
+            verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
+            passed: true
+            outputSummary: Validated 2026-08-30 against worktree + consumers
         - id: F1-G2
           description: pytest + import titan_chordpro + ambos CLIs --help
-          status: pending
-    status: pending
+          status: met
+          metAt: 2026-08-30T13:23:58Z
+          evidence:
+            verifierKind: manual
+            verifiedAt: 2026-08-30T13:23:58Z
+            verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
+            passed: true
+            outputSummary: Validated 2026-08-30 against worktree + consumers
+    reviewGate:
+      status: skipped
+      reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
+      verifiedAt: 2026-08-30T13:23:58Z
+    status: done
   - id: F2
     slug: rebrand-gen-f2-operator-rename-consumer-window
     title: Operator rename + consumer window
@@ -109,11 +145,29 @@ phases:
       criteria:
         - id: F2-G1
           description: GitHub e pasta local titan-chordpro-gen
-          status: pending
+          status: met
+          metAt: 2026-08-30T13:23:58Z
+          evidence:
+            verifierKind: manual
+            verifiedAt: 2026-08-30T13:23:58Z
+            verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
+            passed: true
+            outputSummary: Validated 2026-08-30 against worktree + consumers
         - id: F2-G2
           description: curta pins/path + NAMING link + badges
-          status: pending
-    status: pending
+          status: met
+          metAt: 2026-08-30T13:23:58Z
+          evidence:
+            verifierKind: manual
+            verifiedAt: 2026-08-30T13:23:58Z
+            verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
+            passed: true
+            outputSummary: Validated 2026-08-30 against worktree + consumers
+    reviewGate:
+      status: skipped
+      reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
+      verifiedAt: 2026-08-30T13:23:58Z
+    status: done
 references: []
 ---
 
@@ -134,3 +188,8 @@ Flip external identity (repo, PyPI name, live docs, CLI primary) from `titan-cho
 ## 3. Phase tree
 
 _(Canonical list in frontmatter `phases:`. aiDeck renders the tree visually when running.)_
+
+## Reviews
+
+- plan-end: SKIPPED — non-automate; operator accepted residual risk after deliverable validation (2026-08-30T13:23:58Z).
+- phase reviewGates: skipped (post-hoc close) for F0/F1/F2.
