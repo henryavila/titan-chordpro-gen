@@ -168,7 +168,10 @@ phases:
       reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
       verifiedAt: 2026-08-30T13:23:58Z
     status: done
-references: []
+references:
+  - kind: url
+    path: https://github.com/henryavila/titan-chordpro-gen/pull/5
+    label: "PR #5"
 ---
 
 # Rebrand to titan-chordpro-gen
