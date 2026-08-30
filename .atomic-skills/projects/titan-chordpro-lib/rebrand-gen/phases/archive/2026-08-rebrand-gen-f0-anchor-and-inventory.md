@@ -4,10 +4,10 @@ slug: rebrand-gen-f0-anchor-and-inventory
 title: Anchor and inventory
 goal: Initiative/branch anchored; MUST_CHANGE inventory confirmed against
   design; no code rename yet.
-status: done
+status: archived
 branch: plan/rebrand-gen
 started: 2026-08-29T02:46:42.203Z
-lastUpdated: 2026-08-30T13:23:58Z
+lastUpdated: 2026-08-30T21:48:50Z
 nextAction: null
 parentPlan: rebrand-gen
 phaseId: F0
@@ -28,6 +28,8 @@ tasksDone: 3
 tasksTotal: 3
 gatesMet: 2
 gatesTotal: 2
+weightDone: 3
+weightTotal: 3
 exitGates:
   - id: F0-G1
     description: Branch plan/rebrand-gen ativa e titan-v01 pausado
@@ -39,6 +41,7 @@ exitGates:
       verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
       passed: true
       outputSummary: Validated 2026-08-30 against worktree + consumers
+    evidenceSummary: passed · 2026-08-30
   - id: F0-G2
     description: Inventário MUST_CHANGE alinhado ao design/digest
     status: met
@@ -49,6 +52,7 @@ exitGates:
       verifiedCommit: 95934484581c191a081a2ca23109589b551ff339
       passed: true
       outputSummary: Validated 2026-08-30 against worktree + consumers
+    evidenceSummary: passed · 2026-08-30
 stack:
   - id: 1
     title: Anchor and inventory

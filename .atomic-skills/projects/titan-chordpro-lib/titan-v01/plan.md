@@ -3,9 +3,9 @@ schemaVersion: "0.1"
 slug: titan-v01
 title: Titan ChordPro Lib v0.1 — from research to release
 version: "1.0"
-status: paused
+status: active
 started: 2026-05-08T00:00:00Z
-lastUpdated: 2026-08-29T02:46:28Z
+lastUpdated: 2026-08-30T21:48:50Z
 branch: plan/titan-v01
 currentPhase: F2
 executionMode: automate

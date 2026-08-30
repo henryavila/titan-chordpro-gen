@@ -3,9 +3,9 @@ schemaVersion: "0.1"
 slug: rebrand-gen
 title: Rebrand to titan-chordpro-gen
 version: "1.0"
-status: active
+status: archived
 started: 2026-08-29T02:46:42.203Z
-lastUpdated: 2026-08-30T13:23:58Z
+lastUpdated: 2026-08-30T21:48:50Z
 branch: plan/rebrand-gen
 currentPhase: F2
 parallelismAllowed: false
@@ -78,7 +78,8 @@ phases:
             outputSummary: Validated 2026-08-30 against worktree + consumers
     reviewGate:
       status: skipped
-      reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
+      reason: post-hoc close after validated rebrand deliverables (non-automate
+        finalize)
       verifiedAt: 2026-08-30T13:23:58Z
     status: done
     businessIntent:
@@ -128,7 +129,8 @@ phases:
             outputSummary: Validated 2026-08-30 against worktree + consumers
     reviewGate:
       status: skipped
-      reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
+      reason: post-hoc close after validated rebrand deliverables (non-automate
+        finalize)
       verifiedAt: 2026-08-30T13:23:58Z
     status: done
   - id: F2
@@ -165,13 +167,15 @@ phases:
             outputSummary: Validated 2026-08-30 against worktree + consumers
     reviewGate:
       status: skipped
-      reason: "post-hoc close after validated rebrand deliverables (non-automate finalize)"
+      reason: post-hoc close after validated rebrand deliverables (non-automate
+        finalize)
       verifiedAt: 2026-08-30T13:23:58Z
     status: done
 references:
   - kind: url
     path: https://github.com/henryavila/titan-chordpro-gen/pull/5
     label: "PR #5"
+planTitle: Rebrand to titan-chordpro-gen
 ---
 
 # Rebrand to titan-chordpro-gen
