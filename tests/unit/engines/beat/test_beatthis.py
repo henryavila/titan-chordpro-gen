@@ -7,10 +7,22 @@ The integration smoke (T40) is the test that exercises model loading.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+
+@contextmanager
+def _mock_librosa_load(return_value: Any) -> Iterator[MagicMock]:
+    """Inject a fake librosa module so unit CI need not install librosa."""
+    mock_librosa = MagicMock()
+    mock_librosa.load.return_value = return_value
+    with patch.dict("sys.modules", {"librosa": mock_librosa}):
+        yield mock_librosa
 
 
 @pytest.mark.unit
@@ -67,7 +79,7 @@ class TestBeatThisEngineTrack:
         engine._audio2beats = MagicMock(return_value=(fake_beats, fake_downbeats))
 
         # Phase C T70 iter: track() now calls librosa.load before audio2beats.
-        with patch("librosa.load", return_value=([0.0] * 1024, 22050)):
+        with _mock_librosa_load(([0.0] * 1024, 22050)):
             grid = engine.track(fake_audio)
         assert grid.beats == fake_beats
         assert grid.downbeat_indices == [0, 3]
@@ -82,6 +94,6 @@ class TestBeatThisEngineTrack:
         engine._backend = "cpu"
         engine._audio2beats = MagicMock(return_value=([], []))
 
-        with patch("librosa.load", return_value=([0.0] * 1024, 22050)):
+        with _mock_librosa_load(([0.0] * 1024, 22050)):
             with pytest.raises(BeatTrackingError, match="empty"):
                 engine.track(tmp_path / "x.wav")

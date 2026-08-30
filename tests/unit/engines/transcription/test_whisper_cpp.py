@@ -3,10 +3,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+
+@contextmanager
+def _mock_librosa_load(return_value: Any) -> Iterator[MagicMock]:
+    """Inject a fake librosa module so unit CI need not install librosa."""
+    mock_librosa = MagicMock()
+    mock_librosa.load.return_value = return_value
+    with patch.dict("sys.modules", {"librosa": mock_librosa}):
+        yield mock_librosa
 
 
 @pytest.mark.unit
@@ -68,7 +80,7 @@ class TestWhisperWordLevelTimestamps:
     markers across syllables."""
 
     def test_passes_token_timestamps_max_len_split_on_word(self, tmp_path: Path) -> None:
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
         import numpy as np
 
@@ -80,7 +92,7 @@ class TestWhisperWordLevelTimestamps:
         engine._model_id = "medium"
         engine._model = fake_model
 
-        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+        with _mock_librosa_load((np.zeros(16000, dtype=np.float32), 16000)):
             engine.transcribe(tmp_path / "vocals.wav", language="pt")
 
         _args, kwargs = fake_model.transcribe.call_args
@@ -98,7 +110,7 @@ class TestWhisperWordLevelTimestamps:
         in noisy/silent regions of htdemucs-separated vocals. Tightened
         entropy_thold (2.4 -> 2.2) and no_speech_thold (0.6 -> 0.7) to
         suppress these failure modes."""
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
         import numpy as np
 
@@ -110,7 +122,7 @@ class TestWhisperWordLevelTimestamps:
         engine._model_id = "medium"
         engine._model = fake_model
 
-        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+        with _mock_librosa_load((np.zeros(16000, dtype=np.float32), 16000)):
             engine.transcribe(tmp_path / "vocals.wav", language="pt")
 
         _args, kwargs = fake_model.transcribe.call_args
@@ -139,7 +151,7 @@ class TestWhisperCppEngineTranscribe:
         engine._model = fake_model
 
         # Phase C T70 iter: wrapper now resamples via librosa.load; patch it.
-        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+        with _mock_librosa_load((np.zeros(16000, dtype=np.float32), 16000)):
             result = engine.transcribe(tmp_path / "vocals.wav", language="en")
 
         assert result.phonemes is None
@@ -165,7 +177,7 @@ class TestWhisperCppEngineTranscribe:
         engine._model_id = "base"
         engine._model = fake_model
 
-        with patch("librosa.load", return_value=(np.zeros(16000, dtype=np.float32), 16000)):
+        with _mock_librosa_load((np.zeros(16000, dtype=np.float32), 16000)):
             result = engine.transcribe(tmp_path / "silent.wav")
 
         assert result.words == []
@@ -208,7 +220,7 @@ class TestWhisperSpecialTokenFilter:
         s1 = MagicMock(t0=0, t1=100, text="[Música]")
         s2 = MagicMock(t0=100, t1=200, text="Hello")
         engine, fake_audio = self._make_engine([s1, s2])
-        with patch("librosa.load", return_value=(fake_audio, 16000)):
+        with _mock_librosa_load((fake_audio, 16000)):
             result = engine.transcribe(tmp_path / "vocals.wav")
         assert [w.text for w in result.words] == ["Hello"]
 
@@ -216,7 +228,7 @@ class TestWhisperSpecialTokenFilter:
         s1 = MagicMock(t0=0, t1=100, text="[BLANK_AUDIO]")
         s2 = MagicMock(t0=100, t1=200, text="world")
         engine, fake_audio = self._make_engine([s1, s2])
-        with patch("librosa.load", return_value=(fake_audio, 16000)):
+        with _mock_librosa_load((fake_audio, 16000)):
             result = engine.transcribe(tmp_path / "vocals.wav")
         assert [w.text for w in result.words] == ["world"]
 
@@ -224,7 +236,7 @@ class TestWhisperSpecialTokenFilter:
         """Only WHOLE-segment [...] tokens are dropped; mixed text stays."""
         s1 = MagicMock(t0=0, t1=100, text="Hello [pause] world")
         engine, fake_audio = self._make_engine([s1])
-        with patch("librosa.load", return_value=(fake_audio, 16000)):
+        with _mock_librosa_load((fake_audio, 16000)):
             result = engine.transcribe(tmp_path / "vocals.wav")
         assert [w.text for w in result.words] == ["Hello [pause] world"]
 
@@ -232,6 +244,6 @@ class TestWhisperSpecialTokenFilter:
         s1 = MagicMock(t0=0, t1=100, text="[]")
         s2 = MagicMock(t0=100, t1=200, text="ok")
         engine, fake_audio = self._make_engine([s1, s2])
-        with patch("librosa.load", return_value=(fake_audio, 16000)):
+        with _mock_librosa_load((fake_audio, 16000)):
             result = engine.transcribe(tmp_path / "vocals.wav")
         assert [w.text for w in result.words] == ["ok"]
