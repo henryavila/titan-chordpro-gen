@@ -1316,6 +1316,7 @@ svg.diagram text{fill:var(--fg-default)}
 <script>
 (function(){
 var MIN=0.3,MAX=2.8,PREFIX="as-flow-zoom:";
+var PDF_DIAGRAM_STYLE="svg{--bg-sunken:#e8edf4;--bg-canvas:#f4f6fa;--bg-surface:#ffffff;--bg-elevated:#eef2f7;--border-subtle:#e8edf3;--border-default:#d5dce6;--fg-default:#12161d;--fg-muted:#4a5565;--fg-subtle:#6b7585;--fg-faint:#98a1ad;--status-success:#4cc28e;--status-warning:#e0a44a;--status-error:#ff5c5c;--status-info:#5fb1ff;--status-success-line:#9bd1c1;--status-warning-line:#dac4a4;--status-error-line:#e99fa4;--status-info-line:#a3caf0;--font-sans:\"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;--font-mono:\"JetBrains Mono\", ui-monospace, \"SF Mono\", \"Menlo\", \"Consolas\", monospace}svg.diagram{display:block;max-width:none;font-family:var(--font-sans);shape-rendering:geometricPrecision;text-rendering:geometricPrecision}\nsvg.diagram text{fill:var(--fg-default)}\n.actor-box{fill:var(--bg-elevated);stroke:var(--border-default);stroke-width:1}\n.actor-label{fill:var(--fg-default);font-size:11px;font-weight:600}\n.actor-stick-bg{fill:var(--bg-surface)}\n.actor-stick-rule{stroke:var(--border-default);stroke-width:1}\n.lifeline{stroke:var(--fg-faint);stroke-width:1;stroke-dasharray:3 5;pointer-events:none}\n.life-hit{stroke:transparent;stroke-width:20;fill:none}\n.arrow{stroke:var(--fg-muted);stroke-width:1.25;fill:none}\n.arrow.async{stroke-dasharray:5 4}\n.arrow-head{fill:var(--fg-muted)}\n.msg{fill:var(--fg-default);font-size:12px}\n.xor-wash{fill:color-mix(in srgb,var(--bg-elevated) 18%,transparent);stroke:none}\n.xor-rail{stroke:var(--status-warning-line);stroke-width:2;fill:none}\n.xor-q{fill:var(--status-warning);font-size:12px;font-weight:600}\n.hair{stroke:var(--border-subtle);stroke-width:1}\n.pill{fill:var(--bg-sunken);stroke:var(--status-warning-line);stroke-width:1}\n.pill-t{fill:var(--status-warning);font-size:11px;font-weight:600}\n.loop-arc{fill:none;stroke:var(--status-warning);stroke-width:1.25;stroke-dasharray:4 3}\n.loop-head{fill:var(--status-warning)}\n.act{fill:var(--bg-elevated);stroke:var(--border-default);stroke-width:1.25}\n.act-t{fill:var(--fg-default);font-size:12px;font-weight:500}\n.who{fill:var(--fg-subtle);font-size:10px;font-family:var(--font-mono)}\n.diamond{fill:color-mix(in srgb,var(--status-warning) 10%,var(--bg-surface));stroke:var(--status-warning-line);stroke-width:1.25}\n.xor-t{fill:var(--fg-default);font-size:12px;font-weight:600}\n.bar{fill:var(--fg-muted)}\n.evt{fill:var(--bg-canvas);stroke:var(--status-error-line);stroke-width:1.5}\n.sub-mark{fill:none;stroke:var(--border-default);stroke-width:1}\n.edge{stroke:var(--fg-faint);stroke-width:1.15;fill:none}\n.edge.back{stroke:var(--status-warning);stroke-dasharray:4 3}\n.edge-head{fill:var(--fg-muted)}\n.edge-head.back{fill:var(--status-warning)}\n.edge-t{fill:var(--fg-muted);font-size:11px}\n.end-ok{fill:var(--status-success);stroke:var(--status-success);stroke-width:1.5}\n.end-bad{fill:var(--status-error);stroke:var(--status-error);stroke-width:1.5}\n.end-t{fill:var(--fg-muted);font-size:11px}\n.end-hole{fill:var(--bg-canvas)}\n.st{fill:var(--bg-sunken);stroke:var(--border-default);stroke-width:1.15}\n.st.entry{stroke:var(--status-info);stroke-width:1.75}\n.st.term{stroke:var(--status-success);stroke-width:1.75}\n.st-t{fill:var(--fg-default);font-size:12px;font-weight:500}\n.mach-title{fill:var(--fg-muted);font-size:12px;font-weight:600}\n.mach-legend{fill:var(--fg-subtle);font-size:10px}\n.edge-cap{fill:var(--bg-surface);stroke:var(--border-default);stroke-width:1}\n.edge-title{fill:var(--fg-default);font-size:11px;font-weight:600}\n.fx{fill:var(--fg-subtle);font-size:10px;font-family:var(--font-sans)}\n.fx-pill{fill:var(--bg-sunken);stroke:var(--border-default);stroke-width:1}\n.fx-pill-t{fill:var(--fg-muted);font-size:9px;font-weight:600}\n.xor-wash{fill:rgba(238,242,247,0.18);stroke:none}\n.diamond{fill:#fcf6ed;stroke:var(--status-warning-line);stroke-width:1.25}\n";
 var slug=document.documentElement.getAttribute("data-fl-slug")||"default";
 var key=PREFIX+slug;
 var viewport=document.getElementById("fl-viewport");
@@ -1434,12 +1435,24 @@ function buildFlowPdf(input){
   for(i=1;i<=maxObj;i++) xref+=String(offsets[i]).padStart(10,"0")+" 00000 n \n";
   return concat([header].concat(bodyParts).concat([enc(xref),enc("trailer\n<< /Size "+(maxObj+1)+" /Root 1 0 R >>\nstartxref\n"+xrefStart+"\n%%EOF\n")]));
 }
+function svgForPdf(svg){
+  var clone=svg.cloneNode(true);
+  clone.removeAttribute("id");
+  var style=document.createElementNS("http://www.w3.org/2000/svg","style");
+  style.setAttribute("data-fl-pdf","1");
+  style.textContent=PDF_DIAGRAM_STYLE;
+  clone.insertBefore(style,clone.firstChild);
+  return clone;
+}
 function svgToJpeg(svg){
   return new Promise(function(resolve,reject){
     var vb=svg.viewBox&&svg.viewBox.baseVal;
     var w=(vb&&vb.width)||svg.width.baseVal.value||1;
     var h=(vb&&vb.height)||svg.height.baseVal.value||1;
-    var xml=new XMLSerializer().serializeToString(svg);
+    var xml=new XMLSerializer().serializeToString(svgForPdf(svg));
+    if(xml.indexOf('xmlns="http://www.w3.org/2000/svg"')<0){
+      xml=xml.replace(/^<svg/,'<svg xmlns="http://www.w3.org/2000/svg"');
+    }
     var blob=new Blob([xml],{type:"image/svg+xml;charset=utf-8"});
     var url=URL.createObjectURL(blob);
     var img=new Image();
