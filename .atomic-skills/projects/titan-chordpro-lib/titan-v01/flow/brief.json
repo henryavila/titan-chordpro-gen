@@ -1,0 +1,66 @@
+{
+  "actor": "Operador Mac",
+  "scenario": "Gerar ChordPro editável a partir de áudio com acordes na sílaba correta e validar qualidade no corpus iasdermelinda.",
+  "decisions": [
+    {
+      "id": "EntradaOk",
+      "question": "Há áudio legível (e letras quando necessárias) para processar?",
+      "outcomes": ["entrada_ok", "entrada_falha"]
+    },
+    {
+      "id": "ModoEngines",
+      "question": "Rodar com mocks (smoke) ou engines ML reais?",
+      "outcomes": ["mocks", "engines_reais"]
+    },
+    {
+      "id": "QualidadePassa",
+      "question": "Mean WCSR-majmin do sample ≥ 0.70?",
+      "outcomes": ["wcsr_ok", "wcsr_baixo"]
+    },
+    {
+      "id": "DivergenciasOk",
+      "question": "Henry dá GO nas top divergences (≤3 Titan-wrong)?",
+      "outcomes": ["go", "retrabalho"]
+    },
+    {
+      "id": "ProntoParaTag",
+      "question": "Versão c0 pronta para o operador criar a tag v0.1.0-c0?",
+      "outcomes": ["tag_agora", "adiar_tag"]
+    }
+  ],
+  "stateChanges": [
+    {
+      "id": "pipeline",
+      "states": [
+        "ocioso",
+        "separando",
+        "transcrevendo",
+        "alinhando",
+        "detectando",
+        "fundindo",
+        "escrevendo",
+        "concluido",
+        "falhou"
+      ]
+    },
+    {
+      "id": "qualidade",
+      "states": [
+        "nao_medida",
+        "sample_abaixo",
+        "sample_ok",
+        "bloqueada",
+        "aprovada"
+      ]
+    },
+    {
+      "id": "release",
+      "states": [
+        "rascunho",
+        "c0_preparado",
+        "tagueado",
+        "adiado"
+      ]
+    }
+  ]
+}

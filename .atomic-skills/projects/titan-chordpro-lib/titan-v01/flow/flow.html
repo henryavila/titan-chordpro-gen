@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-fl-slug="titan-v01" data-fl-content-sha="0b4eccc016d9c38993f4c3e83fbcb64fec68859822900bd656ed388c2abdb279">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluxo — Áudio → ChordPro com validação de qualidade</title>
+<script>(function(){var K="as-color-scheme";function read(){try{var v=localStorage.getItem(K);return v==='light'||v==='dark'?v:'system'}catch(e){return'system'}}function apply(mode){var r=document.documentElement;if(mode==='light'||mode==='dark')r.setAttribute('data-theme',mode);else r.removeAttribute('data-theme');document.querySelectorAll('[data-theme-set]').forEach(function(b){b.setAttribute('aria-checked',String(b.getAttribute('data-theme-set')===mode))})}apply(read());document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-theme-set]');if(!b)return;var mode=b.getAttribute('data-theme-set');try{localStorage.setItem(K,mode)}catch(err){}apply(mode)});document.addEventListener('DOMContentLoaded',function(){apply(read())})})();</script>
+<style>
+/*
+ * Atomic Skills product docs — shared design-system tokens.
+ * Extracted from docs/design/project-onboarding/index.html (aiDeck foundations).
+ * Dark default. Light via prefers-color-scheme or html[data-theme=light].
+ * Site pages link this file; onboarding may keep its inline copy.
+ */
+
+/* ─────────────────────────────────────────────────────────────────────
+   aiDeck Design System — Foundations (v2)
+   Dark default. Light is a second palette on the same token names.
+
+   Tokens are intentionally domain-agnostic — `status-success` not
+   `phase-done`, `chart-1..8` not `verifier-shell`.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Fonts — Inter (sans) + JetBrains Mono (identifiers). System stacks fall
+   back when webfonts are unavailable (offline-friendly). */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Surfaces ───────────────────────────────────────────────── */
+  --bg-sunken:      #07090d;   /* inputs, code blocks, deepest wells */
+  --bg-canvas:      #0a0d12;   /* page background */
+  --bg-surface:     #12161d;   /* widget cards, section panels */
+  --bg-elevated:    #1a1f28;   /* hover, popovers, dropdowns */
+  --bg-overlay:     #232936;   /* selected rows, focus halos */
+  --bg-highlight:   #2d3340;   /* highest — used sparingly */
+
+  /* ── Glass ──────────────────────────────────────────────────── */
+  --glass-thin:     rgba(18, 22, 29, 0.55);
+  --glass-medium:   rgba(18, 22, 29, 0.72);
+  --glass-thick:    rgba(10, 13, 18, 0.85);
+  --glass-border:   rgba(255, 255, 255, 0.06);
+  --glass-blur:     saturate(180%) blur(20px);
+  --glass-blur-sm:  saturate(160%) blur(10px);
+
+  /* ── Borders ────────────────────────────────────────────────── */
+  --border-subtle:  #1a2029;
+  --border-default: #262d38;
+  --border-strong:  #3d4656;
+  --border-bright:  #555f72;
+
+  /* ── Foreground ─────────────────────────────────────────────── */
+  --fg-default:     #e9eef5;   /* primary text — body, headings */
+  --fg-muted:       #98a1ad;   /* secondary — captions, labels */
+  --fg-subtle:      #6b7585;   /* tertiary — metadata */
+  --fg-faint:       #424a5a;   /* lowest — disabled */
+  --fg-on-accent:   #08090d;   /* text on saturated chip fill */
+
+  /* ── Semantic status ────────────────────────────────────────── */
+  --status-success: #4cc28e;   /* emerald   — passed, done, healthy */
+  --status-warning: #e0a44a;   /* amber     — needs attention, blocked */
+  --status-error:   #ff5c5c;   /* coral red — failed, critical, broken */
+  --status-info:    #5fb1ff;   /* azure     — active, running, current */
+  --status-neutral: #8b95a3;   /* slate     — idle, pending, unknown */
+
+  --status-success-bg: color-mix(in srgb, var(--status-success) 14%, var(--bg-surface));
+  --status-warning-bg: color-mix(in srgb, var(--status-warning) 14%, var(--bg-surface));
+  --status-error-bg:   color-mix(in srgb, var(--status-error)   16%, var(--bg-surface));
+  --status-info-bg:    color-mix(in srgb, var(--status-info)    14%, var(--bg-surface));
+  --status-neutral-bg: var(--bg-elevated);
+
+  --status-success-line: color-mix(in srgb, var(--status-success) 42%, var(--border-default));
+  --status-warning-line: color-mix(in srgb, var(--status-warning) 42%, var(--border-default));
+  --status-error-line:   color-mix(in srgb, var(--status-error)   48%, var(--border-default));
+  --status-info-line:    color-mix(in srgb, var(--status-info)    42%, var(--border-default));
+  --status-neutral-line: var(--border-default);
+
+  /* ── Accents ────────────────────────────────────────────────── */
+  --accent-primary: var(--status-info);
+  --accent-focus:   #88c4ff;
+  --accent-link:    #88c4ff;
+
+  /* ── Typography stacks ──────────────────────────────────────── */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
+               "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono",
+               "Menlo", "Consolas", monospace;
+  --font-display: var(--font-sans);
+
+  /* ── Type scale ─────────────────────────────────────────────── */
+  --fs-2xs: 10px;
+  --fs-xs:  11px;
+  --fs-sm:  12px;
+  --fs-base:13px;
+  --fs-md:  14px;
+  --fs-lg:  16px;
+  --fs-xl:  20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 32px;
+  --fs-4xl: 40px;
+  --fs-5xl: 56px;
+
+  --lh-tight:  1.15;
+  --lh-snug:   1.35;
+  --lh-normal: 1.5;
+  --lh-relaxed:1.65;
+
+  --tracking-tight:  -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-wider:  0.08em;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ── Spacing (4px base) ─────────────────────────────────────── */
+  --space-0:  0;
+  --space-1:  2px;
+  --space-2:  4px;
+  --space-3:  6px;
+  --space-4:  8px;
+  --space-5:  10px;
+  --space-6:  12px;
+  --space-7:  14px;
+  --space-8:  16px;
+  --space-10: 20px;
+  --space-12: 24px;
+  --space-14: 28px;
+  --space-16: 32px;
+  --space-20: 40px;
+  --space-24: 48px;
+  --space-32: 64px;
+
+  /* ── Radii ──────────────────────────────────────────────────── */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-pill: 999px;
+
+  --border-width: 1px;
+
+  /* ── Elevation ──────────────────────────────────────────────── */
+  --highlight-inset:        inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --highlight-inset-strong: inset 0 1px 0 rgba(255, 255, 255, 0.075);
+  --shadow-sm:      0 2px 4px -2px rgba(0, 0, 0, 0.5),
+                    var(--highlight-inset);
+  --shadow-md:      0 8px 24px -8px rgba(0, 0, 0, 0.6),
+                    0 2px 6px -2px rgba(0, 0, 0, 0.4),
+                    var(--highlight-inset);
+  --shadow-focus:   0 0 0 2px var(--bg-canvas),
+                    0 0 0 4px var(--accent-focus);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --bg-sunken:      #e8edf4;
+    --bg-canvas:      #f4f6fa;
+    --bg-surface:     #ffffff;
+    --bg-elevated:    #eef2f7;
+    --bg-overlay:     #e2e8f0;
+    --bg-highlight:   #d8dee8;
+
+    --glass-thin:     rgba(255, 255, 255, 0.55);
+    --glass-medium:   rgba(255, 255, 255, 0.78);
+    --glass-thick:    rgba(244, 246, 250, 0.9);
+    --glass-border:   rgba(15, 23, 42, 0.08);
+
+    --border-subtle:  #e8edf3;
+    --border-default: #d5dce6;
+    --border-strong:  #b8c2d0;
+    --border-bright:  #8b97a8;
+
+    --fg-default:     #12161d;
+    --fg-muted:       #4a5565;
+    --fg-subtle:      #6b7585;
+    --fg-faint:       #98a1ad;
+    --fg-on-accent:   #ffffff;
+
+    --accent-focus:   #1565c0;
+    --accent-link:    #1565c0;
+
+    --highlight-inset:        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    --highlight-inset-strong: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    --shadow-sm:      0 1px 2px rgba(15, 23, 42, 0.06),
+                      0 1px 3px rgba(15, 23, 42, 0.04);
+    --shadow-md:      0 8px 24px -8px rgba(15, 23, 42, 0.12),
+                      0 2px 6px -2px rgba(15, 23, 42, 0.08);
+  }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-sunken:      #e8edf4;
+  --bg-canvas:      #f4f6fa;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #eef2f7;
+  --bg-overlay:     #e2e8f0;
+  --bg-highlight:   #d8dee8;
+
+  --glass-thin:     rgba(255, 255, 255, 0.55);
+  --glass-medium:   rgba(255, 255, 255, 0.78);
+  --glass-thick:    rgba(244, 246, 250, 0.9);
+  --glass-border:   rgba(15, 23, 42, 0.08);
+
+  --border-subtle:  #e8edf3;
+  --border-default: #d5dce6;
+  --border-strong:  #b8c2d0;
+  --border-bright:  #8b97a8;
+
+  --fg-default:     #12161d;
+  --fg-muted:       #4a5565;
+  --fg-subtle:      #6b7585;
+  --fg-faint:       #98a1ad;
+  --fg-on-accent:   #ffffff;
+
+  --accent-focus:   #1565c0;
+  --accent-link:    #1565c0;
+
+  --highlight-inset:        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --highlight-inset-strong: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --shadow-sm:      0 1px 2px rgba(15, 23, 42, 0.06),
+                    0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-md:      0 8px 24px -8px rgba(15, 23, 42, 0.12),
+                    0 2px 6px -2px rgba(15, 23, 42, 0.08);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-canvas);
+  color: var(--fg-default);
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "calt" 0;
+}
+
+code {
+  font-size: 0.92em;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.35em;
+}
+
+pre {
+  margin: 0;
+  padding: var(--space-8);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+}
+
+pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* ── Layout chrome for product docs ───────────────────────────────── */
+
+.site-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-10) var(--space-24);
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  margin-bottom: var(--space-16);
+  padding-bottom: var(--space-10);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.site-brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+
+.site-brand:hover {
+  text-decoration: none;
+}
+
+.site-brand-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.site-brand-sub {
+  font-size: var(--fs-xs);
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.site-nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  color: var(--fg-default);
+  background: var(--bg-elevated);
+  text-decoration: none;
+}
+
+.site-nav a.active {
+  color: var(--status-info);
+  background: var(--status-info-bg);
+  border-color: var(--status-info-line);
+}
+
+.site-header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.theme-switch {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.theme-switch button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  height: 28px;
+  padding: 0 var(--space-5);
+  cursor: pointer;
+}
+
+.theme-switch button[aria-checked="true"] {
+  background: var(--bg-surface);
+  color: var(--fg-default);
+}
+
+.theme-switch button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.site-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.site-footer {
+  margin-top: var(--space-24);
+  padding-top: var(--space-10);
+  border-top: 1px solid var(--border-default);
+  color: var(--fg-subtle);
+  font-size: var(--fs-sm);
+}
+
+h1, h2, h3 {
+  margin: 0;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: var(--fw-semibold);
+}
+
+h1 {
+  font-size: var(--fs-3xl);
+}
+
+h2 {
+  font-size: var(--fs-xl);
+  margin-top: var(--space-4);
+}
+
+h3 {
+  font-size: var(--fs-lg);
+}
+
+.lede {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--fs-md);
+  line-height: var(--lh-relaxed);
+  max-width: 68ch;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10) var(--space-12);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-8);
+}
+
+.card a.card-title {
+  color: var(--fg-default);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+
+.card a.card-title:hover {
+  color: var(--accent-link);
+  text-decoration: underline;
+}
+
+.card .one-liner {
+  margin: var(--space-4) 0 0;
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+}
+
+.iron-law {
+  margin-top: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background: color-mix(in srgb, var(--status-warning) 10%, var(--bg-surface));
+  border: 1px solid var(--status-warning-line);
+  border-radius: var(--radius-md);
+  color: var(--status-warning);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.badge-tested {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-line);
+  color: var(--status-success);
+}
+
+.badge-theoretical {
+  background: var(--status-neutral-bg);
+  border-color: var(--status-neutral-line);
+  color: var(--fg-muted);
+}
+
+.badge-module {
+  background: var(--status-info-bg);
+  border-color: var(--status-info-line);
+  color: var(--status-info);
+}
+
+ul.plain {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--fg-muted);
+}
+
+ul.plain li + li {
+  margin-top: var(--space-3);
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+}
+
+table.docs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+table.docs th,
+table.docs td {
+  padding: var(--space-6) var(--space-8);
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+}
+
+table.docs th {
+  color: var(--fg-subtle);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  background: var(--bg-elevated);
+}
+
+table.docs tr:last-child td {
+  border-bottom: 0;
+}
+
+table.docs td {
+  color: var(--fg-default);
+}
+
+.eyebrow {
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+.install-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.back-link {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+
+.prose p {
+  margin: 0;
+  color: var(--fg-muted);
+  max-width: 70ch;
+  line-height: var(--lh-relaxed);
+}
+
+.prose p + p {
+  margin-top: var(--space-6);
+}
+
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-stack li {
+  padding: var(--space-6) var(--space-8);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.list-stack .cmd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--status-info);
+}
+
+.list-stack .desc {
+  margin-top: var(--space-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+}
+
+.footnote {
+  color: var(--fg-subtle);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+  max-width: 70ch;
+}
+
+/* ── Project guide spine ────────────────────────────────────────────── */
+
+ol.spine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spine-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 7.5rem;
+  max-width: 11rem;
+  flex: 1 1 7.5rem;
+  padding: var(--space-6) var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  position: relative;
+}
+
+.spine-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--status-info);
+}
+
+.spine-note {
+  font-size: var(--fs-2xs);
+  color: var(--fg-muted);
+  line-height: var(--lh-snug);
+}
+
+.spine-arrow {
+  display: none;
+}
+
+.list-stack .cmd-args {
+  margin-left: var(--space-2);
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+/* flow layout — tokens from inlined ds.css only */
+html,body{height:100%;overflow:hidden;margin:0;background:var(--bg-canvas);color:var(--fg-default);font-family:var(--font-sans)}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%;min-height:0}
+.fl-header.top{z-index:20;background:color-mix(in srgb,var(--bg-canvas) 92%,transparent);border-bottom:1px solid var(--border-default);padding:var(--space-6) var(--space-8);display:flex;flex-direction:column;gap:var(--space-4)}
+.top-row{display:flex;flex-wrap:wrap;gap:var(--space-6) var(--space-8);align-items:center;justify-content:space-between}
+.brand{min-width:0;flex:1 1 220px}
+.fl-title{margin:0;font-size:var(--fs-3xl);font-weight:var(--fw-semibold);letter-spacing:var(--tracking-tight);line-height:var(--lh-tight)}
+.fl-scenario{margin:2px 0 0;font-size:var(--fs-sm);color:var(--fg-muted);max-width:72ch}
+.fl-toc{display:flex;flex-wrap:wrap;gap:var(--space-3);margin:0;padding:0}
+.fl-toc button{appearance:none;display:inline-flex;align-items:center;height:30px;padding:0 var(--space-6);border-radius:var(--radius-pill);border:1px solid var(--border-default);background:var(--bg-elevated);color:var(--fg-muted);font:500 12px var(--font-sans);cursor:pointer}
+.fl-toc button[aria-selected="true"]{color:var(--bg-canvas);background:var(--fg-default);border-color:var(--fg-default)}
+.fl-toc button:focus-visible,.fl-toolbar button:focus-visible{outline:none;box-shadow:var(--shadow-focus)}
+.fl-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3)}
+.fl-toolbar button{appearance:none;height:28px;min-width:28px;padding:0 var(--space-4);border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-surface);color:var(--fg-muted);font:600 12px var(--font-sans);cursor:pointer}
+.fl-toolbar .zoom{font:700 12px var(--font-mono);color:var(--fg-subtle);padding:0 var(--space-3);min-width:3.2rem;text-align:center}
+.theme-switch{display:inline-flex;gap:var(--space-2)}
+.theme-switch button{appearance:none;height:28px;padding:0 var(--space-4);border-radius:var(--radius-pill);border:1px solid var(--border-default);background:var(--bg-elevated);color:var(--fg-muted);font:500 12px var(--font-sans);cursor:pointer}
+.theme-switch button[aria-checked="true"]{background:var(--bg-surface);color:var(--fg-default)}
+.fl-hint{margin:0;font-size:var(--fs-sm);color:var(--fg-subtle);display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:center}
+.fl-meta{display:inline-flex;flex-wrap:wrap;gap:var(--space-6)}
+.fl-meta span{font-size:var(--fs-sm);color:var(--fg-subtle)}
+.fl-meta strong{color:var(--fg-muted);font-weight:var(--fw-medium)}
+.fl-footer{font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--fg-faint)}
+.fl-viewport{position:relative;overflow:auto;min-width:0;min-height:0;cursor:grab;background:radial-gradient(circle at 1px 1px,var(--border-default) 1px,transparent 0) 0 0/22px 22px,var(--bg-sunken)}
+.fl-viewport.is-panning{cursor:grabbing;user-select:none}
+#fl-sizer{position:relative;min-width:100%;min-height:100%}
+#fl-stage{position:absolute;top:0;left:0;padding:var(--space-12)}
+.fl-surface{display:inline-block}
+.fl-surface[hidden]{display:none !important}
+.fl-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.sheet{display:inline-block;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:18px 20px}
+svg.diagram{display:block;max-width:none;font-family:var(--font-sans);shape-rendering:geometricPrecision;text-rendering:geometricPrecision}
+svg.diagram text{fill:var(--fg-default)}
+.actor-box{fill:var(--bg-elevated);stroke:var(--border-default);stroke-width:1}
+.actor-label{fill:var(--fg-default);font-size:11px;font-weight:600}
+.actor-stick-bg{fill:var(--bg-surface)}
+.actor-stick-rule{stroke:var(--border-default);stroke-width:1}
+.lifeline{stroke:var(--fg-faint);stroke-width:1;stroke-dasharray:3 5;pointer-events:none}
+.life-hit{stroke:transparent;stroke-width:20;fill:none}
+.arrow{stroke:var(--fg-muted);stroke-width:1.25;fill:none}
+.arrow.async{stroke-dasharray:5 4}
+.arrow-head{fill:var(--fg-muted)}
+.msg{fill:var(--fg-default);font-size:12px}
+.xor-wash{fill:color-mix(in srgb,var(--bg-elevated) 18%,transparent);stroke:none}
+.xor-rail{stroke:var(--status-warning-line);stroke-width:2;fill:none}
+.xor-q{fill:var(--status-warning);font-size:12px;font-weight:600}
+.hair{stroke:var(--border-subtle);stroke-width:1}
+.pill{fill:var(--bg-sunken);stroke:var(--status-warning-line);stroke-width:1}
+.pill-t{fill:var(--status-warning);font-size:11px;font-weight:600}
+.loop-arc{fill:none;stroke:var(--status-warning);stroke-width:1.25;stroke-dasharray:4 3}
+.loop-head{fill:var(--status-warning)}
+.act{fill:var(--bg-elevated);stroke:var(--border-default);stroke-width:1.25}
+.act-t{fill:var(--fg-default);font-size:12px;font-weight:500}
+.who{fill:var(--fg-subtle);font-size:10px;font-family:var(--font-mono)}
+.diamond{fill:color-mix(in srgb,var(--status-warning) 10%,var(--bg-surface));stroke:var(--status-warning-line);stroke-width:1.25}
+.xor-t{fill:var(--fg-default);font-size:12px;font-weight:600}
+.bar{fill:var(--fg-muted)}
+.evt{fill:var(--bg-canvas);stroke:var(--status-error-line);stroke-width:1.5}
+.sub-mark{fill:none;stroke:var(--border-default);stroke-width:1}
+.edge{stroke:var(--fg-faint);stroke-width:1.15;fill:none}
+.edge.back{stroke:var(--status-warning);stroke-dasharray:4 3}
+.edge-head{fill:var(--fg-muted)}
+.edge-head.back{fill:var(--status-warning)}
+.edge-t{fill:var(--fg-muted);font-size:11px}
+.end-ok{fill:var(--status-success);stroke:var(--status-success);stroke-width:1.5}
+.end-bad{fill:var(--status-error);stroke:var(--status-error);stroke-width:1.5}
+.end-t{fill:var(--fg-muted);font-size:11px}
+.end-hole{fill:var(--bg-canvas)}
+.st{fill:var(--bg-sunken);stroke:var(--border-default);stroke-width:1.15}
+.st.entry{stroke:var(--status-info);stroke-width:1.75}
+.st.term{stroke:var(--status-success);stroke-width:1.75}
+.st-t{fill:var(--fg-default);font-size:12px;font-weight:500}
+.mach-title{fill:var(--fg-muted);font-size:12px;font-weight:600}
+.mach-legend{fill:var(--fg-subtle);font-size:10px}
+.edge-cap{fill:var(--bg-surface);stroke:var(--border-default);stroke-width:1}
+.edge-title{fill:var(--fg-default);font-size:11px;font-weight:600}
+.fx{fill:var(--fg-subtle);font-size:10px;font-family:var(--font-sans)}
+.fx-pill{fill:var(--bg-sunken);stroke:var(--border-default);stroke-width:1}
+.fx-pill-t{fill:var(--fg-muted);font-size:9px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="fl-header top">
+    <div class="top-row">
+      <div class="brand">
+        <h1 class="fl-title">Áudio → ChordPro com validação de qualidade</h1>
+        <p class="fl-scenario">Gerar ChordPro editável a partir de áudio com acordes na sílaba correta e validar qualidade no corpus iasdermelinda.</p>
+      </div>
+      <nav class="fl-toc" role="tablist" aria-label="Camadas do fluxo">
+        <button type="button" role="tab" data-tab="sequence" aria-selected="true" aria-controls="fl-sequence">Sequência</button>
+        <button type="button" role="tab" data-tab="bpm" aria-selected="false" aria-controls="fl-bpm">Fluxo</button>
+        <button type="button" role="tab" data-tab="machines" aria-selected="false" aria-controls="fl-machines">Máquinas</button>
+      </nav>
+      <div class="fl-toolbar">
+        <button type="button" data-zoom="out" aria-label="Diminuir">−</button>
+        <span class="zoom" id="z-lab">100%</span>
+        <button type="button" data-zoom="in" aria-label="Aumentar">+</button>
+        <button type="button" data-zoom="height">À altura</button>
+        <button type="button" data-zoom="width">À largura</button>
+        <button type="button" data-action="pdf" data-pdf-name="titan-v01-fluxo.pdf">PDF</button>
+        <div class="theme-switch" role="radiogroup" aria-label="Aparência"><button type="button" role="radio" data-theme-set="system" aria-checked="true">Sistema</button><button type="button" role="radio" data-theme-set="light" aria-checked="false">Claro</button><button type="button" role="radio" data-theme-set="dark" aria-checked="false">Escuro</button></div>
+      </div>
+    </div>
+    <p class="fl-hint" id="fl-hint">
+      <span class="fl-meta"><span><strong>Ator:</strong> Operador Mac</span><span><strong>Plano:</strong> titan-v01</span></span>
+      <span class="fl-footer">content-sha 0b4eccc016d9c389 · schema 1.0</span>
+    </p>
+  </header>
+  <div class="fl-viewport" id="fl-viewport">
+    <div id="fl-sizer">
+      <div id="fl-stage">
+        <section id="fl-sequence" class="fl-surface" role="tabpanel" data-surface="sequence" aria-labelledby="fl-sequence-title">
+      <h2 id="fl-sequence-title" class="fl-sr-only">Sequência</h2>
+      <div class="sheet"><svg class="diagram" id="seq-svg" data-surface="sequence" width="668" height="1576" viewBox="0 0 668 1576" xmlns="http://www.w3.org/2000/svg" role="img">
+    <title>Diagrama de sequência — Áudio → ChordPro com validação de qualidade</title>
+    <desc>Gerar ChordPro editável a partir de áudio com acordes na sílaba correta e validar qualidade no corpus iasdermelinda.</desc>
+    <rect class="xor-wash" x="8" y="78" width="652" height="1426" rx="10"/>
+    <g data-actor-id="Op">
+        <line class="lifeline" data-lifeline="Op" x1="150" y1="50" x2="150" y2="1532"/>
+        <line class="life-hit" data-actor-label="Operador Mac" x1="150" y1="50" x2="150" y2="1532"/>
+      </g>
+<g data-actor-id="Lib">
+        <line class="lifeline" data-lifeline="Lib" x1="346" y1="50" x2="346" y2="1532"/>
+        <line class="life-hit" data-actor-label="titan_chordpro" x1="346" y1="50" x2="346" y2="1532"/>
+      </g>
+<g data-actor-id="Harness">
+        <line class="lifeline" data-lifeline="Harness" x1="542" y1="50" x2="542" y2="1532"/>
+        <line class="life-hit" data-actor-label="Harness de validação" x1="542" y1="50" x2="542" y2="1532"/>
+      </g>
+    <g data-xor-rail="EntradaOk">
+        <line class="xor-rail" x1="22" y1="88" x2="22" y2="1496"/>
+        <text class="xor-q" x="38" y="100">◇ Há áudio legível (e letras quando necessárias) para processar?</text>
+      </g>
+<g data-xor-rail="ModoEngines">
+        <line class="xor-rail" x1="36" y1="184" x2="36" y2="1448"/>
+        <text class="xor-q" x="52" y="196">◇ Rodar com mocks (smoke) ou engines ML reais?</text>
+      </g>
+<g data-xor-rail="QualidadePassa">
+        <line class="xor-rail" x1="50" y1="522" x2="50" y2="1140"/>
+        <text class="xor-q" x="66" y="534">◇ Mean WCSR-majmin do sample ≥ 0.70?</text>
+      </g>
+<g data-xor-rail="DivergenciasOk">
+        <line class="xor-rail" x1="64" y1="618" x2="64" y2="1018"/>
+        <text class="xor-q" x="80" y="630">◇ Henry dá GO nas top divergences (≤3 Titan-wrong)?</text>
+      </g>
+<g data-xor-rail="ProntoParaTag">
+        <line class="xor-rail" x1="78" y1="752" x2="78" y2="866"/>
+        <text class="xor-q" x="94" y="764">◇ Versão c0 pronta para o operador criar a tag v0.1.0-c0?</text>
+      </g>
+
+<g>
+          <line class="hair" x1="22" y1="144" x2="40" y2="144"/>
+          <rect class="pill" x="40" y="132" width="90" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Entrada ok" x="85" y="148" text-anchor="middle">Entrada ok</text>
+        </g>
+
+<g>
+          <line class="hair" x1="36" y1="240" x2="54" y2="240"/>
+          <rect class="pill" x="54" y="228" width="72" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Mocks" x="90" y="244" text-anchor="middle">Mocks</text>
+        </g>
+<g data-from="Op" data-to="Lib">
+          <line class="arrow" x1="158" y1="270" x2="330" y2="270"/>
+          <polygon class="arrow-head" points="338,270 330,266 330,274"/>
+          <text class="msg" x="248" y="250" text-anchor="middle">Invoca CLI ou API com áudio e</text><text class="msg" x="248" y="262" text-anchor="middle">perfil ChordPro</text>
+        </g>
+<g data-from="Lib" data-to="Lib">
+          <circle cx="346" cy="308" r="3" class="arrow-head"/>
+          <text class="msg" x="356" y="312">Separation → transcription →</text><text class="msg" x="356" y="324">align → chord/beat/lang →</text><text class="msg" x="356" y="336">fusion placement → writer</text>
+        </g>
+<g data-from="Lib" data-to="Op">
+          <line class="arrow async" x1="338" y1="360" x2="166" y2="360"/>
+          <polygon class="arrow-head" points="158,360 166,356 166,364"/>
+          <text class="msg" x="248" y="340" text-anchor="middle">Entrega ChordPro com acordes na</text><text class="msg" x="248" y="352" text-anchor="middle">sílaba</text>
+        </g>
+<g data-from="Op" data-to="Harness">
+          <line class="arrow" x1="158" y1="398" x2="526" y2="398"/>
+          <polygon class="arrow-head" points="534,398 526,394 526,402"/>
+          <text class="msg" x="346" y="378" text-anchor="middle">Dispara sample de 3 músicas ou</text><text class="msg" x="346" y="390" text-anchor="middle">--validate no corpus</text>
+        </g>
+<g data-from="Harness" data-to="Harness">
+          <circle cx="542" cy="436" r="3" class="arrow-head"/>
+          <text class="msg" x="552" y="440">Calcula WCSR-majmin e</text><text class="msg" x="552" y="452">ranqueia divergências</text>
+        </g>
+<g data-from="Harness" data-to="Op">
+          <line class="arrow async" x1="534" y1="474" x2="166" y2="474"/>
+          <polygon class="arrow-head" points="158,474 166,470 166,478"/>
+          <text class="msg" x="346" y="454" text-anchor="middle">Escreve</text><text class="msg" x="346" y="466" text-anchor="middle">benchmarks/reports/*/top-divergences.md</text>
+        </g>
+
+<g>
+          <line class="hair" x1="50" y1="578" x2="68" y2="578"/>
+          <rect class="pill" x="68" y="566" width="72" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Passa" x="104" y="582" text-anchor="middle">Passa</text>
+        </g>
+
+<g>
+          <line class="hair" x1="64" y1="674" x2="82" y2="674"/>
+          <rect class="pill" x="82" y="662" width="72" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="GO" x="118" y="678" text-anchor="middle">GO</text>
+        </g>
+<g data-from="Op" data-to="Lib">
+          <line class="arrow" x1="158" y1="704" x2="330" y2="704"/>
+          <polygon class="arrow-head" points="338,704 330,700 330,708"/>
+          <text class="msg" x="248" y="684" text-anchor="middle">Confirma 0.1.0c0 + CHANGELOG +</text><text class="msg" x="248" y="696" text-anchor="middle">roadmap Phase C</text>
+        </g>
+
+<g>
+          <line class="hair" x1="78" y1="808" x2="96" y2="808"/>
+          <rect class="pill" x="96" y="796" width="83" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Tag agora" x="137.5" y="812" text-anchor="middle">Tag agora</text>
+        </g>
+<g>
+          <line class="hair" x1="78" y1="856" x2="96" y2="856"/>
+          <rect class="pill" x="96" y="844" width="83" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Adiar tag" x="137.5" y="860" text-anchor="middle">Adiar tag</text>
+        </g>
+<g>
+          <line class="hair" x1="64" y1="904" x2="82" y2="904"/>
+          <rect class="pill" x="82" y="892" width="90" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Retrabalho" x="127" y="908" text-anchor="middle">Retrabalho</text>
+        </g>
+<g data-from="Op" data-to="Lib">
+          <line class="arrow" x1="158" y1="934" x2="330" y2="934"/>
+          <polygon class="arrow-head" points="338,934 330,930 330,938"/>
+          <text class="msg" x="248" y="914" text-anchor="middle">Corrige fusion/engines com base</text><text class="msg" x="248" y="926" text-anchor="middle">nas divergências</text>
+        </g>
+<g data-from="Lib" data-to="Op">
+          <line class="arrow async" x1="338" y1="972" x2="166" y2="972"/>
+          <polygon class="arrow-head" points="158,972 166,968 166,976"/>
+          <text class="msg" x="248" y="964" text-anchor="middle">Nova build pronta para re-medir</text>
+        </g>
+<g data-loop-ref="MedirSample">
+          <path class="loop-arc" d="M150 972 C114 1008, 92 1020, 82 974"/>
+          <polygon class="loop-head" points="82,964 77,974 88,972"/>
+        </g>
+<g>
+          <line class="hair" x1="50" y1="1026" x2="68" y2="1026"/>
+          <rect class="pill" x="68" y="1014" width="118" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Abaixo do gate" x="127" y="1030" text-anchor="middle">Abaixo do gate</text>
+        </g>
+<g data-from="Op" data-to="Lib">
+          <line class="arrow" x1="158" y1="1056" x2="330" y2="1056"/>
+          <polygon class="arrow-head" points="338,1056 330,1052 330,1060"/>
+          <text class="msg" x="248" y="1036" text-anchor="middle">Corrige fusion/engines com base</text><text class="msg" x="248" y="1048" text-anchor="middle">nas divergências</text>
+        </g>
+<g data-from="Lib" data-to="Op">
+          <line class="arrow async" x1="338" y1="1094" x2="166" y2="1094"/>
+          <polygon class="arrow-head" points="158,1094 166,1090 166,1098"/>
+          <text class="msg" x="248" y="1086" text-anchor="middle">Nova build pronta para re-medir</text>
+        </g>
+<g data-loop-ref="MedirSample">
+          <path class="loop-arc" d="M150 1094 C114 1130, 78 1142, 68 1096"/>
+          <polygon class="loop-head" points="68,1086 63,1096 74,1094"/>
+        </g>
+<g>
+          <line class="hair" x1="36" y1="1148" x2="54" y2="1148"/>
+          <rect class="pill" x="54" y="1136" width="111" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Engines reais" x="109.5" y="1152" text-anchor="middle">Engines reais</text>
+        </g>
+<g data-from="Op" data-to="Lib">
+          <line class="arrow" x1="158" y1="1178" x2="330" y2="1178"/>
+          <polygon class="arrow-head" points="338,1178 330,1174 330,1182"/>
+          <text class="msg" x="248" y="1158" text-anchor="middle">Invoca CLI ou API com áudio e</text><text class="msg" x="248" y="1170" text-anchor="middle">perfil ChordPro</text>
+        </g>
+<g data-from="Lib" data-to="Lib">
+          <circle cx="346" cy="1216" r="3" class="arrow-head"/>
+          <text class="msg" x="356" y="1220">Separation → transcription →</text><text class="msg" x="356" y="1232">align → chord/beat/lang →</text><text class="msg" x="356" y="1244">fusion placement → writer</text>
+        </g>
+<g data-from="Lib" data-to="Op">
+          <line class="arrow async" x1="338" y1="1268" x2="166" y2="1268"/>
+          <polygon class="arrow-head" points="158,1268 166,1264 166,1272"/>
+          <text class="msg" x="248" y="1248" text-anchor="middle">Entrega ChordPro com acordes na</text><text class="msg" x="248" y="1260" text-anchor="middle">sílaba</text>
+        </g>
+<g data-from="Op" data-to="Harness">
+          <line class="arrow" x1="158" y1="1306" x2="526" y2="1306"/>
+          <polygon class="arrow-head" points="534,1306 526,1302 526,1310"/>
+          <text class="msg" x="346" y="1286" text-anchor="middle">Dispara sample de 3 músicas ou</text><text class="msg" x="346" y="1298" text-anchor="middle">--validate no corpus</text>
+        </g>
+<g data-from="Harness" data-to="Harness">
+          <circle cx="542" cy="1344" r="3" class="arrow-head"/>
+          <text class="msg" x="552" y="1348">Calcula WCSR-majmin e</text><text class="msg" x="552" y="1360">ranqueia divergências</text>
+        </g>
+<g data-from="Harness" data-to="Op">
+          <line class="arrow async" x1="534" y1="1382" x2="166" y2="1382"/>
+          <polygon class="arrow-head" points="158,1382 166,1378 166,1386"/>
+          <text class="msg" x="346" y="1362" text-anchor="middle">Escreve</text><text class="msg" x="346" y="1374" text-anchor="middle">benchmarks/reports/*/top-divergences.md</text>
+        </g>
+<g data-join-ref="1">
+          <line class="hair" x1="50" y1="1438" x2="68" y2="1438"/>
+          <rect class="pill" x="68" y="1426" width="241.20000000000002" height="24" rx="12"/>
+          <text class="pill-t" x="188.60000000000002" y="1442" text-anchor="middle">→ Mean WCSR-majmin do sample ≥ 0.70?</text>
+        </g>
+<g>
+          <line class="hair" x1="22" y1="1486" x2="40" y2="1486"/>
+          <rect class="pill" x="40" y="1474" width="111" height="24" rx="12"/>
+          <text class="pill-t" data-branch-label="Entrada falha" x="95.5" y="1490" text-anchor="middle">Entrada falha</text>
+        </g>
+    <g data-actor-id="Op">
+        <rect class="actor-box" x="66" y="1540" width="168" height="26" rx="8"/>
+        <text class="actor-label" x="150" y="1558" text-anchor="middle">Operador Mac</text>
+      </g>
+<g data-actor-id="Lib">
+        <rect class="actor-box" x="262" y="1540" width="168" height="26" rx="8"/>
+        <text class="actor-label" x="346" y="1558" text-anchor="middle">titan_chordpro</text>
+      </g>
+<g data-actor-id="Harness">
+        <rect class="actor-box" x="458" y="1540" width="168" height="26" rx="8"/>
+        <text class="actor-label" x="542" y="1558" text-anchor="middle">Harness de validação</text>
+      </g>
+    <g data-actor-stick>
+    <rect class="actor-stick-bg" x="0" y="0" width="668" height="42"/>
+    <line class="actor-stick-rule" x1="0" y1="41.5" x2="668" y2="41.5"/>
+    <g data-actor-id="Op">
+        <rect class="actor-box" x="66" y="8" width="168" height="26" rx="8"/>
+        <text class="actor-label" x="150" y="26" text-anchor="middle">Operador Mac</text>
+      </g>
+<g data-actor-id="Lib">
+        <rect class="actor-box" x="262" y="8" width="168" height="26" rx="8"/>
+        <text class="actor-label" x="346" y="26" text-anchor="middle">titan_chordpro</text>
+      </g>
+<g data-actor-id="Harness">
+        <rect class="actor-box" x="458" y="8" width="168" height="26" rx="8"/>
+        <text class="actor-label" x="542" y="26" text-anchor="middle">Harness de validação</text>
+      </g>
+  </g>
+  </svg></div>
+    </section>
+        <section id="fl-bpm" class="fl-surface" role="tabpanel" data-surface="bpm" aria-labelledby="fl-bpm-title" hidden>
+      <h2 id="fl-bpm-title" class="fl-sr-only">Fluxo BPM</h2>
+      <div class="sheet"><svg class="diagram" id="bpm-svg" data-surface="bpm" width="996" height="1388" viewBox="0 0 996 1388" xmlns="http://www.w3.org/2000/svg" role="img">
+    <title>Diagrama de processo — Áudio → ChordPro com validação de qualidade</title>
+    <path class="edge" d="M516 264 L516 376"/>
+<path class="edge" d="M516 264 L516 376"/>
+<path class="edge" d="M516 446 L516 502"/>
+<path class="edge" d="M516 572 L516 628"/>
+<path class="edge" d="M244 978 L244 1034"/>
+<path class="edge" d="M194 1097 L108 1097 L108 1176"/>
+<path class="edge" d="M294 1097 L380 1097 L380 1176"/>
+<path class="edge" d="M330 831 L244 831 L244 908"/>
+<path class="edge" d="M380 852 L380 1274"/>
+<path class="edge" d="M380 1344 L380 537 L416 537"/>
+<path class="edge" d="M294 1097 L294 1309 L280 1309"/>
+<path class="edge" d="M466 691 L380 691 L380 768"/>
+<path class="edge" d="M466 691 L380 691 L380 1274"/>
+<path class="edge" d="M516 572 L516 1309 L480 1309"/>
+<path class="edge" d="M602 103 L516 103 L516 180"/>
+<path class="edge" d="M702 103 L924 103 L924 182"/>
+    <g data-node-id="EntradaOk" data-node-type="xor" data-shape="diamond">
+          <polygon class="diamond" points="652,40 752,82 652,124 552,82"/>
+          <text class="xor-t" x="652" y="69" text-anchor="middle" dominant-baseline="central">Entrada de áudio</text><text class="xor-t" x="652" y="83" text-anchor="middle" dominant-baseline="central">ok?</text><text class="who" x="652" y="96" text-anchor="middle" dominant-baseline="central">Operador Mac</text>
+        </g>
+<g data-node-id="ModoEngines" data-node-type="xor" data-shape="diamond">
+          <polygon class="diamond" points="516,180 616,222 516,264 416,222"/>
+          <text class="xor-t" x="516" y="209" text-anchor="middle" dominant-baseline="central">Mocks ou engines</text><text class="xor-t" x="516" y="223" text-anchor="middle" dominant-baseline="central">reais?</text><text class="who" x="516" y="236" text-anchor="middle" dominant-baseline="central">Operador Mac</text>
+        </g>
+<g data-node-id="RodarPipeline" data-node-type="activity" data-shape="rect" data-next="MedirSample">
+        <rect class="act" x="416" y="376" width="200" height="70" rx="8"/>
+
+        <text class="act-t" x="516" y="398" text-anchor="middle" dominant-baseline="central">Separar, transcrever,</text><text class="act-t" x="516" y="412" text-anchor="middle" dominant-baseline="central">alinhar, detectar e</text><text class="who" x="516" y="425" text-anchor="middle" dominant-baseline="central">titan_chordpro</text>
+      </g>
+<g data-node-id="MedirSample" data-node-type="activity" data-shape="rect" data-next="QualidadePassa">
+        <rect class="act" x="416" y="502" width="200" height="70" rx="8"/>
+
+        <text class="act-t" x="516" y="524" text-anchor="middle" dominant-baseline="central">Rodar sample_run /</text><text class="act-t" x="516" y="538" text-anchor="middle" dominant-baseline="central">harness e gravar</text><text class="who" x="516" y="551" text-anchor="middle" dominant-baseline="central">Harness de validação</text>
+      </g>
+<g data-node-id="QualidadePassa" data-node-type="xor" data-shape="diamond">
+          <polygon class="diamond" points="516,628 616,670 516,712 416,670"/>
+          <text class="xor-t" x="516" y="657" text-anchor="middle" dominant-baseline="central">WCSR sample ≥</text><text class="xor-t" x="516" y="671" text-anchor="middle" dominant-baseline="central">0.70?</text><text class="who" x="516" y="684" text-anchor="middle" dominant-baseline="central">Harness de validação</text>
+        </g>
+<g data-node-id="DivergenciasOk" data-node-type="xor" data-shape="diamond">
+          <polygon class="diamond" points="380,768 480,810 380,852 280,810"/>
+          <text class="xor-t" x="380" y="797" text-anchor="middle" dominant-baseline="central">GO humano nas</text><text class="xor-t" x="380" y="811" text-anchor="middle" dominant-baseline="central">divergências?</text><text class="who" x="380" y="824" text-anchor="middle" dominant-baseline="central">Operador Mac</text>
+        </g>
+<g data-node-id="PrepararC0" data-node-type="activity" data-shape="rect" data-next="ProntoParaTag">
+        <rect class="act" x="144" y="908" width="200" height="70" rx="8"/>
+
+        <text class="act-t" x="244" y="930" text-anchor="middle" dominant-baseline="central">Sincronizar versão,</text><text class="act-t" x="244" y="944" text-anchor="middle" dominant-baseline="central">CHANGELOG e roadmap</text><text class="who" x="244" y="957" text-anchor="middle" dominant-baseline="central">Operador Mac</text>
+      </g>
+<g data-node-id="ProntoParaTag" data-node-type="xor" data-shape="diamond">
+          <polygon class="diamond" points="244,1034 344,1076 244,1118 144,1076"/>
+          <text class="xor-t" x="244" y="1063" text-anchor="middle" dominant-baseline="central">Criar tag</text><text class="xor-t" x="244" y="1077" text-anchor="middle" dominant-baseline="central">v0.1.0-c0 agora?</text><text class="who" x="244" y="1090" text-anchor="middle" dominant-baseline="central">Operador Mac</text>
+        </g>
+<g data-node-id="FimTagueado" data-node-type="end" data-shape="circle">
+          <circle class="end-ok" cx="108" cy="1186" r="10"/>
+
+          <text class="end-t" x="108" y="1210" text-anchor="middle">Fim · tag v0.1.0-c0</text>
+        </g>
+<g data-node-id="FimAdiado" data-node-type="end" data-shape="circle">
+          <circle class="end-ok" cx="380" cy="1186" r="10"/>
+
+          <text class="end-t" x="380" y="1210" text-anchor="middle">Fim · tag adiada</text>
+        </g>
+<g data-node-id="MelhorarQualidade" data-node-type="activity" data-shape="rect" data-next="MedirSample">
+        <rect class="act" x="280" y="1274" width="200" height="70" rx="8"/>
+
+        <text class="act-t" x="380" y="1296" text-anchor="middle" dominant-baseline="central">Ajustar chord/time</text><text class="act-t" x="380" y="1310" text-anchor="middle" dominant-baseline="central">agreement e placement</text><text class="who" x="380" y="1323" text-anchor="middle" dominant-baseline="central">Operador Mac</text>
+      </g>
+<g data-node-id="FimEntrada" data-node-type="end" data-shape="circle">
+          <circle class="end-bad" cx="924" cy="192" r="10"/>
+          <circle class="end-hole" cx="924" cy="192" r="5"/>
+          <text class="end-t" x="924" y="216" text-anchor="middle">Fim · entrada falhou</text>
+        </g>
+    <polygon class="edge-head" points="516,376 519.6,368 512.4,368"/>
+<polygon class="edge-head" points="516,376 519.6,368 512.4,368"/>
+<polygon class="edge-head" points="516,502 519.6,494 512.4,494"/>
+<polygon class="edge-head" points="516,628 519.6,620 512.4,620"/>
+<polygon class="edge-head" points="244,1034 247.6,1026 240.4,1026"/>
+<polygon class="edge-head" points="108,1176 111.6,1168 104.4,1168"/>
+<polygon class="edge-head" points="380,1176 383.6,1168 376.4,1168"/>
+<polygon class="edge-head" points="244,908 247.6,900 240.4,900"/>
+<polygon class="edge-head" points="380,1274 383.6,1266 376.4,1266"/>
+<polygon class="edge-head" points="416,537 408,533.4 408,540.6"/>
+<polygon class="edge-head" points="280,1309 288,1312.6 288,1305.4"/>
+<polygon class="edge-head" points="380,768 383.6,760 376.4,760"/>
+<polygon class="edge-head" points="380,1274 383.6,1266 376.4,1266"/>
+<polygon class="edge-head" points="480,1309 488,1312.6 488,1305.4"/>
+<polygon class="edge-head" points="516,180 519.6,172 512.4,172"/>
+<polygon class="edge-head" points="924,182 927.6,174 920.4,174"/>
+    <text class="edge-t" x="524" y="320" text-anchor="start">Mocks</text>
+<text class="edge-t" x="524" y="320" text-anchor="start">Engines reais</text>
+
+
+
+<text class="edge-t" x="151" y="1089" text-anchor="middle">Tag agora</text>
+<text class="edge-t" x="337" y="1089" text-anchor="middle">Adiar tag</text>
+<text class="edge-t" x="287" y="823" text-anchor="middle">GO</text>
+<text class="edge-t" x="388" y="1063" text-anchor="start">Retrabalho</text>
+
+
+<text class="edge-t" x="423" y="683" text-anchor="middle">Passa</text>
+<text class="edge-t" x="388" y="982.5" text-anchor="start">Abaixo do gate</text>
+
+<text class="edge-t" x="559" y="95" text-anchor="middle">Entrada ok</text>
+<text class="edge-t" x="813" y="95" text-anchor="middle">Entrada falha</text>
+  </svg></div>
+    </section>
+        <section id="fl-machines" class="fl-surface" role="tabpanel" data-surface="machines" aria-labelledby="fl-machines-title" hidden>
+      <h2 id="fl-machines-title" class="fl-sr-only">Máquinas</h2>
+      <div class="sheet"><svg class="diagram" id="mach-svg" data-surface="machines" width="3653" height="1684" viewBox="0 0 3653 1684" xmlns="http://www.w3.org/2000/svg" role="img">
+    <title>Diagrama de estados — Pipeline de áudio</title>
+    <g transform="translate(177 16)">
+    <g data-machine-id="pipeline">
+      <text class="mach-title" x="16" y="16">Pipeline de áudio</text>
+      <text class="mach-legend" x="16" y="30">Laço = permanece no estado · pastilha = o que o sistema faz</text>
+      <path class="edge" d="M240 228 L532 228"/>
+<path class="edge" d="M700 228 L992 228"/>
+<path class="edge" d="M1160 228 L1452 228"/>
+<path class="edge" d="M1620 228 L1912 228"/>
+<path class="edge" d="M2080 228 L2372 228"/>
+<path class="edge" d="M2540 228 L2832 228"/>
+<path class="edge" d="M3000 228 L3292 228"/>
+<path class="edge" d="M616 244 L616 400"/>
+      <g data-state-id="ocioso">
+        <rect class="st entry" x="72" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="156" y="228" text-anchor="middle" dominant-baseline="central">Ocioso</text>
+      </g>
+<g data-state-id="separando">
+        <rect class="st" x="532" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="616" y="228" text-anchor="middle" dominant-baseline="central">Separando stems</text>
+      </g>
+<g data-state-id="transcrevendo">
+        <rect class="st" x="992" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="1076" y="228" text-anchor="middle" dominant-baseline="central">Transcrevendo</text>
+      </g>
+<g data-state-id="alinhando">
+        <rect class="st" x="1452" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="1536" y="228" text-anchor="middle" dominant-baseline="central">Alinhando</text>
+      </g>
+<g data-state-id="detectando">
+        <rect class="st" x="1912" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="1996" y="228" text-anchor="middle" dominant-baseline="central">Detectando acordes/beat/lang</text>
+      </g>
+<g data-state-id="fundindo">
+        <rect class="st" x="2372" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="2456" y="228" text-anchor="middle" dominant-baseline="central">Fundindo placement</text>
+      </g>
+<g data-state-id="escrevendo">
+        <rect class="st" x="2832" y="212" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="2916" y="228" text-anchor="middle" dominant-baseline="central">Escrevendo ChordPro</text>
+      </g>
+<g data-state-id="concluido">
+        <rect class="st term" x="3292" y="212" width="168" height="32" rx="16"/>
+        <rect class="st term" x="3295" y="215" width="162" height="26" rx="13" fill="none"/>
+        <text class="st-t" x="3376" y="228" text-anchor="middle" dominant-baseline="central">Concluído</text>
+      </g>
+<g data-state-id="falhou">
+        <rect class="st term" x="532" y="400" width="168" height="32" rx="16"/>
+        <rect class="st term" x="535" y="403" width="162" height="26" rx="13" fill="none"/>
+        <text class="st-t" x="616" y="416" text-anchor="middle" dominant-baseline="central">Falhou</text>
+      </g>
+      <polygon class="edge-head" points="532,228 524,224.4 524,231.6"/>
+<polygon class="edge-head" points="992,228 984,224.4 984,231.6"/>
+<polygon class="edge-head" points="1452,228 1444,224.4 1444,231.6"/>
+<polygon class="edge-head" points="1912,228 1904,224.4 1904,231.6"/>
+<polygon class="edge-head" points="2372,228 2364,224.4 2364,231.6"/>
+<polygon class="edge-head" points="2832,228 2824,224.4 2824,231.6"/>
+<polygon class="edge-head" points="3292,228 3284,224.4 3284,231.6"/>
+<polygon class="edge-head" points="616,400 619.6,392 612.4,392"/>
+      <g data-transition-id="T_pipe_start" data-from="ocioso" data-to="separando"><rect class="edge-cap" x="323.5" y="176" width="125" height="26" rx="6"/><text class="edge-title" x="331.5" y="189" dominant-baseline="central">Começa separation</text></g>
+<g data-transition-id="T_pipe_tx" data-from="separando" data-to="transcrevendo"><rect class="edge-cap" x="796.5" y="176" width="99" height="26" rx="6"/><text class="edge-title" x="804.5" y="189" dominant-baseline="central">Stems prontos</text></g>
+<g data-transition-id="T_pipe_align" data-from="transcrevendo" data-to="alinhando"><rect class="edge-cap" x="1243.5" y="176" width="125" height="26" rx="6"/><text class="edge-title" x="1251.5" y="189" dominant-baseline="central">Transcript pronto</text></g>
+<g data-transition-id="T_pipe_detect" data-from="alinhando" data-to="detectando"><rect class="edge-cap" x="1700.5" y="176" width="131" height="26" rx="6"/><text class="edge-title" x="1708.5" y="189" dominant-baseline="central">Alinhamento pronto</text></g>
+<g data-transition-id="T_pipe_fuse" data-from="detectando" data-to="fundindo"><rect class="edge-cap" x="2170" y="176" width="112" height="26" rx="6"/><text class="edge-title" x="2178" y="189" dominant-baseline="central">Detecção pronta</text></g>
+<g data-transition-id="T_pipe_write" data-from="fundindo" data-to="escrevendo"><rect class="edge-cap" x="2626.5" y="176" width="119" height="26" rx="6"/><text class="edge-title" x="2634.5" y="189" dominant-baseline="central">Placement pronto</text></g>
+<g data-transition-id="T_pipe_done" data-from="escrevendo" data-to="concluido"><rect class="edge-cap" x="3051" y="156" width="190" height="46" rx="6"/><text class="edge-title" x="3059" y="169" dominant-baseline="central">ChordPro escrito</text><rect class="fx-pill" x="3059" y="180" width="40" height="14" rx="7"/><text class="fx-pill-t" x="3079" y="187" text-anchor="middle" dominant-baseline="central">Grava</text><text class="fx" x="3105" y="187" dominant-baseline="central" data-effect-kind="write" data-effect-target="Op">Grava arquivo ChordPro</text></g>
+<g data-transition-id="T_pipe_fail" data-from="separando" data-to="falhou"><rect class="edge-cap" x="628" y="299" width="196" height="46" rx="6"/><text class="edge-title" x="636" y="312" dominant-baseline="central">Falha de entrada/pipeline</text><rect class="fx-pill" x="636" y="323" width="40" height="14" rx="7"/><text class="fx-pill-t" x="656" y="330" text-anchor="middle" dominant-baseline="central">Avisa</text><text class="fx" x="682" y="330" dominant-baseline="central" data-effect-kind="notify" data-effect-target="Op">Avisa falha ao operador</text></g>
+    </g>
+<g data-machine-id="qualidade">
+      <text class="mach-title" x="16" y="640">Gate de qualidade</text>
+      <text class="mach-legend" x="16" y="654">Laço = permanece no estado · pastilha = o que o sistema faz</text>
+      <path class="edge" d="M240 744 L532 744"/>
+<path class="edge" d="M240 744 L532 932"/>
+<path class="edge" d="M700 932 L992 744"/>
+<path class="edge" d="M616 948 L616 1104"/>
+<path class="edge back" d="M532 744 L36 744 L36 744 L72 744"/>
+<path class="edge back" d="M992 744 L36 744 L36 744 L72 744"/>
+      <g data-state-id="nao_medida">
+        <rect class="st entry" x="72" y="728" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="156" y="744" text-anchor="middle" dominant-baseline="central">Não medida</text>
+      </g>
+<g data-state-id="sample_abaixo">
+        <rect class="st" x="532" y="728" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="616" y="744" text-anchor="middle" dominant-baseline="central">Sample abaixo de 0.70</text>
+      </g>
+<g data-state-id="sample_ok">
+        <rect class="st" x="532" y="916" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="616" y="932" text-anchor="middle" dominant-baseline="central">Sample ≥ 0.70</text>
+      </g>
+<g data-state-id="bloqueada">
+        <rect class="st" x="992" y="728" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="1076" y="744" text-anchor="middle" dominant-baseline="central">Bloqueada (sem GO)</text>
+      </g>
+<g data-state-id="aprovada">
+        <rect class="st term" x="532" y="1104" width="168" height="32" rx="16"/>
+        <rect class="st term" x="535" y="1107" width="162" height="26" rx="13" fill="none"/>
+        <text class="st-t" x="616" y="1120" text-anchor="middle" dominant-baseline="central">Aprovada</text>
+      </g>
+      <polygon class="edge-head" points="532,744 524,740.4 524,747.6"/>
+<polygon class="edge-head" points="532,932 527.2223901529783,924.6423886926773 523.3247450897379,930.6961778334551"/>
+<polygon class="edge-head" points="992,744 983.3247450897379,745.3038221665449 987.2223901529783,751.3576113073227"/>
+<polygon class="edge-head" points="616,1104 619.6,1096 612.4,1096"/>
+<polygon class="edge-head back" points="72,744 64,740.4 64,747.6"/>
+<polygon class="edge-head back" points="72,744 64,740.4 64,747.6"/>
+      <g data-transition-id="T_q_baixo" data-from="nao_medida" data-to="sample_abaixo"><rect class="edge-cap" x="311" y="692" width="150" height="26" rx="6"/><text class="edge-title" x="319" y="705" dominant-baseline="central">Sample abaixo do gate</text></g>
+<g data-transition-id="T_q_ok" data-from="nao_medida" data-to="sample_ok"><rect class="edge-cap" x="338" y="692" width="96" height="26" rx="6"/><text class="edge-title" x="346" y="705" dominant-baseline="central">Sample passa</text></g>
+<g data-transition-id="T_q_block" data-from="sample_ok" data-to="bloqueada"><rect class="edge-cap" x="777" y="880" width="138" height="26" rx="6"/><text class="edge-title" x="785" y="893" dominant-baseline="central">Sem GO — retrabalho</text></g>
+<g data-transition-id="T_q_go" data-from="sample_ok" data-to="aprovada"><rect class="edge-cap" x="628" y="1013" width="96" height="26" rx="6"/><text class="edge-title" x="636" y="1026" dominant-baseline="central">GO humano</text></g>
+<g data-transition-id="T_q_retry" data-from="sample_abaixo" data-to="nao_medida"><rect class="edge-cap" x="-122" y="715" width="150" height="26" rx="6"/><text class="edge-title" x="-114" y="728" dominant-baseline="central">Re-mede após correção</text></g>
+<g data-transition-id="T_q_unblock" data-from="bloqueada" data-to="nao_medida"><rect class="edge-cap" x="-161" y="715" width="189" height="26" rx="6"/><text class="edge-title" x="-153" y="728" dominant-baseline="central">Volta ao ciclo de qualidade</text></g>
+    </g>
+<g data-machine-id="release">
+      <text class="mach-title" x="16" y="1344">Release c0</text>
+      <text class="mach-legend" x="16" y="1358">Laço = permanece no estado · pastilha = o que o sistema faz</text>
+      <path class="edge" d="M240 1448 L532 1448"/>
+<path class="edge" d="M700 1448 L992 1448"/>
+<path class="edge" d="M700 1448 L992 1636"/>
+      <g data-state-id="rascunho">
+        <rect class="st entry" x="72" y="1432" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="156" y="1448" text-anchor="middle" dominant-baseline="central">Rascunho</text>
+      </g>
+<g data-state-id="c0_preparado">
+        <rect class="st" x="532" y="1432" width="168" height="32" rx="16"/>
+
+        <text class="st-t" x="616" y="1448" text-anchor="middle" dominant-baseline="central">c0 preparado</text>
+      </g>
+<g data-state-id="tagueado">
+        <rect class="st term" x="992" y="1432" width="168" height="32" rx="16"/>
+        <rect class="st term" x="995" y="1435" width="162" height="26" rx="13" fill="none"/>
+        <text class="st-t" x="1076" y="1448" text-anchor="middle" dominant-baseline="central">Tagueado</text>
+      </g>
+<g data-state-id="adiado">
+        <rect class="st term" x="992" y="1620" width="168" height="32" rx="16"/>
+        <rect class="st term" x="995" y="1623" width="162" height="26" rx="13" fill="none"/>
+        <text class="st-t" x="1076" y="1636" text-anchor="middle" dominant-baseline="central">Tag adiada</text>
+      </g>
+      <polygon class="edge-head" points="532,1448 524,1444.4 524,1451.6"/>
+<polygon class="edge-head" points="992,1448 984,1444.4 984,1451.6"/>
+<polygon class="edge-head" points="992,1636 987.2223901529783,1628.6423886926775 983.3247450897379,1634.696177833455"/>
+      <g data-transition-id="T_rel_prep" data-from="rascunho" data-to="c0_preparado"><rect class="edge-cap" x="259" y="1376" width="254" height="46" rx="6"/><text class="edge-title" x="267" y="1389" dominant-baseline="central">Qualidade aprovada → preparar c0</text><rect class="fx-pill" x="267" y="1400" width="40" height="14" rx="7"/><text class="fx-pill-t" x="287" y="1407" text-anchor="middle" dominant-baseline="central">Grava</text><text class="fx" x="313" y="1407" dominant-baseline="central" data-effect-kind="write" data-effect-target="Lib">Confirma versão/CHANGELOG/roadmap</text></g>
+<g data-transition-id="T_rel_tag" data-from="c0_preparado" data-to="tagueado"><rect class="edge-cap" x="757" y="1376" width="178" height="46" rx="6"/><text class="edge-title" x="765" y="1389" dominant-baseline="central">Operador cria tag</text><rect class="fx-pill" x="765" y="1400" width="40" height="14" rx="7"/><text class="fx-pill-t" x="785" y="1407" text-anchor="middle" dominant-baseline="central">Avisa</text><text class="fx" x="811" y="1407" dominant-baseline="central" data-effect-kind="notify" data-effect-target="Op">Tag v0.1.0-c0 criada</text></g>
+<g data-transition-id="T_rel_defer" data-from="c0_preparado" data-to="adiado"><rect class="edge-cap" x="798" y="1396" width="96" height="26" rx="6"/><text class="edge-title" x="806" y="1409" dominant-baseline="central">Adia a tag</text></g>
+    </g>
+    </g>
+  </svg></div>
+    </section>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+var MIN=0.3,MAX=2.8,PREFIX="as-flow-zoom:";
+var slug=document.documentElement.getAttribute("data-fl-slug")||"default";
+var key=PREFIX+slug;
+var viewport=document.getElementById("fl-viewport");
+var sizer=document.getElementById("fl-sizer");
+var stage=document.getElementById("fl-stage");
+var lab=document.getElementById("z-lab");
+var scale=1;
+function readZoom(){
+  try{
+    var n=parseFloat(localStorage.getItem(key));
+    if(Number.isFinite(n)) return Math.min(MAX,Math.max(MIN,n));
+  }catch(e){}
+  return 1;
+}
+function saveZoom(){try{localStorage.setItem(key,String(scale))}catch(e){}}
+function visiblePanel(){return document.querySelector(".fl-surface:not([hidden])")}
+function visibleSvg(){
+  var p=visiblePanel();
+  return p?p.querySelector("svg"):null;
+}
+function svgNative(svg){
+  if(!svg) return {w:0,h:0};
+  if(!svg.dataset.nw){
+    var vb=svg.viewBox&&svg.viewBox.baseVal;
+    svg.dataset.nw=String((vb&&vb.width)||0);
+    svg.dataset.nh=String((vb&&vb.height)||0);
+  }
+  return {w:+svg.dataset.nw,h:+svg.dataset.nh};
+}
+function applySvgScale(){
+  var svg=visibleSvg();
+  if(!svg) return;
+  var n=svgNative(svg);
+  svg.setAttribute("width",String(n.w*scale));
+  svg.setAttribute("height",String(n.h*scale));
+}
+function applyStageGeometry(){
+  applySvgScale();
+  var sheet=document.querySelector(".fl-surface:not([hidden]) .sheet");
+  if(!sheet||!viewport||!sizer||!stage) return null;
+  var w=sheet.offsetWidth,h=sheet.offsetHeight,pad=40;
+  var contentW=w+pad*2,contentH=h+pad*2;
+  sizer.style.width=Math.max(viewport.clientWidth,Math.ceil(contentW))+"px";
+  sizer.style.height=Math.max(viewport.clientHeight,Math.ceil(contentH))+"px";
+  var sizerW=Math.max(viewport.clientWidth,Math.ceil(contentW));
+  stage.style.left=Math.max(0,(sizerW-contentW)/2)+"px";
+  stage.style.top="0px";
+  if(lab) lab.textContent=Math.round(scale*100)+"%";
+  return {contentW:contentW};
+}
+function setScale(next){
+  scale=Math.min(MAX,Math.max(MIN,next));
+  applyStageGeometry();
+  saveZoom();
+}
+function selectTab(name){
+  var tabs=document.querySelectorAll('[role="tab"][data-tab]');
+  var i=0;
+  for(;i<tabs.length;i++){
+    var t=tabs[i];
+    var on=t.getAttribute("data-tab")===name;
+    t.setAttribute("aria-selected",on?"true":"false");
+    var panel=document.getElementById(t.getAttribute("aria-controls"));
+    if(!panel) continue;
+    if(on) panel.removeAttribute("hidden");
+    else panel.setAttribute("hidden","");
+  }
+  applyStageGeometry();
+}
+var toc=document.querySelector(".fl-toc");
+if(toc) toc.addEventListener("click",function(e){
+  var t=e.target.closest("[data-tab]");
+  if(!t||t.hidden) return;
+  selectTab(t.getAttribute("data-tab"));
+});
+function pdfFilename(slug){
+  var s=String(slug||"").trim().replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"");
+  return s?s+"-fluxo.pdf":"fluxo.pdf";
+}
+function enc(s){return new TextEncoder().encode(s)}
+function concat(chunks){
+  var n=0,i=0;
+  for(;i<chunks.length;i++) n+=chunks[i].length;
+  var out=new Uint8Array(n),o=0;
+  for(i=0;i<chunks.length;i++){out.set(chunks[i],o);o+=chunks[i].length}
+  return out;
+}
+function buildFlowPdf(input){
+  var list=Array.isArray(input&&input.pages)?input.pages:[];
+  if(!list.length) throw new Error("buildFlowPdf: pages required");
+  var header=enc("%PDF-1.4\n%\x80\x80\x80\x80\n");
+  var bodyParts=[],offsets=[0],pos=header.length;
+  function pushObj(num,payload){
+    var start=enc(num+" 0 obj\n"),end=enc("\nendobj\n");
+    offsets[num]=pos;
+    var chunk=concat([start,payload,end]);
+    bodyParts.push(chunk);
+    pos+=chunk.length;
+  }
+  var n=list.length,kids=list.map(function(_,i){return (3+i*3)+" 0 R"}).join(" ");
+  pushObj(1,enc("<< /Type /Catalog /Pages 2 0 R >>"));
+  pushObj(2,enc("<< /Type /Pages /Kids [ "+kids+" ] /Count "+n+" >>"));
+  list.forEach(function(p,i){
+    var pageNo=3+i*3,contentNo=pageNo+1,imageNo=pageNo+2;
+    var ptW=Number(p.ptWidth)||Number(p.width)||595;
+    var ptH=Number(p.ptHeight)||Number(p.height)||842;
+    var raw=p.jpeg;
+    var jpeg=raw instanceof Uint8Array?raw:new Uint8Array(raw);
+    var pxW=Math.max(1,Number(p.width)||1),pxH=Math.max(1,Number(p.height)||1);
+    var content="q "+ptW+" 0 0 "+ptH+" 0 0 cm /Im0 Do Q";
+    pushObj(pageNo,enc("<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 "+ptW+" "+ptH+" ] /Resources << /XObject << /Im0 "+imageNo+" 0 R >> >> /Contents "+contentNo+" 0 R >>"));
+    pushObj(contentNo,enc("<< /Length "+content.length+" >>\nstream\n"+content+"\nendstream"));
+    pushObj(imageNo,concat([enc("<< /Type /XObject /Subtype /Image /Width "+pxW+" /Height "+pxH+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+jpeg.length+" >>\nstream\n"),jpeg,enc("\nendstream")]));
+  });
+  var xrefStart=pos,maxObj=2+n*3,xref="xref\n0 "+(maxObj+1)+"\n0000000000 65535 f \n",i;
+  for(i=1;i<=maxObj;i++) xref+=String(offsets[i]).padStart(10,"0")+" 00000 n \n";
+  return concat([header].concat(bodyParts).concat([enc(xref),enc("trailer\n<< /Size "+(maxObj+1)+" /Root 1 0 R >>\nstartxref\n"+xrefStart+"\n%%EOF\n")]));
+}
+function svgToJpeg(svg){
+  return new Promise(function(resolve,reject){
+    var vb=svg.viewBox&&svg.viewBox.baseVal;
+    var w=(vb&&vb.width)||svg.width.baseVal.value||1;
+    var h=(vb&&vb.height)||svg.height.baseVal.value||1;
+    var xml=new XMLSerializer().serializeToString(svg);
+    var blob=new Blob([xml],{type:"image/svg+xml;charset=utf-8"});
+    var url=URL.createObjectURL(blob);
+    var img=new Image();
+    img.onload=function(){
+      URL.revokeObjectURL(url);
+      var canvas=document.createElement("canvas");
+      canvas.width=Math.max(1,Math.round(w*2));
+      canvas.height=Math.max(1,Math.round(h*2));
+      var ctx=canvas.getContext("2d");
+      ctx.fillStyle="#ffffff";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      canvas.toBlob(function(b){
+        if(!b){reject(new Error("jpeg"));return}
+        b.arrayBuffer().then(function(buf){
+          resolve({jpeg:new Uint8Array(buf),width:canvas.width,height:canvas.height,ptWidth:539,ptHeight:539*(canvas.height/canvas.width)});
+        }).catch(reject);
+      },"image/jpeg",0.92);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("svg"))};
+    img.src=url;
+  });
+}
+async function downloadPdf(btn){
+  if(btn.disabled) return;
+  btn.disabled=true;
+  var prev=btn.textContent;
+  btn.textContent="PDF…";
+  try{
+    var ids=["seq-svg","bpm-svg","mach-svg"],pages=[],i;
+    for(i=0;i<ids.length;i++){
+      var svg=document.getElementById(ids[i]);
+      if(svg) pages.push(await svgToJpeg(svg));
+    }
+    if(!pages.length) throw new Error("Nenhum diagrama para exportar");
+    var bytes=buildFlowPdf({pages:pages});
+    var url=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
+    var name=btn.getAttribute("data-pdf-name")||pdfFilename(document.documentElement.getAttribute("data-fl-slug")||"");
+    var a=document.createElement("a");
+    a.href=url;a.download=name;a.click();
+    setTimeout(function(){URL.revokeObjectURL(url)},60000);
+  }catch(err){
+    var hint=document.getElementById("fl-hint");
+    if(hint) hint.appendChild(document.createTextNode(" "+((err&&err.message)||"Falha ao gerar PDF")));
+  }finally{
+    btn.disabled=false;
+    btn.textContent=prev||"PDF";
+  }
+}
+var bar=document.querySelector(".fl-toolbar");
+if(bar) bar.addEventListener("click",function(e){
+  var pdf=e.target.closest("[data-action=pdf]");
+  if(pdf){downloadPdf(pdf);return}
+  var b=e.target.closest("[data-zoom]");
+  if(!b) return;
+  var a=b.getAttribute("data-zoom");
+  if(a==="in") setScale(scale+0.1);
+  else if(a==="out") setScale(scale-0.1);
+  else if(a==="height"||a==="width"){
+    var n=svgNative(visibleSvg());
+    if(!n.w||!n.h||!viewport) return;
+    var fitX=(viewport.clientWidth-24)/(n.w+80);
+    var fitY=(viewport.clientHeight-24)/(n.h+80);
+    setScale(a==="height"?fitY:fitX);
+  } else {
+    setScale(1);
+  }
+});
+if(viewport){
+  var panning=false,px=0,py=0,sx=0,sy=0;
+  viewport.addEventListener("pointerdown",function(e){
+    if(e.button!==0) return;
+    panning=true;px=e.clientX;py=e.clientY;sx=viewport.scrollLeft;sy=viewport.scrollTop;
+    viewport.classList.add("is-panning");
+    viewport.setPointerCapture(e.pointerId);
+  });
+  viewport.addEventListener("pointermove",function(e){
+    if(!panning) return;
+    viewport.scrollLeft=sx-(e.clientX-px);
+    viewport.scrollTop=sy-(e.clientY-py);
+  });
+  function endPan(){panning=false;viewport.classList.remove("is-panning")}
+  viewport.addEventListener("pointerup",endPan);
+  viewport.addEventListener("pointercancel",endPan);
+  viewport.addEventListener("wheel",function(e){
+    if(!e.ctrlKey) return;
+    e.preventDefault();
+    setScale(scale+(e.deltaY<0?0.1:-0.1));
+  },{passive:false});
+}
+scale=readZoom();
+applyStageGeometry();
+window.addEventListener("resize",applyStageGeometry);
+})();
+</script>
+</body>
+</html>

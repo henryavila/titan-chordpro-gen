@@ -1,0 +1,497 @@
+{
+  "schemaVersion": "1.0",
+  "planSlug": "titan-v01",
+  "title": "Áudio → ChordPro com validação de qualidade",
+  "description": "Fluxo operacional do operador Mac: processar áudio pelos engines, fundir acordes na sílaba, escrever ChordPro e fechar o gate de qualidade (WCSR + revisão humana) antes da tag c0. Não é a árvore de fases.",
+  "scenario": "Gerar ChordPro editável a partir de áudio com acordes na sílaba correta e validar qualidade no corpus iasdermelinda.",
+  "actor": "Operador Mac",
+  "audience": "both",
+  "youAreHere": "QualidadePassa",
+  "actors": [
+    {
+      "id": "Op",
+      "label": "Operador Mac",
+      "kind": "actor"
+    },
+    {
+      "id": "Lib",
+      "label": "titan_chordpro",
+      "kind": "participant"
+    },
+    {
+      "id": "Harness",
+      "label": "Harness de validação",
+      "kind": "participant"
+    }
+  ],
+  "graph": {
+    "entry": "EntradaOk",
+    "nodes": {
+      "EntradaOk": {
+        "type": "xor",
+        "label": "Entrada de áudio ok?",
+        "who": "Operador Mac",
+        "question": "Há áudio legível (e letras quando necessárias) para processar?",
+        "branches": [
+          {
+            "id": "EntradaOk.ok",
+            "when": "entrada_ok",
+            "label": "Entrada ok",
+            "next": "ModoEngines"
+          },
+          {
+            "id": "EntradaOk.falha",
+            "when": "entrada_falha",
+            "label": "Entrada falha",
+            "next": "FimEntrada"
+          }
+        ]
+      },
+      "ModoEngines": {
+        "type": "xor",
+        "label": "Mocks ou engines reais?",
+        "who": "Operador Mac",
+        "question": "Rodar com mocks (smoke) ou engines ML reais?",
+        "branches": [
+          {
+            "id": "ModoEngines.mocks",
+            "when": "mocks",
+            "label": "Mocks",
+            "next": "RodarPipeline"
+          },
+          {
+            "id": "ModoEngines.reais",
+            "when": "engines_reais",
+            "label": "Engines reais",
+            "next": "RodarPipeline"
+          }
+        ]
+      },
+      "RodarPipeline": {
+        "type": "activity",
+        "title": "Rodar o pipeline",
+        "label": "Separar, transcrever, alinhar, detectar e fundir",
+        "who": "titan_chordpro",
+        "messages": [
+          {
+            "from": "Op",
+            "to": "Lib",
+            "text": "Invoca CLI ou API com áudio e perfil ChordPro",
+            "async": false
+          },
+          {
+            "from": "Lib",
+            "to": "Lib",
+            "text": "Separation → transcription → align → chord/beat/lang → fusion placement → writer",
+            "async": false
+          },
+          {
+            "from": "Lib",
+            "to": "Op",
+            "text": "Entrega ChordPro com acordes na sílaba",
+            "async": true
+          }
+        ],
+        "next": "MedirSample"
+      },
+      "MedirSample": {
+        "type": "activity",
+        "title": "Medir o sample",
+        "label": "Rodar sample_run / harness e gravar top-divergences",
+        "who": "Harness de validação",
+        "messages": [
+          {
+            "from": "Op",
+            "to": "Harness",
+            "text": "Dispara sample de 3 músicas ou --validate no corpus",
+            "async": false
+          },
+          {
+            "from": "Harness",
+            "to": "Harness",
+            "text": "Calcula WCSR-majmin e ranqueia divergências",
+            "async": false
+          },
+          {
+            "from": "Harness",
+            "to": "Op",
+            "text": "Escreve benchmarks/reports/*/top-divergences.md",
+            "async": true
+          }
+        ],
+        "next": "QualidadePassa"
+      },
+      "QualidadePassa": {
+        "type": "xor",
+        "label": "WCSR sample ≥ 0.70?",
+        "who": "Harness de validação",
+        "question": "Mean WCSR-majmin do sample ≥ 0.70?",
+        "branches": [
+          {
+            "id": "QualidadePassa.ok",
+            "when": "wcsr_ok",
+            "label": "Passa",
+            "next": "DivergenciasOk"
+          },
+          {
+            "id": "QualidadePassa.baixo",
+            "when": "wcsr_baixo",
+            "label": "Abaixo do gate",
+            "next": "MelhorarQualidade"
+          }
+        ]
+      },
+      "MelhorarQualidade": {
+        "type": "activity",
+        "title": "Melhorar detecção/placement",
+        "label": "Ajustar chord/time agreement e placement",
+        "who": "Operador Mac",
+        "messages": [
+          {
+            "from": "Op",
+            "to": "Lib",
+            "text": "Corrige fusion/engines com base nas divergências",
+            "async": false
+          },
+          {
+            "from": "Lib",
+            "to": "Op",
+            "text": "Nova build pronta para re-medir",
+            "async": true
+          }
+        ],
+        "next": "MedirSample"
+      },
+      "DivergenciasOk": {
+        "type": "xor",
+        "label": "GO humano nas divergências?",
+        "who": "Operador Mac",
+        "question": "Henry dá GO nas top divergences (≤3 Titan-wrong)?",
+        "branches": [
+          {
+            "id": "DivergenciasOk.go",
+            "when": "go",
+            "label": "GO",
+            "next": "PrepararC0"
+          },
+          {
+            "id": "DivergenciasOk.retrabalho",
+            "when": "retrabalho",
+            "label": "Retrabalho",
+            "next": "MelhorarQualidade"
+          }
+        ]
+      },
+      "PrepararC0": {
+        "type": "activity",
+        "title": "Preparar fechamento c0",
+        "label": "Sincronizar versão, CHANGELOG e roadmap",
+        "who": "Operador Mac",
+        "messages": [
+          {
+            "from": "Op",
+            "to": "Lib",
+            "text": "Confirma 0.1.0c0 + CHANGELOG + roadmap Phase C",
+            "async": false
+          }
+        ],
+        "next": "ProntoParaTag"
+      },
+      "ProntoParaTag": {
+        "type": "xor",
+        "label": "Criar tag v0.1.0-c0 agora?",
+        "who": "Operador Mac",
+        "question": "Versão c0 pronta para o operador criar a tag v0.1.0-c0?",
+        "branches": [
+          {
+            "id": "ProntoParaTag.agora",
+            "when": "tag_agora",
+            "label": "Tag agora",
+            "next": "FimTagueado"
+          },
+          {
+            "id": "ProntoParaTag.adiar",
+            "when": "adiar_tag",
+            "label": "Adiar tag",
+            "next": "FimAdiado"
+          }
+        ]
+      },
+      "FimEntrada": {
+        "type": "end",
+        "title": "Fim · entrada inválida",
+        "label": "Fim · entrada falhou"
+      },
+      "FimTagueado": {
+        "type": "end",
+        "title": "Fim · c0 tagueado",
+        "label": "Fim · tag v0.1.0-c0"
+      },
+      "FimAdiado": {
+        "type": "end",
+        "title": "Fim · c0 preparado sem tag",
+        "label": "Fim · tag adiada"
+      }
+    }
+  },
+  "machines": [
+    {
+      "id": "pipeline",
+      "label": "Pipeline de áudio",
+      "entry": "ocioso",
+      "nodes": {
+        "ocioso": {
+          "label": "Ocioso"
+        },
+        "separando": {
+          "label": "Separando stems"
+        },
+        "transcrevendo": {
+          "label": "Transcrevendo"
+        },
+        "alinhando": {
+          "label": "Alinhando"
+        },
+        "detectando": {
+          "label": "Detectando acordes/beat/lang"
+        },
+        "fundindo": {
+          "label": "Fundindo placement"
+        },
+        "escrevendo": {
+          "label": "Escrevendo ChordPro"
+        },
+        "concluido": {
+          "label": "Concluído",
+          "terminal": true
+        },
+        "falhou": {
+          "label": "Falhou",
+          "terminal": true
+        }
+      },
+      "transitions": [
+        {
+          "id": "T_pipe_start",
+          "from": "ocioso",
+          "to": "separando",
+          "when": "entrada_ok",
+          "label": "Começa separation",
+          "via": "EntradaOk.ok",
+          "effects": []
+        },
+        {
+          "id": "T_pipe_tx",
+          "from": "separando",
+          "to": "transcrevendo",
+          "when": "stems_ok",
+          "label": "Stems prontos",
+          "effects": []
+        },
+        {
+          "id": "T_pipe_align",
+          "from": "transcrevendo",
+          "to": "alinhando",
+          "when": "transcript_ok",
+          "label": "Transcript pronto",
+          "effects": []
+        },
+        {
+          "id": "T_pipe_detect",
+          "from": "alinhando",
+          "to": "detectando",
+          "when": "align_ok",
+          "label": "Alinhamento pronto",
+          "effects": []
+        },
+        {
+          "id": "T_pipe_fuse",
+          "from": "detectando",
+          "to": "fundindo",
+          "when": "detect_ok",
+          "label": "Detecção pronta",
+          "effects": []
+        },
+        {
+          "id": "T_pipe_write",
+          "from": "fundindo",
+          "to": "escrevendo",
+          "when": "placement_ok",
+          "label": "Placement pronto",
+          "effects": []
+        },
+        {
+          "id": "T_pipe_done",
+          "from": "escrevendo",
+          "to": "concluido",
+          "when": "chordpro_escrito",
+          "label": "ChordPro escrito",
+          "effects": [
+            {
+              "kind": "write",
+              "label": "Grava arquivo ChordPro",
+              "target": "Op"
+            }
+          ]
+        },
+        {
+          "id": "T_pipe_fail",
+          "from": "separando",
+          "to": "falhou",
+          "when": "entrada_falha",
+          "label": "Falha de entrada/pipeline",
+          "via": "EntradaOk.falha",
+          "effects": [
+            {
+              "kind": "notify",
+              "label": "Avisa falha ao operador",
+              "target": "Op"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qualidade",
+      "label": "Gate de qualidade",
+      "entry": "nao_medida",
+      "nodes": {
+        "nao_medida": {
+          "label": "Não medida"
+        },
+        "sample_abaixo": {
+          "label": "Sample abaixo de 0.70"
+        },
+        "sample_ok": {
+          "label": "Sample ≥ 0.70"
+        },
+        "bloqueada": {
+          "label": "Bloqueada (sem GO)"
+        },
+        "aprovada": {
+          "label": "Aprovada",
+          "terminal": true
+        }
+      },
+      "transitions": [
+        {
+          "id": "T_q_baixo",
+          "from": "nao_medida",
+          "to": "sample_abaixo",
+          "when": "wcsr_baixo",
+          "label": "Sample abaixo do gate",
+          "via": "QualidadePassa.baixo",
+          "effects": []
+        },
+        {
+          "id": "T_q_ok",
+          "from": "nao_medida",
+          "to": "sample_ok",
+          "when": "wcsr_ok",
+          "label": "Sample passa",
+          "via": "QualidadePassa.ok",
+          "effects": []
+        },
+        {
+          "id": "T_q_retry",
+          "from": "sample_abaixo",
+          "to": "nao_medida",
+          "when": "wcsr_baixo",
+          "label": "Re-mede após correção",
+          "effects": []
+        },
+        {
+          "id": "T_q_go",
+          "from": "sample_ok",
+          "to": "aprovada",
+          "when": "go",
+          "label": "GO humano",
+          "via": "DivergenciasOk.go",
+          "effects": []
+        },
+        {
+          "id": "T_q_block",
+          "from": "sample_ok",
+          "to": "bloqueada",
+          "when": "retrabalho",
+          "label": "Sem GO — retrabalho",
+          "via": "DivergenciasOk.retrabalho",
+          "effects": []
+        },
+        {
+          "id": "T_q_unblock",
+          "from": "bloqueada",
+          "to": "nao_medida",
+          "when": "wcsr_baixo",
+          "label": "Volta ao ciclo de qualidade",
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "label": "Release c0",
+      "entry": "rascunho",
+      "nodes": {
+        "rascunho": {
+          "label": "Rascunho"
+        },
+        "c0_preparado": {
+          "label": "c0 preparado"
+        },
+        "tagueado": {
+          "label": "Tagueado",
+          "terminal": true
+        },
+        "adiado": {
+          "label": "Tag adiada",
+          "terminal": true
+        }
+      },
+      "transitions": [
+        {
+          "id": "T_rel_prep",
+          "from": "rascunho",
+          "to": "c0_preparado",
+          "when": "go",
+          "label": "Qualidade aprovada → preparar c0",
+          "via": "DivergenciasOk.go",
+          "effects": [
+            {
+              "kind": "write",
+              "label": "Confirma versão/CHANGELOG/roadmap",
+              "target": "Lib"
+            }
+          ]
+        },
+        {
+          "id": "T_rel_tag",
+          "from": "c0_preparado",
+          "to": "tagueado",
+          "when": "tag_agora",
+          "label": "Operador cria tag",
+          "via": "ProntoParaTag.agora",
+          "effects": [
+            {
+              "kind": "notify",
+              "label": "Tag v0.1.0-c0 criada",
+              "target": "Op"
+            }
+          ]
+        },
+        {
+          "id": "T_rel_defer",
+          "from": "c0_preparado",
+          "to": "adiado",
+          "when": "adiar_tag",
+          "label": "Adia a tag",
+          "via": "ProntoParaTag.adiar",
+          "effects": []
+        }
+      ]
+    }
+  ],
+  "ratifiedAt": "2026-08-31T00:30:06.659Z",
+  "ratifiedGraphSha": "0b4eccc016d9c38993f4c3e83fbcb64fec68859822900bd656ed388c2abdb279",
+  "ratifiedBy": "operator"
+}

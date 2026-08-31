@@ -17,6 +17,14 @@
   },
   {
     "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "date": "2026-08-31",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
     "date": "2026-06-24",
     "plannedValue": null,
@@ -555,6 +563,14 @@
     "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
     "date": "2026-08-30",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-31",
     "plannedValue": null,
     "earnedCount": 0,
     "earnedProxy": 7
@@ -1475,6 +1491,14 @@
     "projectId": "titan-chordpro-lib",
     "planSlug": "titan-v01",
     "date": "2026-08-30",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-31",
     "plannedValue": null,
     "earnedCount": 3,
     "earnedProxy": 0
