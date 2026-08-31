@@ -1,6 +1,72 @@
 [
   {
     "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f0-anchor-and-inventory",
+    "phaseId": "F0",
+    "id": "F0-G1",
+    "description": "Branch plan/rebrand-gen ativa e titan-v01 pausado",
+    "status": "met",
+    "verifierLabel": "",
+    "evidenceSummary": "passed · 2026-08-30"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f0-anchor-and-inventory",
+    "phaseId": "F0",
+    "id": "F0-G2",
+    "description": "Inventário MUST_CHANGE alinhado ao design/digest",
+    "status": "met",
+    "verifierLabel": "",
+    "evidenceSummary": "passed · 2026-08-30"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f1-this-repo-identity-flip",
+    "phaseId": "F1",
+    "id": "F1-G1",
+    "description": "pyproject name titan-chordpro-gen e dual scripts",
+    "status": "met",
+    "verifierLabel": "",
+    "evidenceSummary": "passed · 2026-08-30"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f1-this-repo-identity-flip",
+    "phaseId": "F1",
+    "id": "F1-G2",
+    "description": "pytest + import titan_chordpro + ambos CLIs --help",
+    "status": "met",
+    "verifierLabel": "",
+    "evidenceSummary": "passed · 2026-08-30"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f2-operator-rename-consumer-window",
+    "phaseId": "F2",
+    "id": "F2-G1",
+    "description": "GitHub e pasta local titan-chordpro-gen",
+    "status": "met",
+    "verifierLabel": "",
+    "evidenceSummary": "passed · 2026-08-30"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f2-operator-rename-consumer-window",
+    "phaseId": "F2",
+    "id": "F2-G2",
+    "description": "curta pins/path + NAMING link + badges",
+    "status": "met",
+    "verifierLabel": "",
+    "evidenceSummary": "passed · 2026-08-30"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
     "initiativeId": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
     "phaseId": "F0",

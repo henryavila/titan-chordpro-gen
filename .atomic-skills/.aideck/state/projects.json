@@ -2,17 +2,17 @@
   {
     "id": "titan-chordpro-lib",
     "name": "Titan Chordpro Lib",
-    "totalPlans": 2,
+    "totalPlans": 3,
     "activeCount": 1,
     "blockedCount": 0,
-    "concludedCount": 1,
+    "concludedCount": 2,
     "isParallel": false,
     "hasActiveFront": true,
     "mode": "isolado",
     "parallelTone": "success",
     "dotTone": "info",
-    "plansSummary": "2 · 1 ✓",
-    "phasesActiveText": "1/5",
+    "plansSummary": "3 · 2 ✓",
+    "phasesActiveText": "1/8",
     "fronts": [
       {
         "projectId": "titan-chordpro-lib",
@@ -26,8 +26,8 @@
     "moreText": "",
     "idleText": "",
     "bannerTitle": "1 frente ativa",
-    "bannerSub": "2 planos · 0 tasks travadas",
+    "bannerSub": "3 planos · 0 tasks travadas",
     "moreFrontsText": "",
-    "updatedRel": "37m"
+    "updatedRel": "37s"
   }
 ]

@@ -1,6 +1,17 @@
 [
   {
     "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "initiativeId": "rebrand-gen-f0-anchor-and-inventory",
+    "phaseId": "F0",
+    "index": 0,
+    "id": 1,
+    "title": "Anchor and inventory",
+    "type": "task",
+    "openedAt": "2026-08-29T02:46:42.203Z"
+  },
+  {
+    "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
     "initiativeId": "titan-core-decoupling-f0-root-import-decoupling-and-contract-re",
     "phaseId": "F0",

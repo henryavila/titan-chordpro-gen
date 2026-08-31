@@ -1,6 +1,22 @@
 [
   {
     "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "date": "2026-08-29",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "rebrand-gen",
+    "date": "2026-08-30",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
     "date": "2026-06-24",
     "plannedValue": null,
@@ -331,6 +347,214 @@
     "projectId": "titan-chordpro-lib",
     "planSlug": "titan-core-decoupling",
     "date": "2026-08-04",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-05",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-06",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-07",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-08",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-09",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-10",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-11",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-12",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-13",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-14",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-15",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-16",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-17",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-18",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-19",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-20",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-21",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-22",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-23",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-24",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-25",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-26",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-27",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-28",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-29",
+    "plannedValue": null,
+    "earnedCount": 0,
+    "earnedProxy": 7
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-core-decoupling",
+    "date": "2026-08-30",
     "plannedValue": null,
     "earnedCount": 0,
     "earnedProxy": 7
@@ -1043,6 +1267,214 @@
     "projectId": "titan-chordpro-lib",
     "planSlug": "titan-v01",
     "date": "2026-08-04",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-05",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-06",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-07",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-08",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-09",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-10",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-11",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-12",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-13",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-14",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-15",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-16",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-17",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-18",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-19",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-20",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-21",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-22",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-23",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-24",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-25",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-26",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-27",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-28",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-29",
+    "plannedValue": null,
+    "earnedCount": 3,
+    "earnedProxy": 0
+  },
+  {
+    "projectId": "titan-chordpro-lib",
+    "planSlug": "titan-v01",
+    "date": "2026-08-30",
     "plannedValue": null,
     "earnedCount": 3,
     "earnedProxy": 0
