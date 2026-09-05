@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,14 @@ from titan_chordpro.writer.profiles import PROFILES
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="titan-chordpro-gen")
+    raw = list(sys.argv[1:] if argv is None else argv)
+    if raw and raw[0] == "preview":
+        return _run_preview(raw[1:])
+
+    parser = argparse.ArgumentParser(
+        prog="titan-chordpro-gen",
+        epilog="Also: titan-chordpro-gen preview [file-or-dir]  (open titan-chordpro-ui)",
+    )
     parser.add_argument("audio", type=Path, nargs="?")
     parser.add_argument("--profile", default="inline_slash")
     parser.add_argument("--language", default=None)
@@ -62,7 +70,20 @@ def main(argv: list[str] | None = None) -> int:
         default=151,
         help="Number of corpus rows to validate (use with --validate). Default 151.",
     )
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help=(
+            "Open titan-chordpro-ui on the written chart. With no audio, "
+            "preview the latest harness cifras."
+        ),
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="With --preview, start the demo but do not open a browser.",
+    )
+    args = parser.parse_args(raw)
 
     if args.list_profiles:
         for name, profile in PROFILES.items():
@@ -72,9 +93,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.validate is not None:
         if args.audio is not None:
             parser.error("--validate is mutually exclusive with the audio positional argument")
+        if args.preview:
+            parser.error("--preview is mutually exclusive with --validate")
         return _run_validate(args.validate, args.sample_size)
 
     if args.audio is None:
+        if args.preview:
+            return _preview_charts(None, open_browser=not args.no_browser)
         parser.print_help()
         return 1
 
@@ -104,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
             real_tag = "real" if info["real"] else "mock"
             print(f"  {stage:20s} {info['engine']:20s} [{real_tag}] ({info['reason']})")
 
+    if args.preview:
+        return _preview_charts([out], open_browser=not args.no_browser)
     return 0
 
 
@@ -181,6 +208,59 @@ def _run_validate(csv_path: Path, sample_size: int) -> int:
     out_path = write_report(report, output_dir=Path("benchmarks/reports"), top_n=20)
     console.log(f"Mean WCSR-majmin: {report.mean_wcsr:.3f}")
     console.log(f"Report: {out_path}")
+    return 0
+
+
+def _run_preview(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(
+        prog="titan-chordpro-gen preview",
+        description="Open titan-chordpro-ui on generated ChordPro files.",
+    )
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        help="Chart files or directories. Default: latest benchmarks/reports/*/cifras.",
+    )
+    parser.add_argument("--port", type=int, default=None)
+    parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument(
+        "--ui-root",
+        type=Path,
+        default=None,
+        help="Path to titan-chordpro-ui (default: TITAN_CHORDPRO_UI or ../titan-chordpro-ui).",
+    )
+    args = parser.parse_args(argv)
+    paths = list(args.paths) if args.paths else None
+    return _preview_charts(
+        paths,
+        open_browser=not args.no_browser,
+        port=args.port,
+        ui_root=args.ui_root,
+    )
+
+
+def _preview_charts(
+    paths: list[Path] | None,
+    *,
+    open_browser: bool,
+    port: int | None = None,
+    ui_root: Path | None = None,
+) -> int:
+    from titan_chordpro.preview import PreviewError, start_preview
+
+    try:
+        session = start_preview(
+            paths,
+            open_browser=open_browser,
+            wait=True,
+            port=port,
+            ui_root=ui_root,
+        )
+    except PreviewError as exc:
+        print(f"error: {exc}", flush=True)
+        return 2
+    print(f"Preview: {session.url}", flush=True)
     return 0
 
 

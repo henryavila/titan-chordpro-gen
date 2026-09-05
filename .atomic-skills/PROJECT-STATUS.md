@@ -1,5 +1,5 @@
 ---
-lastUpdated: 2026-08-04T16:10:45Z
+lastUpdated: 2026-09-05T17:24:52Z
 schemaVersion: '0.1'
 ---
 
@@ -14,4 +14,5 @@ Legacy flat `plans/` + `initiatives/` for `titan-v01` were retired on 2026-08-04
 
 | Plan | Phase | Next |
 |------|-------|------|
+| preview-ui | F0 active | preview.py + CLI `--preview` |
 | titan-v01 | F2 active | T-003 T70 quality loop |

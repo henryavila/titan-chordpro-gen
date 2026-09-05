@@ -1,8 +1,8 @@
 ---
-lastUpdated: 2026-08-30T21:48:50Z
+lastUpdated: 2026-09-05T17:24:52Z
 schemaVersion: '0.1'
-activePlans: 1
-activeInitiatives: 1
+activePlans: 2
+activeInitiatives: 2
 archivedCount: 2
 ---
 
@@ -20,7 +20,14 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 | Slug | Status | Current Phase | Branch | Started |
 |------|--------|---------------|--------|---------|
+| preview-ui | active | F0 — Ponte gen → UI | plan/preview-ui | 2026-09-05 |
 | titan-v01 | active | F2 — Phase C Validation and quality | plan/titan-v01 | 2026-05-08 |
+
+### preview-ui — active phase initiatives
+
+| Slug | Phase | Status | Next Action |
+|------|-------|--------|-------------|
+| preview-ui | F0 | active | Implementar titan_chordpro/preview.py até os testes unitários passarem |
 
 ### titan-v01 — active phase initiatives
 
@@ -30,7 +37,9 @@ This repo follows a 3-level model under `projects/<project-id>/`:
 
 ## Active Initiatives (standalone)
 
-| _(empty)_ | | | | |
+| Slug | Status | Branch | Next Action |
+|------|--------|--------|-------------|
+| preview-ui | active | plan/preview-ui | Implementar titan_chordpro/preview.py até os testes unitários passarem |
 
 ## Recently Archived (last 10)
 

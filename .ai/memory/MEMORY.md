@@ -7,6 +7,8 @@ details in topic files.
 
 - [Review lessons](review-lessons.md)
 
+- [Preview gen → UI](preview-ui.md) — sibling demo via `TITAN_PREVIEW_DIR`; Henry visual GO 2026-09-05 on Ao-olhar-pra-cruz (not F2 WCSR close)
+
 - [2026-08-04 titan-v01 F2 quality handoff](2026-08-04-titan-v01-session-handoff.md) — T-003 open; chord LCS ~93%; outro F-hold residual; branch `plan/titan-v01`
 
 ### Parallel lanes (2026-08-05) — self-contained
