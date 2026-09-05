@@ -78,6 +78,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Also write `<slug>.beatgrid.txt` next to the chordpro for visual beat validation.",
     )
+    p.add_argument(
+        "--preview",
+        action="store_true",
+        help="Open titan-chordpro-ui on the written chart.",
+    )
+    p.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="With --preview, start the demo but do not open a browser.",
+    )
     args = p.parse_args(argv)
 
     youtube_id = extract_youtube_id(args.url)
@@ -109,6 +119,20 @@ def main(argv: list[str] | None = None) -> int:
         beatgrid_path.write_text(render_beatgrid_doc(doc.model_dump(mode="json"), title))
         print(f"      Wrote {beatgrid_path}")
 
+    if args.preview:
+        from titan_chordpro.preview import PreviewError, start_preview
+
+        print("[preview] Opening titan-chordpro-ui ...")
+        try:
+            session = start_preview(
+                [out_path],
+                open_browser=not args.no_browser,
+                wait=True,
+            )
+        except PreviewError as exc:
+            print(f"error: {exc}", flush=True)
+            return 2
+        print(f"      Preview: {session.url}")
     return 0
 
 

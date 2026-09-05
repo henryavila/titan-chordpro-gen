@@ -120,3 +120,77 @@ class TestValidateFlag:
         missing = tmp_path / "nope.csv"
         code = main(["--validate", str(missing), "--sample-size", "1"])
         assert code == 2
+
+
+@pytest.mark.integration
+class TestPreviewFlag:
+    def test_help_documents_preview(self, capsys: pytest.CaptureFixture[str]) -> None:
+        from titan_chordpro.cli import main
+
+        with pytest.raises(SystemExit) as exc:
+            main(["--help"])
+        assert exc.value.code == 0
+        out = capsys.readouterr().out
+        assert "--preview" in out
+        assert "preview" in out.lower()
+
+    def test_preview_subcommand_help(self, capsys: pytest.CaptureFixture[str]) -> None:
+        from titan_chordpro.cli import main
+
+        with pytest.raises(SystemExit) as exc:
+            main(["preview", "--help"])
+        assert exc.value.code == 0
+        out = capsys.readouterr().out
+        assert "preview" in out.lower()
+
+    def test_preview_flag_without_audio_calls_start_preview(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from titan_chordpro.cli import main
+        from titan_chordpro.preview import PreviewSession
+
+        session = PreviewSession(
+            url="http://127.0.0.1:5173/",
+            preview_dir=tmp_path,
+            ui_root=tmp_path,
+            process=None,
+            port=5173,
+            cmd=["pnpm", "dev"],
+        )
+        with patch("titan_chordpro.preview.start_preview", return_value=session) as spy:
+            code = main(["--preview", "--no-browser"])
+        assert code == 0
+        spy.assert_called_once()
+        kwargs = spy.call_args.kwargs
+        assert kwargs.get("open_browser") is False
+
+    def test_preview_after_transcribe_passes_output(self, silent_wav: Path, tmp_path: Path) -> None:
+        from titan_chordpro.cli import main
+        from titan_chordpro.preview import PreviewSession
+
+        out_path = tmp_path / "out.chordpro"
+        session = PreviewSession(
+            url="http://127.0.0.1:5173/",
+            preview_dir=tmp_path,
+            ui_root=tmp_path,
+            process=None,
+            port=5173,
+            cmd=["pnpm", "dev"],
+        )
+        with patch("titan_chordpro.preview.start_preview", return_value=session) as spy:
+            code = main(
+                [
+                    str(silent_wav),
+                    "--output",
+                    str(out_path),
+                    "--device",
+                    "mock",
+                    "--preview",
+                    "--no-browser",
+                ]
+            )
+        assert code == 0
+        assert out_path.exists()
+        spy.assert_called_once()
+        args, _kwargs = spy.call_args
+        assert args[0] == [out_path]

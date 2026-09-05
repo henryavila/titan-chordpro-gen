@@ -81,7 +81,25 @@ The fastest path from a URL to a chord chart is the `render_from_url.py` wrapper
 titan-chordpro-gen path/to/audio.mp3 --output song.chordpro --profile inline_slash
 ```
 
-Flags: `--title` (embedded in `{title:}`; default = YouTube id), `--language` (default `pt`), `--output`, `--profile` (default `inline_slash` — run `titan-chordpro-gen --list-profiles` for the full set), `--beatgrid` (writes `<slug>.beatgrid.txt` next to the chord chart).
+Flags: `--title` (embedded in `{title:}`; default = YouTube id), `--language` (default `pt`), `--output`, `--profile` (default `inline_slash` — run `titan-chordpro-gen --list-profiles` for the full set), `--beatgrid` (writes `<slug>.beatgrid.txt` next to the chord chart), `--preview` (opens the sibling `titan-chordpro-ui` Vue demo on the written file).
+
+## Preview generated charts in titan-chordpro-ui
+
+The viewer/editor lives in the sibling repo (not this tree). After a generate, or against the latest harness cifras:
+
+```bash
+# Latest benchmarks/reports/*/cifras (the charts this generator already wrote)
+titan-chordpro-gen preview
+
+# A file or directory
+titan-chordpro-gen preview path/to/song.chordpro
+titan-chordpro-gen --preview --device mock path/to/audio.wav --output /tmp/song.chordpro
+
+# Override the UI checkout
+TITAN_CHORDPRO_UI=/Volumes/External/code/titan-chordpro-ui titan-chordpro-gen preview
+```
+
+Requires `pnpm install` in `titan-chordpro-ui`. The demo reads `TITAN_PREVIEW_DIR` and lists those charts instead of the bundled fixtures.
 
 Cold first run on a new URL is ~5 min (audio download + htdemucs separation + whisper medium + chord/beat/align). Same URL re-run is <1 s — the orchestrator hits the document-level cache directly.
 
